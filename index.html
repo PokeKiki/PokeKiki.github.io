@@ -294,6 +294,55 @@
     background: #2a8050;
     z-index: 20;
   }
+
+  /* ===== GAME SCREEN ===== */
+  #game-screen {
+    flex-direction: column;
+    background: #000;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  #game-canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+  .joystick-wrap {
+    width: 100%;
+    background: #1a1a2e;
+    padding: 10px 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    height: 140px;
+  }
+  #joystick-zone {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.15);
+    touch-action: none;
+    cursor: pointer;
+  }
+  #joystick-knob {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #8888ee, #3333aa);
+    border: 2px solid rgba(255,255,255,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
 </style>
 <script>
   // Fix iOS/iPad full screen height
@@ -372,6 +421,16 @@
         <button id="username-confirm" onclick="confirmUsername()">OK</button>
       </div>
       <div class="tap-indicator" id="tap-indicator">▼</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="game-screen" class="screen">
+  <canvas id="game-canvas"></canvas>
+  <div class="joystick-wrap">
+    <div id="joystick-zone">
+      <div id="joystick-knob"></div>
     </div>
   </div>
 </div>
@@ -531,8 +590,10 @@ document.getElementById('intro-screen').addEventListener('click', (e) => {
     if (dialogueIndex < dialogues.length) {
       runDialogue();
     } else {
-      document.getElementById('dialogue-text').textContent = "Your adventure begins now...";
-      hideTapIndicator();
+      // Launch game!
+      document.getElementById('intro-screen').classList.remove('active');
+      document.getElementById('game-screen').classList.add('active');
+      startGame();
     }
   }
 });
@@ -540,6 +601,436 @@ document.getElementById('intro-screen').addEventListener('click', (e) => {
 document.getElementById('username-field').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') confirmUsername();
 });
+
+// ===== GAME ENGINE =====
+const TILE = 32;
+const COLS = 12;
+const ROWS = 10;
+
+// Tile types
+const T_FLOOR  = 0;
+const T_WALL   = 1;
+const T_RUG    = 2;
+const T_MAT    = 3;
+
+// Room map (12 wide x 10 tall)
+const roomMap = [
+  [1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,2,2,2,2,0,0,0,1],
+  [1,0,0,0,2,3,3,2,0,0,0,1],
+  [1,0,0,0,2,3,3,2,0,0,0,1],
+  [1,0,0,0,2,2,2,2,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,0,0,1,1,1,1,1],
+];
+
+// Furniture: {x,y,w,h, draw fn}
+const furniture = [];
+
+// Player
+let player = { x: 5.5, y: 7.5, dir: 0, frame: 0, frameTimer: 0 };
+// dir: 0=down,1=up,2=left,3=right
+
+let keys = { up:false, down:false, left:false, right:false };
+let gameCanvas, gctx;
+let lastTime = 0;
+
+function startGame() {
+  gameCanvas = document.getElementById('game-canvas');
+  gctx = gameCanvas.getContext('2d');
+  gctx.imageSmoothingEnabled = false;
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  setupJoystick();
+  requestAnimationFrame(gameLoop);
+}
+
+function resizeCanvas() {
+  const wrap = document.getElementById('game-screen');
+  const joystickWrap = document.querySelector('.joystick-wrap');
+  gameCanvas.width = COLS * TILE;
+  gameCanvas.height = ROWS * TILE;
+  const availH = wrap.clientHeight - joystickWrap.clientHeight;
+  const scale = Math.min(wrap.clientWidth / gameCanvas.width, availH / gameCanvas.height);
+  gameCanvas.style.width = (gameCanvas.width * scale) + 'px';
+  gameCanvas.style.height = (gameCanvas.height * scale) + 'px';
+}
+
+// ===== JOYSTICK =====
+let joystick = { active: false, dx: 0, dy: 0 };
+
+function setupJoystick() {
+  const zone = document.getElementById('joystick-zone');
+  const knob = document.getElementById('joystick-knob');
+  const RADIUS = 60; // zone radius
+  const KNOB_MAX = 36; // max knob travel
+
+  function getPos(e) {
+    const rect = zone.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX - cx, y: touch.clientY - cy };
+  }
+
+  function updateKnob(dx, dy) {
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const clamped = Math.min(dist, KNOB_MAX);
+    const angle = Math.atan2(dy, dx);
+    const kx = Math.cos(angle) * clamped;
+    const ky = Math.sin(angle) * clamped;
+    knob.style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+    // Normalize direction (-1 to 1)
+    joystick.dx = dist > 8 ? dx / Math.max(dist, KNOB_MAX) : 0;
+    joystick.dy = dist > 8 ? dy / Math.max(dist, KNOB_MAX) : 0;
+  }
+
+  function onStart(e) {
+    e.preventDefault();
+    joystick.active = true;
+    const p = getPos(e);
+    updateKnob(p.x, p.y);
+  }
+  function onMove(e) {
+    e.preventDefault();
+    if (!joystick.active) return;
+    const p = getPos(e);
+    updateKnob(p.x, p.y);
+  }
+  function onEnd(e) {
+    e.preventDefault();
+    joystick.active = false;
+    joystick.dx = 0;
+    joystick.dy = 0;
+    knob.style.transform = 'translate(-50%, -50%)';
+  }
+
+  zone.addEventListener('touchstart', onStart, { passive: false });
+  zone.addEventListener('touchmove',  onMove,  { passive: false });
+  zone.addEventListener('touchend',   onEnd,   { passive: false });
+  zone.addEventListener('mousedown',  onStart);
+  window.addEventListener('mousemove', e => { if(joystick.active) onMove(e); });
+  window.addEventListener('mouseup',   onEnd);
+
+  // Keyboard support
+  document.addEventListener('keydown', e => {
+    if(e.key==='ArrowUp')    { joystick.dy=-1; joystick.dx=joystick.dx||0; }
+    if(e.key==='ArrowDown')  { joystick.dy= 1; joystick.dx=joystick.dx||0; }
+    if(e.key==='ArrowLeft')  { joystick.dx=-1; joystick.dy=joystick.dy||0; }
+    if(e.key==='ArrowRight') { joystick.dx= 1; joystick.dy=joystick.dy||0; }
+  });
+  document.addEventListener('keyup', e => {
+    if(e.key==='ArrowUp'||e.key==='ArrowDown')   joystick.dy=0;
+    if(e.key==='ArrowLeft'||e.key==='ArrowRight') joystick.dx=0;
+  });
+}
+
+// ===== COLLISION =====
+function isWalkable(nx, ny) {
+  // Check all 4 corners of player hitbox
+  const R = 0.3;
+  const points = [
+    [nx - R, ny - R], [nx + R, ny - R],
+    [nx - R, ny + R], [nx + R, ny + R],
+  ];
+  for (const [px, py] of points) {
+    const col = Math.floor(px);
+    const row = Math.floor(py);
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
+    if (roomMap[row][col] === T_WALL) return false;
+  }
+  return true;
+}
+
+function gameLoop(ts) {
+  requestAnimationFrame(gameLoop);
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  const speed = 4;
+  const dx = joystick.dx;
+  const dy = joystick.dy;
+  const moving = Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05;
+
+  if (moving) {
+    // Update direction based on dominant axis
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      player.dir = dx > 0 ? 3 : 2;
+    } else {
+      player.dir = dy > 0 ? 0 : 1;
+    }
+
+    // Try full move
+    const nx = player.x + dx * speed * dt;
+    const ny = player.y + dy * speed * dt;
+
+    // Try X and Y separately for smooth wall sliding
+    if (isWalkable(nx, player.y)) player.x = nx;
+    if (isWalkable(player.x, ny)) player.y = ny;
+
+    player.frameTimer += dt;
+    if (player.frameTimer > 0.15) { player.frameTimer = 0; player.frame = (player.frame + 1) % 4; }
+  } else {
+    player.frame = 0;
+    player.frameTimer = 0;
+  }
+
+  drawGame();
+}
+
+function drawGame() {
+  const c = gctx;
+  const W = COLS*TILE, H = ROWS*TILE;
+  c.clearRect(0,0,W,H);
+
+  // Draw tiles
+  for(let r=0; r<ROWS; r++) {
+    for(let col=0; col<COLS; col++) {
+      const t = roomMap[r][col];
+      const px = col*TILE, py = r*TILE;
+      if(t === T_WALL) {
+        // Wall - stone grey/blue
+        c.fillStyle = '#7888a0';
+        c.fillRect(px,py,TILE,TILE);
+        c.fillStyle = '#6878908';
+        // brick pattern
+        const bOff = (r%2===0) ? 0 : TILE/2;
+        c.fillStyle = '#6070888';
+        for(let bx=0; bx<TILE; bx+=TILE) {
+          c.fillStyle = '#5a6878';
+          c.fillRect(px+1, py+1, TILE-2, TILE/2-1);
+          c.fillRect(px+1, py+TILE/2+1, TILE-2, TILE/2-2);
+        }
+        c.strokeStyle = '#4a5868';
+        c.lineWidth = 1;
+        c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+        c.beginPath(); c.moveTo(px,py+TILE/2); c.lineTo(px+TILE,py+TILE/2); c.stroke();
+      } else if(t === T_FLOOR) {
+        // Brick floor - warm tan
+        c.fillStyle = (r+col)%2===0 ? '#c8a878' : '#c0a070';
+        c.fillRect(px,py,TILE,TILE);
+        c.strokeStyle = '#a88858';
+        c.lineWidth = 0.5;
+        c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+      } else if(t === T_RUG) {
+        // Rug border - blue
+        c.fillStyle = '#8ab0d0';
+        c.fillRect(px,py,TILE,TILE);
+        c.strokeStyle = '#6090b8';
+        c.lineWidth = 1;
+        c.strokeRect(px+1,py+1,TILE-2,TILE-2);
+      } else if(t === T_MAT) {
+        // Rug center - lighter blue
+        c.fillStyle = '#b0d0e8';
+        c.fillRect(px,py,TILE,TILE);
+      }
+    }
+  }
+
+  // Draw furniture
+  drawFurniture(c);
+
+  // Draw player
+  drawPlayer(c, player.x*TILE, player.y*TILE, player.dir, player.frame);
+}
+
+function drawFurniture(c) {
+  // Bookshelf top-left
+  drawBookshelf(c, 1*TILE, 1*TILE);
+  // TV + stand center-top
+  drawTV(c, 5*TILE, 1*TILE);
+  // Cabinet top-right
+  drawCabinet(c, 9*TILE, 1*TILE);
+  // Plants left
+  drawPlant(c, 1*TILE, 4*TILE);
+  drawPlant(c, 1*TILE, 6*TILE);
+  // Plants right
+  drawPlant(c, 10*TILE, 4*TILE);
+  drawPlant(c, 10*TILE, 6*TILE);
+  // Bed/sofa in center on rug
+  drawBed(c, 4*TILE, 4*TILE);
+  // Door mat at bottom
+  c.fillStyle = '#c05030';
+  c.fillRect(5*TILE+4, 9*TILE+20, TILE*2-8, 10);
+}
+
+function drawBookshelf(c, x, y) {
+  c.fillStyle = '#8B4513';
+  c.fillRect(x+2, y+2, TILE*1.5-4, TILE*2-4);
+  // Books
+  const colors = ['#e05030','#3080e0','#30a050','#e0c030','#9030e0'];
+  for(let i=0;i<5;i++) {
+    c.fillStyle = colors[i];
+    c.fillRect(x+4+i*8, y+6, 6, TILE-8);
+  }
+  c.fillStyle = '#6B3410';
+  c.fillRect(x+2, y+TILE+2, TILE*1.5-4, 3);
+}
+
+function drawTV(c, x, y) {
+  // Stand
+  c.fillStyle = '#555';
+  c.fillRect(x+TILE/2-4, y+TILE-4, 8, 8);
+  c.fillRect(x+TILE/2-10, y+TILE+2, 20, 4);
+  // Screen
+  c.fillStyle = '#222';
+  c.fillRect(x+2, y+2, TILE*2-4, TILE-8);
+  c.fillStyle = '#1a3a5a';
+  c.fillRect(x+4, y+4, TILE*2-8, TILE-14);
+  // Screen glow
+  c.fillStyle = 'rgba(100,180,255,0.2)';
+  c.fillRect(x+4, y+4, TILE*2-8, TILE-14);
+}
+
+function drawCabinet(c, x, y) {
+  c.fillStyle = '#8B6914';
+  c.fillRect(x+2, y+2, TILE*1.5-4, TILE*2-4);
+  // Glass panels
+  c.fillStyle = '#aaddff';
+  c.fillRect(x+5, y+5, TILE/2-3, TILE-8);
+  c.fillRect(x+TILE/2+3, y+5, TILE/2-3, TILE-8);
+  c.strokeStyle = '#6B5010';
+  c.lineWidth = 1;
+  c.strokeRect(x+2,y+2,TILE*1.5-4,TILE*2-4);
+  c.beginPath(); c.moveTo(x+2,y+TILE); c.lineTo(x+TILE*1.5-2,y+TILE); c.stroke();
+}
+
+function drawPlant(c, x, y) {
+  // Pot
+  c.fillStyle = '#c06080';
+  c.fillRect(x+8, y+TILE-10, TILE-16, 10);
+  // Leaves
+  c.fillStyle = '#40a040';
+  c.beginPath();
+  c.arc(x+TILE/2, y+TILE-14, 10, 0, Math.PI*2);
+  c.fill();
+  c.fillStyle = '#30c030';
+  c.beginPath();
+  c.arc(x+TILE/2-5, y+TILE-20, 7, 0, Math.PI*2);
+  c.fill();
+  c.beginPath();
+  c.arc(x+TILE/2+5, y+TILE-20, 7, 0, Math.PI*2);
+  c.fill();
+  c.beginPath();
+  c.arc(x+TILE/2, y+TILE-25, 8, 0, Math.PI*2);
+  c.fill();
+}
+
+function drawBed(c, x, y) {
+  const W = TILE*4, H = TILE*4;
+  // Frame
+  c.fillStyle = '#a0b8c8';
+  c.fillRect(x, y, W, H);
+  // Inner mattress
+  c.fillStyle = '#c8dde8';
+  c.fillRect(x+4, y+4, W-8, H-8);
+  // Pillow top-left
+  c.fillStyle = '#e8eef2';
+  c.fillRect(x+8, y+8, W/2-12, H/3-4);
+  // Pillow top-right
+  c.fillRect(x+W/2+4, y+8, W/2-12, H/3-4);
+  // Blanket bottom
+  c.fillStyle = '#90a8b8';
+  c.fillRect(x+6, y+H/2, W-12, H/2-6);
+  // Border
+  c.strokeStyle = '#7090a8';
+  c.lineWidth = 2;
+  c.strokeRect(x+1,y+1,W-2,H-2);
+}
+
+function drawPlayer(c, px, py, dir, frame) {
+  const x = Math.round(px - TILE/2);
+  const y = Math.round(py - TILE*0.8);
+  const S = TILE; // sprite size
+
+  // Walk bob
+  const bob = (frame===1||frame===3) ? -1 : 0;
+  const legL = (frame===1||frame===2) ? 4 : 0;
+  const legR = (frame===3||frame===0&&frame!==0) ? 0 : (frame===3?4:0);
+
+  // Shadow
+  c.fillStyle = 'rgba(0,0,0,0.2)';
+  c.beginPath();
+  c.ellipse(x+S/2, y+S+2, S/3, 4, 0, 0, Math.PI*2);
+  c.fill();
+
+  const cx = x + S/2;
+  const cy = y + bob;
+
+  // Shoes - dark
+  c.fillStyle = '#1a1a1a';
+  c.fillRect(cx-7, cy+S-6, 6, 5);
+  c.fillRect(cx+1, cy+S-6, 6, 5);
+
+  // Legs - dark pants
+  c.fillStyle = '#2a2060';
+  if(dir===2||dir===3) {
+    // Side view legs animated
+    c.fillRect(cx-5, cy+S*0.55, 9, S*0.3);
+  } else {
+    c.fillRect(cx-7, cy+S*0.55, 6, S*0.32+(frame===1?-3:frame===3?3:0));
+    c.fillRect(cx+1, cy+S*0.55, 6, S*0.32+(frame===3?-3:frame===1?3:0));
+  }
+
+  // Body - RED trainer jacket
+  c.fillStyle = '#cc2020';
+  c.fillRect(cx-8, cy+S*0.3, 16, S*0.3);
+
+  // White stripe on jacket
+  c.fillStyle = '#ffffff';
+  c.fillRect(cx-1, cy+S*0.3, 2, S*0.3);
+
+  // Arms
+  c.fillStyle = '#cc2020';
+  if(dir===0||dir===1) {
+    c.fillRect(cx-11, cy+S*0.3+2, 4, S*0.22);
+    c.fillRect(cx+7, cy+S*0.3+2, 4, S*0.22);
+    // Hands
+    c.fillStyle = '#c8a070';
+    c.fillRect(cx-11, cy+S*0.52, 4, 4);
+    c.fillRect(cx+7, cy+S*0.52, 4, 4);
+  } else {
+    c.fillRect(cx-9, cy+S*0.3+2, 4, S*0.22);
+    c.fillStyle = '#c8a070';
+    c.fillRect(cx-9, cy+S*0.52, 4, 4);
+  }
+
+  // Neck
+  c.fillStyle = '#c8a070';
+  c.fillRect(cx-3, cy+S*0.2, 6, S*0.12);
+
+  // Head
+  c.fillStyle = '#c8a070';
+  c.fillRect(cx-7, cy+S*0.03, 14, 13);
+
+  // Hair - dark brown, trainer cap style
+  c.fillStyle = '#cc2020'; // Red cap
+  c.fillRect(cx-8, cy+S*0.01, 16, 6);
+  if(dir!==1) {
+    c.fillRect(cx+5, cy+S*0.03, 4, 4); // cap brim front
+  } else {
+    c.fillRect(cx-9, cy+S*0.03, 4, 4); // cap brim back
+  }
+  c.fillStyle = '#2a1a0a'; // hair under cap
+  c.fillRect(cx-7, cy+S*0.05, 14, 3);
+
+  // Eyes
+  if(dir===0) {
+    c.fillStyle = '#111';
+    c.fillRect(cx-4, cy+S*0.12, 3, 3);
+    c.fillRect(cx+1, cy+S*0.12, 3, 3);
+  } else if(dir===1) {
+    // back of head, no eyes
+  } else {
+    c.fillStyle = '#111';
+    c.fillRect(dir===3 ? cx+2 : cx-5, cy+S*0.12, 3, 3);
+  }
+}
+
 </script>
 </body>
 </html>
