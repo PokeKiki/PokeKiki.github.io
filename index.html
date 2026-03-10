@@ -316,7 +316,8 @@
     padding: 10px 0 18px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    padding-left: 30px;
     flex-shrink: 0;
     height: 140px;
   }
@@ -620,8 +621,8 @@ const roomMap = [
   [1,0,0,0,0,0,0,0,0,0,0,1],
   [1,0,0,0,0,0,0,0,0,0,0,1],
   [1,0,0,0,2,2,2,2,0,0,0,1],
-  [1,0,0,0,2,3,3,2,0,0,0,1],
-  [1,0,0,0,2,3,3,2,0,0,0,1],
+  [1,0,0,0,2,2,2,2,0,0,0,1],
+  [1,0,0,0,2,2,2,2,0,0,0,1],
   [1,0,0,0,2,2,2,2,0,0,0,1],
   [1,0,0,0,0,0,0,0,0,0,0,1],
   [1,1,1,1,1,0,0,1,1,1,1,1],
@@ -631,7 +632,7 @@ const roomMap = [
 const furniture = [];
 
 // Player
-let player = { x: 5.5, y: 7.5, dir: 0, frame: 0, frameTimer: 0 };
+let player = { x: 5.5, y: 8.5, dir: 0, frame: 0, frameTimer: 0 };
 // dir: 0=down,1=up,2=left,3=right
 
 let keys = { up:false, down:false, left:false, right:false };
@@ -729,19 +730,50 @@ function setupJoystick() {
   });
 }
 
-// ===== COLLISION =====
+// ===== COLLISION BOXES FOR FURNITURE =====
+// Each box is in TILE units: { x, y, w, h }
+const collisionBoxes = [
+  // Walls are handled by roomMap, these are furniture boxes
+  // Bookshelf top-left: tile 1,1 — 1.5 tiles wide, 2 tiles tall
+  { x: 1.0, y: 1.0, w: 1.5, h: 2.0 },
+  // TV: tile 5,1 — 2 tiles wide, 1.5 tall
+  { x: 5.0, y: 1.0, w: 2.0, h: 1.5 },
+  // Cabinet top-right: tile 9,1 — 1.5 wide, 2 tall
+  { x: 9.0, y: 1.0, w: 1.5, h: 2.0 },
+  // Plant left top: tile 1,4
+  { x: 1.1, y: 4.1, w: 0.8, h: 0.8 },
+  // Plant left bottom: tile 1,6
+  { x: 1.1, y: 6.1, w: 0.8, h: 0.8 },
+  // Plant right top: tile 10,4
+  { x: 10.1, y: 4.1, w: 0.8, h: 0.8 },
+  // Plant right bottom: tile 10,6
+  { x: 10.1, y: 6.1, w: 0.8, h: 0.8 },
+  // Carpet center is walkable - no collision box for it
+];
+
 function isWalkable(nx, ny) {
-  // Check all 4 corners of player hitbox
   const R = 0.3;
-  const points = [
+  // Check map walls with 4-corner hitbox
+  const corners = [
     [nx - R, ny - R], [nx + R, ny - R],
     [nx - R, ny + R], [nx + R, ny + R],
   ];
-  for (const [px, py] of points) {
-    const col = Math.floor(px);
-    const row = Math.floor(py);
+  for (const [cx, cy] of corners) {
+    const col = Math.floor(cx);
+    const row = Math.floor(cy);
     if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
     if (roomMap[row][col] === T_WALL) return false;
+  }
+  // Check furniture collision boxes (AABB)
+  for (const box of collisionBoxes) {
+    if (
+      nx + R > box.x &&
+      nx - R < box.x + box.w &&
+      ny + R > box.y &&
+      ny - R < box.y + box.h
+    ) {
+      return false;
+    }
   }
   return true;
 }
