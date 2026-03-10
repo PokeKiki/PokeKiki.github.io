@@ -173,12 +173,17 @@
   }
   #hud-ball-count { font-family:'Press Start 2P',cursive; font-size:10px; color:#fff; }
   #pokedex-btn {
-    font-family:'Press Start 2P',cursive; font-size:clamp(7px,1.8vw,9px);
-    background: #e63020; color:#fff; border: 2px solid #fff;
-    border-radius: 8px; padding: 8px 12px; cursor: pointer;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+    font-family:'Press Start 2P',cursive; font-size:clamp(6px,1.5vw,8px);
+    background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
   }
-  #pokedex-btn:active { transform: scale(0.95); }
+  #pokedex-btn:active { transform: scale(0.9); }
+  #pokedex-btn-label {
+    color: #fff; font-family:'Press Start 2P',cursive;
+    font-size: clamp(6px,1.5vw,8px);
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  }
 
   /* POKÉDEX OVERLAY */
   #pokedex-overlay {
@@ -419,7 +424,28 @@
       <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#f05050" stroke="#222" stroke-width="1"/><path d="M.5 7h13" stroke="#222" stroke-width="1"/><circle cx="7" cy="7" r="2.5" fill="#fff" stroke="#222" stroke-width="1"/></svg>
       <span id="hud-ball-count">x0</span>
     </div>
-    <button id="pokedex-btn" onclick="togglePokedex()">📖 Pokédex</button>
+    <button id="pokedex-btn" onclick="togglePokedex()">
+      <svg width="52" height="44" viewBox="0 0 52 44" xmlns="http://www.w3.org/2000/svg">
+        <!-- Book shadow -->
+        <ellipse cx="26" cy="40" rx="20" ry="4" fill="rgba(0,0,0,0.4)"/>
+        <!-- Book bottom white half -->
+        <rect x="4" y="22" width="44" height="16" rx="3" fill="#f0f0f0"/>
+        <!-- Book top red half -->
+        <rect x="4" y="6" width="44" height="16" rx="3" fill="#e82010"/>
+        <!-- Black divider line -->
+        <rect x="4" y="20" width="44" height="4" fill="#111"/>
+        <!-- Book spine left -->
+        <rect x="4" y="6" width="5" height="32" rx="2" fill="#c01008"/>
+        <!-- Pokeball center button -->
+        <circle cx="26" cy="22" r="6" fill="#fff" stroke="#111" stroke-width="2"/>
+        <circle cx="26" cy="22" r="3" fill="#ddd" stroke="#111" stroke-width="1.5"/>
+        <!-- Belt buckle on spine -->
+        <rect x="6" y="19" width="3" height="6" rx="1" fill="#c8a820"/>
+        <!-- Shine on red -->
+        <rect x="10" y="9" width="14" height="3" rx="1" fill="rgba(255,255,255,0.25)"/>
+      </svg>
+      <div id="pokedex-btn-label">POKéDEX</div>
+    </button>
   </div>
 </div>
 
@@ -715,8 +741,8 @@ var maps = {
       [4,3,3,3,3,3,3,3,3,3,3,4],
       [4,3,10,10,3,3,3,10,10,3,3,4],
       [4,3,10,10,3,3,3,10,10,3,3,4],
-      [4,3,3,3,3,3,3,3,3,3,3,4],
-      [4,3,3,3,5,5,3,3,3,3,3,4],
+      [4,3,3,10,3,3,3,10,3,3,3,4],
+      [4,3,3,10,5,5,3,10,3,3,3,4],
       [4,3,3,3,5,5,3,10,10,3,3,4],
       [4,3,10,3,3,3,3,10,10,3,3,4],
       [4,3,3,3,3,3,3,3,3,3,3,4],
@@ -906,7 +932,7 @@ function gameLoop(ts) {
     }
     // Wild sign trigger — player can walk through freely, no collision
     if (currentMap === 'wild' && !starterChosen && !oakCutsceneActive
-        && player.x > 4.6 && player.x < 6.4 && player.y > 2.6 && player.y < 3.8) {
+        && player.x > 4.6 && player.x < 6.4 && player.y > 1.0 && player.y < 2.2) {
       startOakCutscene();
     }
     // Mom NPC trigger — mom stands at col 8, row 7
@@ -1449,7 +1475,7 @@ document.addEventListener('DOMContentLoaded', function() {
           oakCutsceneActive = false;
           joystick.dx = 0; joystick.dy = 0; joystick.active = false;
           document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
-          player.y = 4.8;
+          player.y = 3.5; player.x = 5.5;
         }
       }
     }
@@ -1723,7 +1749,7 @@ function drawWildDecorations(c) {
   c.fillStyle='rgba(255,255,255,'+(0.05+0.05*Math.sin(t*2))+')';
   c.fillRect(4*TILE,5*TILE,2*TILE,2*TILE);
   // Path sign
-  drawSign(c, 5*TILE+4, 3*TILE+4);
+  drawSign(c, 5*TILE+4, 1*TILE+4);
   // Flowers scattered on grass
   var flowers = [{x:2,y:2},{x:7,y:3},{x:3,y:6},{x:8,y:7},{x:6,y:2},{x:9,y:5}];
   flowers.forEach(function(f){
