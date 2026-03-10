@@ -538,7 +538,7 @@
     <div class="travel-options-box" id="travel-options-box">
       <button class="travel-option selected" onclick="travelTo('castle')">Go to the Castle</button>
       <button class="travel-option" onclick="travelTo('center')">Go to Pokemon Center</button>
-      <button class="travel-option" onclick="travelTo('wild')">Go in the Wild</button>
+      <button class="travel-option" onclick="travelTo('wild')">Go to the Wild Area</button>
       <button class="travel-option" onclick="travelTo('stay')">Stay here</button>
     </div>
   </div>
@@ -709,7 +709,8 @@ var maps = {
     collision: [
       {x:1.0,y:1.0,w:1.5,h:2.0},{x:5.0,y:1.0,w:2.0,h:1.5},{x:9.0,y:1.0,w:1.5,h:2.0},
       {x:1.1,y:4.1,w:0.8,h:0.8},{x:1.1,y:6.1,w:0.8,h:0.8},
-      {x:10.1,y:4.1,w:0.8,h:0.8},{x:10.1,y:6.1,w:0.8,h:0.8}
+      {x:10.1,y:4.1,w:0.8,h:0.8},{x:10.1,y:6.1,w:0.8,h:0.8},
+      {x:7.6,y:6.4,w:1.2,h:1.4}
     ],
     spawn: {x:5.5,y:7.5},
     hasDoorTrigger: true
@@ -732,8 +733,7 @@ var maps = {
       {x:1,y:1,w:1,h:2},{x:10,y:1,w:1,h:2} // side walls of counter
     ],
     spawn: {x:5.5,y:7.5},
-    hasDoorTrigger: false,
-    hasReturnTrigger: true
+    hasDoorTrigger: true
   },
   wild: {
     data: [
@@ -753,8 +753,7 @@ var maps = {
       {x:4,y:5,w:2,h:2}
     ],
     spawn: {x:5.5,y:7.5},
-    hasDoorTrigger: false,
-    hasReturnTrigger: true
+    hasDoorTrigger: true
   },
   castle: {
     data: [
@@ -774,8 +773,7 @@ var maps = {
       {x:2,y:1,w:8,h:1}                      // top banner
     ],
     spawn: {x:5.5,y:7.5},
-    hasDoorTrigger: false,
-    hasReturnTrigger: true
+    hasDoorTrigger: true
   }
 };
 
@@ -920,12 +918,10 @@ function gameLoop(ts) {
 
     // Door/return triggers
     var mapCfg = maps[currentMap];
-    if (mapCfg.hasDoorTrigger && player.y > 8.6 && player.x > 4.6 && player.x < 7.4 && player.dir === 0) {
+    if (mapCfg.hasDoorTrigger && !travelMenuOpen && player.y > 8.5 && player.x > 4.5 && player.x < 7.5) {
       showTravelMenu();
     }
-    if (mapCfg.hasReturnTrigger && player.y > 8.6 && player.x > 4.6 && player.x < 7.4) {
-      changeMap('home', 5.5, 7.5);
-    }
+
     // Nurse Joy trigger — she stands behind counter at row 1-2, center
     if (currentMap === 'center' && !nurseDialogueActive
         && player.x > 3.5 && player.x < 8.5 && player.y > 2.2 && player.y < 3.5) {
@@ -972,21 +968,38 @@ function gameLoop(ts) {
 function showTravelMenu() {
   travelMenuOpen = true;
   joystick.dx = 0; joystick.dy = 0;
-  // Reset selection arrow to first option
-  var opts = document.querySelectorAll('.travel-option');
-  opts.forEach(function(o){ o.classList.remove('selected'); });
-  if (opts.length) opts[0].classList.add('selected');
-  // Add hover listener to move arrow
-  opts.forEach(function(o) {
-    o.addEventListener('touchstart', function(){ 
-      opts.forEach(function(x){ x.classList.remove('selected'); });
-      o.classList.add('selected');
+
+  // Dynamically update options based on current map
+  var box = document.getElementById('travel-options-box');
+  var destinations = [
+    { dest: 'castle', label: 'Go to the Castle' },
+    { dest: 'center', label: 'Go to Pokemon Center' },
+    { dest: 'wild',   label: 'Go to the Wild Area' },
+    { dest: 'home',   label: 'Go back Home' },
+    { dest: 'stay',   label: 'Stay here' }
+  ];
+  box.innerHTML = '';
+  destinations.forEach(function(d, i) {
+    // Skip current location, replace with nothing (it's already there)
+    if (d.dest === currentMap) return;
+    // Home map already has its own options; don't show "Go back Home" from home
+    if (d.dest === 'home' && currentMap === 'home') return;
+    // Hide "stay" from non-home (or keep it everywhere)
+    var btn = document.createElement('button');
+    btn.className = 'travel-option' + (box.children.length === 0 ? ' selected' : '');
+    btn.textContent = d.label;
+    btn.onclick = function(){ travelTo(d.dest); };
+    btn.addEventListener('touchstart', function(){
+      Array.from(box.querySelectorAll('.travel-option')).forEach(function(x){ x.classList.remove('selected'); });
+      btn.classList.add('selected');
     }, {passive:true});
-    o.addEventListener('mouseover', function(){ 
-      opts.forEach(function(x){ x.classList.remove('selected'); });
-      o.classList.add('selected');
+    btn.addEventListener('mouseover', function(){
+      Array.from(box.querySelectorAll('.travel-option')).forEach(function(x){ x.classList.remove('selected'); });
+      btn.classList.add('selected');
     });
+    box.appendChild(btn);
   });
+
   document.getElementById('travel-menu').classList.add('show');
 }
 
@@ -996,7 +1009,8 @@ function travelTo(dest) {
   if (dest === 'castle') { changeMap('castle', 5.5, 7.5); }
   else if (dest === 'center') { changeMap('center', 5.5, 7.5); }
   else if (dest === 'wild') { changeMap('wild', 5.5, 7.5); }
-  else { player.y = 7.8; } // stay
+  else if (dest === 'home') { changeMap('home', 5.5, 7.5); }
+  else { player.y = 7.8; player.x = 5.5; }
 }
 
 function changeMap(name, spawnX, spawnY) {
