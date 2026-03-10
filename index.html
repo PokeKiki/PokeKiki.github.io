@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pokémon Castle</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: #000;
+    font-family: 'Press Start 2P', cursive;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  /* ===== SCREEN MANAGER ===== */
+  .screen { position: absolute; inset: 0; display: none; }
+  .screen.active { display: flex; }
+
+  /* ===== TITLE SCREEN ===== */
+  #title-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a1a;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .castle-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 50% 80%, rgba(30,60,120,0.5) 0%, transparent 70%),
+      radial-gradient(ellipse at 50% 50%, rgba(10,10,40,0.8) 0%, transparent 100%);
+  }
+
+  .castle-silhouette {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(400px, 90vw);
+    height: 60vh;
+    opacity: 0.35;
+  }
+
+  .castle-silhouette svg { width: 100%; height: 100%; }
+
+  .stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 8%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 20%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 5%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 18%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 88% 10%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 35%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 30%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 28%, #fff 0%, transparent 100%),
+      radial-gradient(2px 2px at 92% 22%, rgba(255,220,100,0.9) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 42%, #fff 0%, transparent 100%),
+      radial-gradient(1px 1px at 33% 38%, #fff 0%, transparent 100%);
+  }
+
+  .sparkle {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    font-size: 28px;
+    color: #fff;
+    opacity: 0;
+    animation: sparkleAnim 2s ease-in-out infinite;
+  }
+  @keyframes sparkleAnim {
+    0%,100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.2) rotate(20deg); }
+  }
+
+  .pokemon-logo {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .pokemon-text {
+    font-size: clamp(36px, 10vw, 72px);
+    color: #f8d030;
+    text-shadow:
+      3px 3px 0 #b8860b,
+      -2px -2px 0 #b8860b,
+      2px -2px 0 #b8860b,
+      -2px 2px 0 #b8860b,
+      0 0 20px rgba(248,208,48,0.5),
+      0 0 40px rgba(248,208,48,0.3);
+    letter-spacing: 2px;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .pokemon-text.visible { opacity: 1; transform: translateY(0); }
+
+  .accent { color: #fff; text-shadow: 2px 2px 0 #888, 0 0 10px rgba(255,255,255,0.5); }
+
+  .castle-title {
+    font-size: clamp(24px, 7vw, 56px);
+    color: #e8d090;
+    text-shadow:
+      2px 2px 0 #8b7536,
+      -1px -1px 0 #8b7536,
+      0 0 15px rgba(232,208,144,0.4);
+    letter-spacing: 6px;
+    opacity: 0;
+    transform: translateY(-15px);
+    transition: opacity 0.8s ease 0.6s, transform 0.8s ease 0.6s;
+    position: relative;
+    z-index: 10;
+  }
+  .castle-title.visible { opacity: 1; transform: translateY(0); }
+
+  .made-by {
+    font-size: clamp(8px, 2.5vw, 13px);
+    color: #c8c8d0;
+    text-shadow: 1px 1px 0 #444;
+    margin-top: 12px;
+    opacity: 0;
+    transition: opacity 0.8s ease 1.4s;
+    position: relative;
+    z-index: 10;
+    letter-spacing: 1px;
+  }
+  .made-by.visible { opacity: 1; }
+
+  .press-start {
+    font-size: clamp(9px, 2.8vw, 14px);
+    color: #fff;
+    margin-top: 32px;
+    opacity: 0;
+    animation: none;
+    position: relative;
+    z-index: 10;
+    cursor: pointer;
+    transition: opacity 0.5s ease 2.2s;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+  }
+  .press-start.visible {
+    opacity: 1;
+    animation: blink 1.2s step-end infinite;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ===== INTRO SCREEN ===== */
+  #intro-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    background: #000;
+    padding-bottom: 0;
+  }
+
+  .professor-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+  }
+
+  .spotlight {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 180px;
+    height: 80px;
+    background: radial-gradient(ellipse, rgba(255,240,150,0.7) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  #prof-canvas {
+    image-rendering: pixelated;
+    width: clamp(80px, 22vw, 140px);
+    height: auto;
+  }
+
+  .dialogue-box {
+    width: 100%;
+    background: #f8f8f8;
+    border-top: 4px solid #38c070;
+    border-bottom: 4px solid #38c070;
+    padding: 16px 20px 20px;
+    position: relative;
+    min-height: 110px;
+  }
+
+  .dialogue-box::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 0; right: 0;
+    height: 4px;
+    background: #1a8040;
+  }
+  .dialogue-box::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0; right: 0;
+    height: 4px;
+    background: #1a8040;
+  }
+
+  .dialogue-inner {
+    border: 3px solid #38c070;
+    padding: 12px 14px;
+    background: #fff;
+    min-height: 80px;
+    position: relative;
+  }
+
+  #dialogue-text {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(7px, 2.2vw, 11px);
+    color: #111;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    min-height: 50px;
+  }
+
+  .tap-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    font-size: 10px;
+    color: #38c070;
+    animation: bounce 0.6s ease-in-out infinite alternate;
+    display: none;
+  }
+  .tap-indicator.show { display: block; }
+  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(4px); } }
+
+  #username-input-area {
+    display: none;
+    margin-top: 10px;
+    position: relative;
+  }
+  #username-input-area.show { display: flex; align-items: center; gap: 8px; }
+
+  #username-field {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(7px, 2vw, 10px);
+    border: 2px solid #38c070;
+    padding: 6px 8px;
+    background: #f0fff4;
+    color: #111;
+    width: 160px;
+    outline: none;
+  }
+
+  #username-confirm {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(6px, 1.8vw, 9px);
+    background: #38c070;
+    color: #fff;
+    border: none;
+    padding: 8px 10px;
+    cursor: pointer;
+    text-shadow: 1px 1px 0 #1a6030;
+  }
+  #username-confirm:active { transform: scale(0.95); }
+
+  .gba-bar-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 18px;
+    background: linear-gradient(to bottom, #50e090, #38c070);
+    z-index: 20;
+  }
+  .gba-bar-mid {
+    position: absolute;
+    top: 14px; left: 0; right: 0;
+    height: 6px;
+    background: #2a8050;
+    z-index: 20;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TITLE SCREEN ===== -->
+<div id="title-screen" class="screen active">
+  <div class="stars"></div>
+  <div class="castle-bg"></div>
+
+  <div class="castle-silhouette">
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" fill="#2244aa">
+      <rect x="20" y="100" width="60" height="300"/>
+      <rect x="10" y="80" width="80" height="30"/>
+      <rect x="15" y="60" width="15" height="25"/>
+      <rect x="45" y="60" width="15" height="25"/>
+      <rect x="75" y="60" width="15" height="25"/>
+      <polygon points="50,10 20,80 80,80"/>
+      <ellipse cx="50" cy="120" rx="10" ry="14" fill="#0a1530"/>
+      <rect x="320" y="100" width="60" height="300"/>
+      <rect x="310" y="80" width="80" height="30"/>
+      <rect x="315" y="60" width="15" height="25"/>
+      <rect x="345" y="60" width="15" height="25"/>
+      <rect x="375" y="60" width="15" height="25"/>
+      <polygon points="350,10 320,80 380,80"/>
+      <ellipse cx="350" cy="120" rx="10" ry="14" fill="#0a1530"/>
+      <rect x="80" y="160" width="240" height="240"/>
+      <rect x="160" y="280" width="80" height="120" fill="#0a1530"/>
+      <ellipse cx="200" cy="280" rx="40" ry="30" fill="#0a1530"/>
+      <circle cx="200" cy="200" r="28" fill="#0a1530"/>
+      <circle cx="200" cy="200" r="20" fill="#0a1530" stroke="#2244aa" stroke-width="5"/>
+      <rect x="80" y="145" width="20" height="20"/>
+      <rect x="115" y="145" width="20" height="20"/>
+      <rect x="150" y="145" width="20" height="20"/>
+      <rect x="185" y="145" width="20" height="20"/>
+      <rect x="220" y="145" width="20" height="20"/>
+      <rect x="255" y="145" width="20" height="20"/>
+      <rect x="290" y="145" width="20" height="20"/>
+      <rect x="270" y="310" width="8" height="90" fill="#4466aa"/>
+      <rect x="250" y="300" width="60" height="35" rx="3" fill="#3355aa"/>
+    </svg>
+  </div>
+
+  <div class="pokemon-logo">
+    <div class="pokemon-text" id="pokemon-text">POKÉ<span class="accent">MON</span></div>
+  </div>
+  <div class="castle-title" id="castle-title">CASTLE</div>
+  <div class="made-by" id="made-by">made by Kyan and Esteban</div>
+  <div class="press-start" id="press-start" onclick="startIntro()">▶ Press to Start</div>
+
+  <div class="sparkle">✦</div>
+</div>
+
+<!-- ===== INTRO SCREEN ===== -->
+<div id="intro-screen" class="screen">
+  <div class="gba-bar-top"></div>
+  <div class="gba-bar-mid"></div>
+
+  <div class="professor-area">
+    <div class="spotlight"></div>
+    <canvas id="prof-canvas" width="64" height="96"></canvas>
+  </div>
+
+  <div class="dialogue-box">
+    <div class="dialogue-inner">
+      <div id="dialogue-text"></div>
+      <div id="username-input-area">
+        <input id="username-field" type="text" maxlength="12" placeholder="Username..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+        <button id="username-confirm" onclick="confirmUsername()">OK</button>
+      </div>
+      <div class="tap-indicator" id="tap-indicator">▼</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== TITLE SCREEN ANIMATION =====
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('pokemon-text').classList.add('visible'), 300);
+  setTimeout(() => document.getElementById('castle-title').classList.add('visible'), 900);
+  setTimeout(() => document.getElementById('made-by').classList.add('visible'), 1700);
+  setTimeout(() => document.getElementById('press-start').classList.add('visible'), 2300);
+});
+
+function startIntro() {
+  document.getElementById('title-screen').classList.remove('active');
+  document.getElementById('intro-screen').classList.add('active');
+  drawProfessor();
+  runDialogue();
+}
+
+// ===== PIXEL ART PROFESSOR =====
+function drawProfessor() {
+  const canvas = document.getElementById('prof-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const px = (x, y, w, h, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+  };
+
+  ctx.clearRect(0, 0, 64, 96);
+
+  px(18, 86, 10, 8, '#2a1a0a');
+  px(36, 86, 10, 8, '#2a1a0a');
+  px(18, 65, 10, 22, '#a07840');
+  px(36, 65, 10, 22, '#a07840');
+  px(14, 36, 36, 34, '#d0d0e0');
+  px(24, 36, 16, 20, '#333');
+  px(14, 36, 10, 18, '#c0c0d0');
+  px(40, 36, 10, 18, '#c0c0d0');
+  px(6, 38, 10, 26, '#d0d0e0');
+  px(48, 38, 10, 26, '#d0d0e0');
+  px(6, 62, 10, 8, '#c8a070');
+  px(48, 56, 10, 10, '#c8a070');
+  px(26, 28, 12, 10, '#c8a070');
+  px(18, 8, 28, 26, '#c8a070');
+  px(18, 6, 28, 10, '#6b3a1f');
+  px(16, 10, 6, 12, '#6b3a1f');
+  px(18, 8, 4, 6, '#6b3a1f');
+  px(24, 18, 4, 4, '#111');
+  px(36, 18, 4, 4, '#111');
+  px(26, 26, 3, 2, '#8a5040');
+  px(35, 26, 3, 2, '#8a5040');
+  px(29, 28, 6, 2, '#8a5040');
+  px(18, 46, 8, 6, '#b0b0c0');
+  px(19, 47, 6, 4, '#c8c8d8');
+}
+
+// ===== DIALOGUE SYSTEM =====
+let username = '';
+let dialogueIndex = 0;
+let isTyping = false;
+let currentTypeTimeout = null;
+let waitingForInput = false;
+
+const dialogues = [
+  { text: "Hey Trainer, Welcome to the World of Pokémon Castle.", action: null },
+  { text: "First... what is your username?", action: 'username' },
+  { text: "__HELLO__", action: null },
+  { text: "You will now discover this amazing world, and your legend is about to uncover!", action: null },
+  { text: "You can catch Pokémon in the wild and complete the Pokédex.", action: null },
+  { text: "With enough discipline and persévérance you will maybe become the King of the Fighting Castle!", action: null },
+];
+
+function runDialogue() {
+  if (dialogueIndex >= dialogues.length) return;
+  const d = dialogues[dialogueIndex];
+  let text = d.text;
+  if (text === '__HELLO__') text = `Hello ${username}!`;
+
+  typeText(text, () => {
+    if (d.action === 'username') {
+      showUsernameInput();
+    } else {
+      showTapIndicator();
+      waitingForInput = true;
+    }
+  });
+}
+
+function typeText(text, onDone) {
+  const el = document.getElementById('dialogue-text');
+  el.textContent = '';
+  hideTapIndicator();
+  document.getElementById('username-input-area').classList.remove('show');
+  isTyping = true;
+  let i = 0;
+  function type() {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      currentTypeTimeout = setTimeout(type, 32);
+    } else {
+      isTyping = false;
+      if (onDone) onDone();
+    }
+  }
+  type();
+}
+
+function showTapIndicator() {
+  document.getElementById('tap-indicator').classList.add('show');
+}
+function hideTapIndicator() {
+  document.getElementById('tap-indicator').classList.remove('show');
+}
+
+function showUsernameInput() {
+  const area = document.getElementById('username-input-area');
+  area.classList.add('show');
+  setTimeout(() => document.getElementById('username-field').focus(), 100);
+}
+
+function confirmUsername() {
+  const field = document.getElementById('username-field');
+  const val = field.value.trim();
+  if (!val) { field.focus(); return; }
+  username = val;
+  document.getElementById('username-input-area').classList.remove('show');
+  dialogueIndex++;
+  runDialogue();
+}
+
+document.getElementById('intro-screen').addEventListener('click', (e) => {
+  if (e.target.closest('#username-input-area')) return;
+
+  if (isTyping) {
+    clearTimeout(currentTypeTimeout);
+    isTyping = false;
+    const d = dialogues[dialogueIndex];
+    let text = d.text;
+    if (text === '__HELLO__') text = `Hello ${username}!`;
+    document.getElementById('dialogue-text').textContent = text;
+    if (d.action === 'username') {
+      showUsernameInput();
+    } else {
+      showTapIndicator();
+      waitingForInput = true;
+    }
+    return;
+  }
+
+  if (waitingForInput) {
+    waitingForInput = false;
+    hideTapIndicator();
+    dialogueIndex++;
+    if (dialogueIndex < dialogues.length) {
+      runDialogue();
+    } else {
+      document.getElementById('dialogue-text').textContent = "Your adventure begins now...";
+      hideTapIndicator();
+    }
+  }
+});
+
+document.getElementById('username-field').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') confirmUsername();
+});
+</script>
+</body>
+</html>
