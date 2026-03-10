@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -875,7 +876,7 @@ function gameLoop(ts) {
   }
 
   // Door trigger — red mat is at row 9, cols 5-6 (tile units)
-  if (!travelMenuOpen && player.y > 8.7 && player.x > 4.8 && player.x < 7.2) {
+  if (!travelMenuOpen && player.y > 8.4 && player.x > 4.5 && player.x < 7.5) {
     showTravelMenu();
   }
 
@@ -954,8 +955,11 @@ function drawFurniture(c) {
   // Bed/sofa in center on rug
   drawBed(c, 4*TILE, 4*TILE);
   // Door mat at bottom
+  // Red door mat
   c.fillStyle = '#c05030';
-  c.fillRect(5*TILE+4, 9*TILE+20, TILE*2-8, 10);
+  c.fillRect(5*TILE+2, 8*TILE+20, TILE*2-4, 8);
+  c.fillStyle = '#a03010';
+  c.fillRect(5*TILE+4, 8*TILE+22, TILE*2-8, 4);
 }
 
 function drawBookshelf(c, x, y) {
