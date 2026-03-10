@@ -161,6 +161,64 @@
     top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none;
   }
 
+  /* HUD */
+  #game-hud {
+    position: absolute; bottom: 24px; right: 16px; z-index: 50;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+  }
+  #hud-balls {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(0,0,0,0.55); border: 1.5px solid rgba(255,255,255,0.2);
+    border-radius: 20px; padding: 5px 10px;
+  }
+  #hud-ball-count { font-family:'Press Start 2P',cursive; font-size:10px; color:#fff; }
+  #pokedex-btn {
+    font-family:'Press Start 2P',cursive; font-size:clamp(7px,1.8vw,9px);
+    background: #e63020; color:#fff; border: 2px solid #fff;
+    border-radius: 8px; padding: 8px 12px; cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+  }
+  #pokedex-btn:active { transform: scale(0.95); }
+
+  /* POKÉDEX OVERLAY */
+  #pokedex-overlay {
+    display: none; position: fixed; inset: 0; z-index: 400;
+    background: rgba(0,0,0,0.75); align-items: center; justify-content: center;
+  }
+  #pokedex-overlay.show { display: flex; }
+  .pokedex-window {
+    background: #cc1010; border: 4px solid #fff;
+    border-radius: 12px; width: min(340px, 92vw); max-height: 80vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 0 30px rgba(200,0,0,0.5);
+  }
+  .pokedex-header {
+    background: #aa0808; padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 3px solid #fff;
+  }
+  .pokedex-header span { font-family:'Press Start 2P',cursive; font-size:clamp(8px,2vw,11px); color:#fff; }
+  .pokedex-close {
+    font-family:'Press Start 2P',cursive; font-size:10px; color:#fff;
+    background: none; border: 2px solid #fff; border-radius: 4px; padding: 4px 8px; cursor: pointer;
+  }
+  .pokedex-list {
+    overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1;
+  }
+  .pokedex-entry {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 8px; padding: 8px 12px;
+  }
+  .pokedex-entry.caught { background: rgba(255,255,255,0.15); border-color: #fff; }
+  .pokedex-entry.locked { opacity: 0.5; }
+  .pokedex-num { font-family:'Press Start 2P',cursive; font-size:8px; color:#aaa; min-width:30px; }
+  .pokedex-entry.caught .pokedex-num { color:#ffff80; }
+  .pokedex-name { font-family:'Press Start 2P',cursive; font-size:clamp(7px,1.8vw,9px); color:#fff; flex:1; }
+  .pokedex-entry.locked .pokedex-name { color:#888; }
+  .pokedex-sprite { width:32px; height:32px; image-rendering:pixelated; }
+  .pokedex-locked-icon { width:32px; height:32px; font-size:20px; display:flex; align-items:center; justify-content:center; }
+
   /* ===== OAK CUTSCENE SCREEN ===== */
   #oak-screen {
     flex-direction: column;
@@ -355,6 +413,25 @@
       <div id="joystick-knob"></div>
     </div>
   </div>
+  <!-- HUD: pokeball count + pokedex button -->
+  <div id="game-hud">
+    <div id="hud-balls">
+      <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#f05050" stroke="#222" stroke-width="1"/><path d="M.5 7h13" stroke="#222" stroke-width="1"/><circle cx="7" cy="7" r="2.5" fill="#fff" stroke="#222" stroke-width="1"/></svg>
+      <span id="hud-ball-count">x0</span>
+    </div>
+    <button id="pokedex-btn" onclick="togglePokedex()">📖 Pokédex</button>
+  </div>
+</div>
+
+<!-- POKEDEX OVERLAY -->
+<div id="pokedex-overlay">
+  <div class="pokedex-window">
+    <div class="pokedex-header">
+      <span>📖 POKÉDEX</span>
+      <button class="pokedex-close" onclick="togglePokedex()">✕</button>
+    </div>
+    <div class="pokedex-list" id="pokedex-list"></div>
+  </div>
 </div>
 
 <!-- OAK CUTSCENE SCREEN -->
@@ -406,6 +483,23 @@
       <div style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.8vw,9px);color:#9050c0;margin-bottom:6px;">Mom</div>
       <div id="mom-dialogue-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,2.2vw,11px);color:#111;line-height:1.9;white-space:pre-wrap;"></div>
       <div id="mom-tap" class="tap-indicator">&#9660;</div>
+    </div>
+  </div>
+</div>
+
+<!-- NURSE JOY CUTSCENE SCREEN -->
+<div id="nurse-screen" class="screen" style="flex-direction:column;align-items:center;justify-content:flex-end;background:#000;overflow:hidden;">
+  <div class="gba-bar-top"></div>
+  <div class="gba-bar-mid"></div>
+  <div class="professor-area" style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;width:100%;">
+    <div class="spotlight"></div>
+    <canvas id="nurse-prof-canvas" width="64" height="96" style="image-rendering:pixelated;width:clamp(80px,22vw,140px);height:auto;"></canvas>
+  </div>
+  <div class="dialogue-box" style="flex-shrink:0;">
+    <div class="dialogue-inner">
+      <div style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.8vw,9px);color:#f080a0;margin-bottom:6px;">Nurse Joy</div>
+      <div id="nurse-dialogue-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,2.2vw,11px);color:#111;line-height:1.9;white-space:pre-wrap;"></div>
+      <div id="nurse-tap" class="tap-indicator">&#9660;</div>
     </div>
   </div>
 </div>
@@ -664,6 +758,12 @@ var roomMap = maps.home.data;
 var collisionBoxes = maps.home.collision;
 var player = { x:5.5, y:7.5, dir:0, frame:0, frameTimer:0 };
 var companion = null; // { name, x, y, frame, frameTimer }
+var inventory = { pokeballs: 0 };
+var pokeballs_claimed = false;
+var nurseDialogueActive = false;
+var nurseSeen = false;
+var caughtPokemon = []; // list of caught pokemon names
+var pokedexOpen = false;
 var joystick = { dx:0, dy:0, active:false };
 var travelMenuOpen = false;
 var oakCutsceneActive = false;
@@ -772,7 +872,7 @@ function gameLoop(ts) {
   var dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive) {
+  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen) {
     var speed = 4;
     var dx = joystick.dx;
     var dy = joystick.dy;
@@ -798,6 +898,11 @@ function gameLoop(ts) {
     }
     if (mapCfg.hasReturnTrigger && player.y > 8.6 && player.x > 4.6 && player.x < 7.4) {
       changeMap('home', 5.5, 7.5);
+    }
+    // Nurse Joy trigger — she stands behind counter at row 1-2, center
+    if (currentMap === 'center' && !nurseDialogueActive
+        && player.x > 3.5 && player.x < 8.5 && player.y > 2.2 && player.y < 3.5) {
+      startNurseCutscene();
     }
     // Wild sign trigger — player can walk through freely, no collision
     if (currentMap === 'wild' && !starterChosen && !oakCutsceneActive
@@ -873,6 +978,200 @@ function changeMap(name, spawnX, spawnY) {
   player.frame = 0;
 }
 
+// ============================================================
+// NURSE JOY CUTSCENE
+// ============================================================
+var nurseLines = [];
+var nurseIndex = 0;
+var nurseTyping = false;
+var nurseTypeTimer = null;
+var nurseWaitTap = false;
+
+function startNurseCutscene() {
+  nurseDialogueActive = true;
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+  nurseIndex = 0;
+  if (!pokeballs_claimed) {
+    nurseLines = [
+      'Hello ' + username + '!\nWelcome to the\nPokemon Center!',
+      'Here are 5 Pokeballs\nfor you! Use them\nto catch Pokemon!',
+      'Come back when you\nneed more!'
+    ];
+    pokeballs_claimed = true;
+    inventory.pokeballs += 5;
+    updateHUD();
+  } else {
+    nurseLines = [
+      'Hello again ' + username + '!\nHow can I help you\ntoday?',
+      'Your Pokemon look\ngreat! Keep up the\ngood work!'
+    ];
+  }
+  document.getElementById('nurse-screen').classList.add('active');
+  drawNurseCanvas();
+  setTimeout(function(){ nurseRunLine(); }, 300);
+}
+
+function drawNurseCanvas() {
+  var canvas = document.getElementById('nurse-prof-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  function dp(x,y,w,h,col){ ctx.fillStyle=col; ctx.fillRect(x,y,w,h); }
+  ctx.clearRect(0,0,64,96);
+  dp(20,88,10,6,'#f0c8a0'); dp(34,88,10,6,'#f0c8a0');
+  dp(16,60,14,30,'#f8f8f8'); dp(34,60,14,30,'#f8f8f8');
+  dp(12,36,40,28,'#f8f8f8');
+  dp(12,36,40,5,'#f080a0');
+  dp(6,38,8,22,'#f8f8f8'); dp(50,38,8,22,'#f8f8f8');
+  dp(6,58,8,6,'#f0c8a0'); dp(50,58,8,6,'#f0c8a0');
+  dp(26,26,12,12,'#f0c8a0');
+  dp(18,6,28,24,'#f0c8a0');
+  dp(16,4,32,10,'#f08898');
+  dp(14,8,6,16,'#f08898'); dp(44,8,6,16,'#f08898');
+  dp(16,2,32,6,'#fff');
+  dp(20,2,24,4,'#f080a0');
+  dp(22,18,4,4,'#333'); dp(38,18,4,4,'#333');
+  dp(24,26,4,2,'#c06070'); dp(36,26,4,2,'#c06070'); dp(28,28,8,2,'#c06070');
+}
+
+function nurseRunLine() {
+  var el = document.getElementById('nurse-dialogue-text');
+  var tap = document.getElementById('nurse-tap');
+  el.textContent = '';
+  tap.classList.remove('show');
+  nurseTyping = true;
+  nurseWaitTap = false;
+  var text = nurseLines[nurseIndex];
+  var i = 0;
+  function type() {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      nurseTypeTimer = setTimeout(type, 30);
+    } else {
+      nurseTyping = false;
+      tap.classList.add('show');
+      nurseWaitTap = true;
+    }
+  }
+  type();
+}
+
+function advanceNurseCutscene() {
+  if (nurseTyping) {
+    clearTimeout(nurseTypeTimer);
+    nurseTyping = false;
+    document.getElementById('nurse-dialogue-text').textContent = nurseLines[nurseIndex];
+    document.getElementById('nurse-tap').classList.add('show');
+    nurseWaitTap = true;
+    return;
+  }
+  if (!nurseWaitTap) return;
+  nurseWaitTap = false;
+  nurseIndex++;
+  if (nurseIndex < nurseLines.length) {
+    nurseRunLine();
+  } else {
+    document.getElementById('nurse-screen').classList.remove('active');
+    nurseDialogueActive = false;
+    joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+    document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
+    player.y = 4.0; // push back from counter
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('nurse-screen').addEventListener('click', function() {
+    if (nurseDialogueActive) advanceNurseCutscene();
+  });
+});
+
+// ============================================================
+// POKÉDEX
+// ============================================================
+var allPokemon = [
+  { num:'#001', name:'Bulbasaur',  color:'#78c850' },
+  { num:'#004', name:'Charmander', color:'#f08030' },
+  { num:'#007', name:'Squirtle',   color:'#6890f0' },
+  { num:'#010', name:'Caterpie',   color:'#a8b820' },
+  { num:'#025', name:'Pikachu',    color:'#f8d030' },
+  { num:'#039', name:'Jigglypuff', color:'#f85888' },
+  { num:'#054', name:'Psyduck',    color:'#f8d030' },
+  { num:'#063', name:'Abra',       color:'#f8d030' },
+  { num:'#074', name:'Geodude',    color:'#b8a038' },
+  { num:'#092', name:'Gastly',     color:'#705898' },
+  { num:'#129', name:'Magikarp',   color:'#f08030' },
+  { num:'#133', name:'Eevee',      color:'#c8a040' },
+  { num:'#143', name:'Snorlax',    color:'#708090' },
+  { num:'#152', name:'Chikorita',  color:'#78c850' },
+  { num:'#155', name:'Cyndaquil',  color:'#f08030' },
+  { num:'#158', name:'Totodile',   color:'#6890f0' },
+  { num:'#175', name:'Togepi',     color:'#f8f8d0' },
+  { num:'#252', name:'Treecko',    color:'#78c850' },
+  { num:'#255', name:'Torchic',    color:'#f08030' },
+  { num:'#258', name:'Mudkip',     color:'#6890f0' },
+  { num:'#656', name:'Froakie',    color:'#6890f0' },
+  { num:'#659', name:'Bunnelby',   color:'#c8a040' },
+  { num:'#661', name:'Fletchling', color:'#f08030' },
+  { num:'#664', name:'Scatterbug', color:'#a8b820' }
+];
+
+function togglePokedex() {
+  pokedexOpen = !pokedexOpen;
+  var overlay = document.getElementById('pokedex-overlay');
+  if (pokedexOpen) {
+    overlay.classList.add('show');
+    renderPokedex();
+  } else {
+    overlay.classList.remove('show');
+  }
+}
+
+function renderPokedex() {
+  var list = document.getElementById('pokedex-list');
+  list.innerHTML = '';
+  allPokemon.forEach(function(p) {
+    var caught = caughtPokemon.indexOf(p.name) !== -1;
+    // Also count starter as caught
+    if (starterChosen && p.name === starterChosen) caught = true;
+    var entry = document.createElement('div');
+    entry.className = 'pokedex-entry ' + (caught ? 'caught' : 'locked');
+    var sprite = '';
+    if (caught) {
+      var cv = document.createElement('canvas');
+      cv.width = 32; cv.height = 32;
+      cv.className = 'pokedex-sprite';
+      drawPokedexSprite(cv.getContext('2d'), p.name, p.color);
+      sprite = cv.outerHTML;
+    } else {
+      sprite = '<div class="pokedex-locked-icon">?</div>';
+    }
+    entry.innerHTML = '<span class="pokedex-num">' + p.num + '</span>'
+      + sprite
+      + '<span class="pokedex-name">' + (caught ? p.name : '???') + '</span>';
+    list.appendChild(entry);
+  });
+}
+
+function drawPokedexSprite(ctx, name, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(8, 8, 16, 16);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(8, 20, 16, 4);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(10, 10, 4, 4);
+  ctx.fillRect(18, 10, 4, 4);
+  // Simple face
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(11, 11, 2, 2);
+  ctx.fillRect(19, 11, 2, 2);
+  ctx.fillRect(12, 18, 8, 2);
+}
+
+function updateHUD() {
+  document.getElementById('hud-ball-count').textContent = 'x' + inventory.pokeballs;
+}
+
+// Also block joystick when pokedex open + nurse active
 // ============================================================
 // MOM NPC DIALOGUE
 // ============================================================
@@ -1099,17 +1398,22 @@ function drawStarterPreview(canvasId, name) {
 function selectStarter(name) {
   document.getElementById('oak-starter-area').style.display = 'none';
   document.getElementById('oak-dialogue-box').style.display = 'block';
-  var congrats = 'Congratulations! You have chosen ' + name + '!\nTake good care of your partner!';
-  oakTypeText(congrats, function(){
+  starterChosen = name;
+  companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
+  oakPhase = 'congrats';
+  oakCongratsLines = [
+    'Congratulations! You have chosen ' + name + '!\nTake good care of your partner!',
+    'Now, head over to the\nPokemon Center to\nclaim your first\nPokeballs!',
+    'With them you will be\nable to catch\nPokemon! Come back\nafter!'
+  ];
+  oakCongratsIndex = 0;
+  oakTypeText(oakCongratsLines[0], function(){
     document.getElementById('oak-tap').classList.add('show');
-    document.getElementById('oak-tap').textContent = '▼ Tap to continue';
     oakWaitingTap = true;
-    oakPhase = 'congrats';
-    starterChosen = name;
-    // Spawn companion behind player
-    companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
   });
 }
+var oakCongratsLines = [];
+var oakCongratsIndex = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('oak-screen').addEventListener('click', function(e) {
@@ -1117,9 +1421,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (oakIsTyping) {
       clearTimeout(oakTypeTimeout);
       oakIsTyping = false;
-      var lines = getOakDialogues();
-      if (oakPhase === 'intro' && oakDialogIndex < lines.length) {
-        document.getElementById('oak-dialogue-text').textContent = lines[oakDialogIndex];
+      var lines = oakPhase === 'intro' ? getOakDialogues() : oakCongratsLines;
+      var idx = oakPhase === 'intro' ? oakDialogIndex : oakCongratsIndex;
+      if (idx < lines.length) {
+        document.getElementById('oak-dialogue-text').textContent = lines[idx];
         document.getElementById('oak-tap').classList.add('show');
         oakWaitingTap = true;
       }
@@ -1132,14 +1437,20 @@ document.addEventListener('DOMContentLoaded', function() {
         oakDialogIndex++;
         oakRunDialogue();
       } else if (oakPhase === 'congrats') {
-        // End cutscene — reset everything so player can move
-        document.getElementById('oak-screen').classList.remove('active');
-        oakCutsceneActive = false;
-        joystick.dx = 0;
-        joystick.dy = 0;
-        joystick.active = false;
-        document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
-        player.y = 4.8;
+        oakCongratsIndex++;
+        if (oakCongratsIndex < oakCongratsLines.length) {
+          oakTypeText(oakCongratsLines[oakCongratsIndex], function(){
+            document.getElementById('oak-tap').classList.add('show');
+            oakWaitingTap = true;
+          });
+        } else {
+          // End cutscene
+          document.getElementById('oak-screen').classList.remove('active');
+          oakCutsceneActive = false;
+          joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+          document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
+          player.y = 4.8;
+        }
       }
     }
   });
