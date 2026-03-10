@@ -616,6 +616,16 @@
   </div>
 </div>
 
+<!-- POKEBALL MACHINE POPUP -->
+<div id="pokeball-machine-popup" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="background:#1a1a2e;border:3px solid #e01020;border-radius:14px;padding:22px 20px;max-width:300px;width:88%;text-align:center;">
+    <div style="font-family:'Press Start 2P',cursive;font-size:10px;color:#e01020;margin-bottom:4px;">⚙ POKÉBALL</div>
+    <div style="font-family:'Press Start 2P',cursive;font-size:10px;color:#e01020;margin-bottom:14px;">MACHINE</div>
+    <div id="pb-machine-msg" style="font-family:'Press Start 2P',cursive;font-size:8px;color:#e0e0e0;line-height:1.9;margin-bottom:16px;min-height:48px;"></div>
+    <div id="pb-machine-btns" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"></div>
+  </div>
+</div>
+
 <!-- TRAVEL MENU - GBA Pokemon Style -->
 <div id="travel-menu">
   <div class="travel-window">
@@ -873,6 +883,7 @@ var activePokemon = null; // currently selected pokemon name (for battle + follo
 var inventory = { pokeballs: 0 };
 var pokeballs_claimed = false;
 var nurseDialogueActive = false;
+var pokeballMachineActive = false;
 var nurseSeen = false;
 var caughtPokemon = []; // list of caught pokemon names
 var pokedexOpen = false;
@@ -1094,7 +1105,7 @@ function gameLoop(ts) {
   var dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen && !dukeDialogueActive && !battleActive && !encounterActive) {
+  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen && !dukeDialogueActive && !battleActive && !encounterActive && !pokeballMachineActive) {
     var speed = 4;
     var dx = joystick.dx;
     var dy = joystick.dy;
@@ -1123,6 +1134,11 @@ function gameLoop(ts) {
     if (currentMap === 'center' && !nurseDialogueActive
         && player.x > 3.5 && player.x < 8.5 && player.y > 2.2 && player.y < 3.5) {
       startNurseCutscene();
+    }
+    // Pokeball machine trigger — bottom left of center
+    if (currentMap === 'center' && !pokeballMachineActive && pokeballs_claimed
+        && player.x > 0.5 && player.x < 2.5 && player.y > 6.2 && player.y < 8.2) {
+      startPokeballMachine();
     }
     // Duke NPC trigger
     if (currentMap === 'castle' && !dukeDialogueActive
@@ -1293,7 +1309,15 @@ function checkWildEncounter(dt) {
 }
 
 function triggerWildEncounter() {
-  var p = WILD_POKEMON[Math.floor(Math.random() * WILD_POKEMON.length)];
+  var baseOnly = WILD_POKEMON.filter(function(p) {
+    return !EVOLUTION_MAP[p.name] || Object.keys(EVOLUTION_MAP).every(function(k){ return EVOLUTION_MAP[k].into !== p.name; });
+  });
+  // Extra safety: exclude anything that is an evolution target
+  var evoTargets = {};
+  Object.keys(EVOLUTION_MAP).forEach(function(k){ evoTargets[EVOLUTION_MAP[k].into] = true; });
+  var safePool = WILD_POKEMON.filter(function(p){ return !evoTargets[p.name]; });
+  var pool = safePool.length > 0 ? safePool : WILD_POKEMON;
+  var p = pool[Math.floor(Math.random() * pool.length)];
   currentWildPokemon = p;
   encounterActive = true;
   joystick.dx = 0; joystick.dy = 0; joystick.active = false;
@@ -1453,7 +1477,7 @@ function enemyAttack() {
       setTimeout(closeBattle, 1800);
     }, 900);
   } else {
-    setTimeout(function(){ showBattleActions(); }, 900);
+    setTimeout(function(){ battle.playerTurn = true; showBattleActions(); }, 900);
   }
 }
 
@@ -1506,7 +1530,9 @@ function battleCatch() {
   setTimeout(function() {
     var caught = Math.random() < 0.65;
     if (caught) {
-      if (caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
+      var evoTargets2 = {};
+      Object.keys(EVOLUTION_MAP).forEach(function(k){ evoTargets2[EVOLUTION_MAP[k].into] = true; });
+      if (!evoTargets2[battle.enemyPokemon.name] && caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
         caughtPokemon.push(battle.enemyPokemon.name);
       }
       var myProg = getPokemonProgress(battle.playerName);
@@ -1650,8 +1676,51 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// DUKE NPC CUTSCENE
+// POKEBALL MACHINE
 // ============================================================
+function startPokeballMachine() {
+  pokeballMachineActive = true;
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+  var popup = document.getElementById('pokeball-machine-popup');
+  var msg = document.getElementById('pb-machine-msg');
+  var btns = document.getElementById('pb-machine-btns');
+  popup.style.display = 'flex';
+  btns.innerHTML = '';
+
+  if (inventory.pokeballs > 0) {
+    msg.textContent = 'You still have\n' + inventory.pokeballs + ' Pokéball' + (inventory.pokeballs > 1 ? 's' : '') + '!\nCome back when\nyou run out!';
+    var closeBtn = makeBtn('OK', '#444', '#fff', '#888', closePokeballMachine);
+    btns.appendChild(closeBtn);
+  } else {
+    msg.textContent = 'Out of Pokéballs?\nNo problem!\nTake 5 on the\nhouse!';
+    var getBtn = makeBtn('🔴 Get 5 Balls!', '#e01020', '#fff', '#ff4060', function() {
+      inventory.pokeballs += 5;
+      updateHUD();
+      msg.textContent = 'Here you go!\n5 Pokéballs\nadded!';
+      btns.innerHTML = '';
+      btns.appendChild(makeBtn('Thanks!', '#1a4a2a', '#80ff80', '#40d060', closePokeballMachine));
+    });
+    btns.appendChild(getBtn);
+    btns.appendChild(makeBtn('Never mind', '#333', '#fff', '#888', closePokeballMachine));
+  }
+}
+
+function makeBtn(label, bg, color, border, fn) {
+  var b = document.createElement('button');
+  b.textContent = label;
+  b.style.cssText = 'font-family:"Press Start 2P",cursive;font-size:clamp(7px,1.8vw,9px);background:' + bg + ';color:' + color + ';border:2px solid ' + border + ';border-radius:8px;padding:10px 14px;cursor:pointer;';
+  b.onclick = fn;
+  return b;
+}
+
+function closePokeballMachine() {
+  document.getElementById('pokeball-machine-popup').style.display = 'none';
+  pokeballMachineActive = false;
+  player.y = 6.0; // push back from machine
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+}
+
+
 var dukeLines = [];
 var dukeIndex = 0;
 var dukeTyping = false;
@@ -1781,29 +1850,35 @@ var ALL_STARTERS = {
   ]
 };
 
-var WILD_POKEMON = [
-  { num:'#004', name:'Fletchling',  color:'#f05030', how:'wild', evo:'Fletchinder', evoLevel:17 },
-  { num:'#005', name:'Fletchinder', color:'#d03010', how:'evo',  evo:'Talonflame',  evoLevel:35 },
+// POKEDEX_POKEMON = full list including evolutions (for Pokedex display only)
+var POKEDEX_POKEMON = [
+  { num:'#004', name:'Fletchling',  color:'#f05030', how:'wild', evo:'Fletchinder', evoLevel:15 },
+  { num:'#005', name:'Fletchinder', color:'#d03010', how:'evo',  evo:'Talonflame',  evoLevel:30 },
   { num:'#006', name:'Talonflame',  color:'#b02008', how:'evo',  evo:null,          evoLevel:null },
   { num:'#007', name:'Hawlucha',    color:'#78c850', how:'wild', evo:null,          evoLevel:null },
   { num:'#008', name:'Shinx',       color:'#6060e0', how:'wild', evo:'Luxio',       evoLevel:15 },
   { num:'#009', name:'Luxio',       color:'#4040c0', how:'evo',  evo:'Luxray',      evoLevel:30 },
   { num:'#010', name:'Luxray',      color:'#2020a0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#011', name:'Beldum',      color:'#788090', how:'wild', evo:'Metang',      evoLevel:20 },
-  { num:'#012', name:'Metang',      color:'#6070a0', how:'evo',  evo:'Metagross',   evoLevel:45 },
+  { num:'#011', name:'Beldum',      color:'#788090', how:'wild', evo:'Metang',      evoLevel:15 },
+  { num:'#012', name:'Metang',      color:'#6070a0', how:'evo',  evo:'Metagross',   evoLevel:30 },
   { num:'#013', name:'Metagross',   color:'#4050a0', how:'evo',  evo:null,          evoLevel:null },
   { num:'#014', name:'Pikachu',     color:'#f8d030', how:'wild', evo:null,          evoLevel:null },
   { num:'#015', name:'Wobbuffet',   color:'#70c8f0', how:'wild', evo:null,          evoLevel:null },
-  { num:'#016', name:'Delibird',    color:'#f05050', how:'wild', evo:null,          evoLevel:null },
-  { num:'#017', name:'Ralts',       color:'#f0f0f0', how:'wild', evo:'Kirlia',      evoLevel:20 },
+  { num:'#016', name:'Caterpie',    color:'#a8b820', how:'wild', evo:null,          evoLevel:null },
+  { num:'#017', name:'Ralts',       color:'#f0f0f0', how:'wild', evo:'Kirlia',      evoLevel:15 },
   { num:'#018', name:'Kirlia',      color:'#e0d0f0', how:'evo',  evo:'Gardevoir',   evoLevel:30 },
   { num:'#019', name:'Gardevoir',   color:'#c0b0f0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#020', name:'Gossifleur',  color:'#f0a0c0', how:'wild', evo:'Eldegoss',    evoLevel:20 },
+  { num:'#020', name:'Gossifleur',  color:'#f0a0c0', how:'wild', evo:'Eldegoss',    evoLevel:15 },
   { num:'#021', name:'Eldegoss',    color:'#e090b0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#022', name:'Wooper',      color:'#7090e0', how:'wild', evo:'Quagsire',    evoLevel:20 },
+  { num:'#022', name:'Wooper',      color:'#7090e0', how:'wild', evo:'Quagsire',    evoLevel:15 },
   { num:'#023', name:'Quagsire',    color:'#5070c0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#024', name:'Greavard',    color:'#707080', how:'wild', evo:'Houndstone',  evoLevel:30 },
-  { num:'#025', name:'Houndstone',  color:'#505060', how:'evo',  evo:null,          evoLevel:null }
+  { num:'#024', name:'Greavard',    color:'#707080', how:'wild', evo:'Houndstone',  evoLevel:15 },
+  { num:'#025', name:'Houndstone',  color:'#505060', how:'evo',  evo:null,          evoLevel:null },
+  { num:'#026', name:'Geodude',     color:'#b8a038', how:'wild', evo:null,          evoLevel:null },
+  { num:'#027', name:'Gastly',      color:'#705898', how:'wild', evo:null,          evoLevel:null },
+  { num:'#028', name:'Magikarp',    color:'#f08030', how:'wild', evo:null,          evoLevel:null },
+  { num:'#029', name:'Abra',        color:'#f8d030', how:'wild', evo:null,          evoLevel:null },
+  { num:'#030', name:'Bunnelby',    color:'#c8a040', how:'wild', evo:null,          evoLevel:null }
 ];
 
 function getAllPokemon() {
@@ -1812,7 +1887,7 @@ function getAllPokemon() {
     { num:'#002', name:'???', color:'#777', how:'evo',     evo:null, evoLevel:null },
     { num:'#003', name:'???', color:'#666', how:'evo',     evo:null, evoLevel:null }
   ];
-  return starterLine.concat(WILD_POKEMON);
+  return starterLine.concat(POKEDEX_POKEMON);
 }
 
 function togglePokedex() {
@@ -2555,6 +2630,8 @@ function drawCenterDecorations(c) {
   c.beginPath(); c.arc(cx,cy,8,0,Math.PI*2); c.fill();
   // Healing machine bottom right
   drawHealingMachine(c, 9*TILE, 7*TILE);
+  // Pokeball vending machine bottom left (only visible after nurse first visit)
+  if (pokeballs_claimed) drawPokeballMachine(c, 1*TILE, 7*TILE);
   // Return mat label
   c.fillStyle='rgba(0,0,0,0.4)';
   c.fillRect(5*TILE, 9*TILE+14, TILE*2, 10);
@@ -2623,7 +2700,55 @@ function drawHealingMachine(c, x, y) {
   c.fillStyle='rgba(255,255,255,0.4)'; c.fillRect(x+6,y+18,8,4);
 }
 
-// ---- WILD AREA DECORATIONS ----
+function drawPokeballMachine(c, x, y) {
+  var W = TILE, H = TILE;
+  // Main body - white
+  c.fillStyle = '#f0f0f0'; c.fillRect(x, y, W, H);
+  // Red top panel
+  c.fillStyle = '#e01020'; c.fillRect(x, y, W, H*0.45);
+  // White divider stripe
+  c.fillStyle = '#fff'; c.fillRect(x, y + H*0.45, W, 3);
+  // Dark outline
+  c.strokeStyle = '#333'; c.lineWidth = 1.5; c.strokeRect(x, y, W, H);
+  // Pokeball display window (glass)
+  c.fillStyle = '#c8e8f8'; c.fillRect(x+4, y+3, W-8, H*0.32);
+  c.strokeStyle = '#aaa'; c.lineWidth = 1; c.strokeRect(x+4, y+3, W-8, H*0.32);
+  // Shine on window
+  c.fillStyle = 'rgba(255,255,255,0.5)'; c.fillRect(x+5, y+4, 6, 4);
+  // Pokeball icons inside window
+  var bx = x + 7, by = y + 5;
+  for (var i = 0; i < 3; i++) {
+    var bxc = bx + i * 7;
+    // Top red half
+    c.fillStyle = '#e01020'; c.beginPath(); c.arc(bxc, by+4, 3, Math.PI, 0); c.fill();
+    // Bottom white half
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(bxc, by+4, 3, 0, Math.PI); c.fill();
+    // Middle line
+    c.strokeStyle = '#333'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(bxc-3, by+4); c.lineTo(bxc+3, by+4); c.stroke();
+    // Center button
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(bxc, by+4, 1, 0, Math.PI*2); c.fill();
+    c.strokeStyle = '#555'; c.lineWidth = 0.5; c.beginPath(); c.arc(bxc, by+4, 1, 0, Math.PI*2); c.stroke();
+  }
+  // White panel - label area
+  c.fillStyle = '#fff'; c.fillRect(x+2, y+H*0.5, W-4, H*0.22);
+  c.fillStyle = '#e01020'; c.font = 'bold 4px sans-serif'; c.textAlign = 'center';
+  c.fillText('POKÉ BALL', x + W/2, y + H*0.5 + 8);
+  c.fillText('MACHINE', x + W/2, y + H*0.5 + 14);
+  c.textAlign = 'left';
+  // Coin slot
+  c.fillStyle = '#888'; c.fillRect(x + W/2 - 5, y + H*0.76, 10, 3);
+  c.fillStyle = '#555'; c.fillRect(x + W/2 - 3, y + H*0.76, 6, 1);
+  // Button (red)
+  c.fillStyle = '#e01020'; c.beginPath(); c.arc(x + W/2, y + H*0.88, 4, 0, Math.PI*2); c.fill();
+  c.strokeStyle = '#900'; c.lineWidth = 1; c.beginPath(); c.arc(x + W/2, y + H*0.88, 4, 0, Math.PI*2); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,0.4)'; c.beginPath(); c.arc(x + W/2 - 1, y + H*0.88 - 1, 2, 0, Math.PI*2); c.fill();
+  // Side vents
+  for (var v = 0; v < 4; v++) {
+    c.fillStyle = '#ccc'; c.fillRect(x + W - 4, y + H*0.5 + v*5, 2, 3);
+  }
+}
+
+
 function drawWildDecorations(c) {
   // Animated water shimmer hint
   var t = Date.now()/1000;
