@@ -794,6 +794,7 @@ var joystick = { dx:0, dy:0, active:false };
 var travelMenuOpen = false;
 var oakCutsceneActive = false;
 var starterChosen = false;
+var oakSecondCutsceneDone = false;
 var gameCanvas, gctx, lastTime = 0;
 var momCutsceneActive = false;
 var momCutsceneSeen = false;
@@ -930,10 +931,14 @@ function gameLoop(ts) {
         && player.x > 3.5 && player.x < 8.5 && player.y > 2.2 && player.y < 3.5) {
       startNurseCutscene();
     }
-    // Wild sign trigger — player can walk through freely, no collision
-    if (currentMap === 'wild' && !starterChosen && !oakCutsceneActive
+    // Wild sign trigger
+    if (currentMap === 'wild' && !oakCutsceneActive
         && player.x > 4.6 && player.x < 6.4 && player.y > 1.0 && player.y < 2.2) {
-      startOakCutscene();
+      if (!starterChosen) {
+        startOakCutscene();
+      } else if (pokeballs_claimed && !oakSecondCutsceneDone) {
+        startOakSecondCutscene();
+      }
     }
     // Mom NPC trigger — mom stands at col 8, row 7
     if (currentMap === 'home' && !momCutsceneActive && !momCutsceneSeen
@@ -1443,6 +1448,7 @@ var oakCongratsIndex = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('oak-screen').addEventListener('click', function(e) {
+    if (oakPhase === 'second') return; // handled by second cutscene handler
     if (e.target.closest('.starter-ball')) return;
     if (oakIsTyping) {
       clearTimeout(oakTypeTimeout);
@@ -1477,6 +1483,87 @@ document.addEventListener('DOMContentLoaded', function() {
           document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
           player.y = 3.5; player.x = 5.5;
         }
+      }
+    }
+  });
+});
+
+// ============================================================
+// OAK SECOND CUTSCENE (after getting pokeballs)
+// ============================================================
+var oakSecondLines = [];
+var oakSecondIndex = 0;
+var oakSecondTyping = false;
+var oakSecondTimer = null;
+var oakSecondWaitTap = false;
+
+function startOakSecondCutscene() {
+  oakCutsceneActive = true;
+  oakSecondCutsceneDone = true;
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+  oakSecondIndex = 0;
+  oakPhase = 'second';
+  oakSecondLines = [
+    'Ah, I see you\'ve\ngotten your\nPokeballs ' + username + '!',
+    'Now go wander off\nin the Wild Area to\nfind & catch wild\nPokemons!',
+    'Good Luck!'
+  ];
+  document.getElementById('oak-screen').classList.add('active');
+  drawOakProfCanvas();
+  setTimeout(function(){ oakSecondRunLine(); }, 300);
+}
+
+function oakSecondRunLine() {
+  var el = document.getElementById('oak-dialogue-text');
+  var tap = document.getElementById('oak-tap');
+  el.textContent = '';
+  tap.classList.remove('show');
+  oakSecondTyping = true;
+  oakSecondWaitTap = false;
+  var text = oakSecondLines[oakSecondIndex];
+  var i = 0;
+  function type() {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      oakSecondTimer = setTimeout(type, 30);
+    } else {
+      oakSecondTyping = false;
+      tap.classList.add('show');
+      oakSecondWaitTap = true;
+    }
+  }
+  type();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Hook second cutscene into oak-screen click (oak-screen is reused)
+  var oakScreen = document.getElementById('oak-screen');
+  oakScreen.addEventListener('click', function(e) {
+    if (!oakCutsceneActive || !oakSecondCutsceneDone || oakSecondLines.length === 0) return;
+    if (e.target.closest('.starter-ball')) return;
+    // Only handle if we're in second cutscene mode (oakPhase won't be set)
+    if (oakPhase !== 'second') return;
+    if (oakSecondTyping) {
+      clearTimeout(oakSecondTimer);
+      oakSecondTyping = false;
+      document.getElementById('oak-dialogue-text').textContent = oakSecondLines[oakSecondIndex];
+      document.getElementById('oak-tap').classList.add('show');
+      oakSecondWaitTap = true;
+      return;
+    }
+    if (oakSecondWaitTap) {
+      oakSecondWaitTap = false;
+      document.getElementById('oak-tap').classList.remove('show');
+      oakSecondIndex++;
+      if (oakSecondIndex < oakSecondLines.length) {
+        oakSecondRunLine();
+      } else {
+        document.getElementById('oak-screen').classList.remove('active');
+        oakCutsceneActive = false;
+        oakSecondLines = []; // clear so first oak handler doesn't interfere
+        joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+        document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
+        player.y = 3.5; player.x = 5.5;
       }
     }
   });
