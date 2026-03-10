@@ -223,6 +223,25 @@
   .pokedex-entry.locked .pokedex-name { color:#888; }
   .pokedex-sprite { width:32px; height:32px; image-rendering:pixelated; }
   .pokedex-locked-icon { width:32px; height:32px; font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .pokedex-entry { cursor: pointer; transition: background 0.1s; }
+  .pokedex-entry.caught:active { background: rgba(255,255,255,0.3); }
+  /* Detail view */
+  .poke-detail-header { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+  .poke-detail-name { font-family:'Press Start 2P',cursive; font-size:clamp(9px,2.2vw,12px); color:#fff; }
+  .poke-detail-type { font-family:'Press Start 2P',cursive; font-size:8px; background:rgba(255,255,255,0.2); border-radius:4px; padding:3px 7px; color:#fff; margin-top:4px; display:inline-block; }
+  .poke-detail-num { font-family:'Press Start 2P',cursive; font-size:8px; color:#ffff80; }
+  .poke-detail-section { font-family:'Press Start 2P',cursive; font-size:8px; color:#ffff80; margin:10px 0 6px; border-bottom:1px solid rgba(255,255,255,0.3); padding-bottom:4px; }
+  .poke-xp-bar-wrap { background:rgba(0,0,0,0.4); border-radius:4px; height:8px; width:100%; overflow:hidden; margin-top:4px; }
+  .poke-xp-bar { background: linear-gradient(90deg,#40e060,#80ff80); height:100%; border-radius:4px; transition:width 0.4s; }
+  .poke-stat-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.1); }
+  .poke-stat-row:last-child { border-bottom:none; }
+  .poke-move-name { font-family:'Press Start 2P',cursive; font-size:clamp(6px,1.6vw,8px); color:#fff; flex:1; }
+  .poke-move-dmg { font-family:'Press Start 2P',cursive; font-size:8px; color:#f08030; min-width:50px; text-align:right; }
+  .poke-move-bar-wrap { width:80px; background:rgba(0,0,0,0.4); border-radius:3px; height:6px; margin-left:8px; overflow:hidden; }
+  .poke-move-bar { background:linear-gradient(90deg,#f05030,#f0a030); height:100%; border-radius:3px; }
+  .poke-level-row { display:flex; justify-content:space-between; margin-bottom:4px; }
+  .poke-level-label { font-family:'Press Start 2P',cursive; font-size:8px; color:#aef; }
+  .poke-level-val { font-family:'Press Start 2P',cursive; font-size:8px; color:#fff; }
 
   /* ===== OAK CUTSCENE SCREEN ===== */
   #oak-screen {
@@ -453,10 +472,12 @@
 <div id="pokedex-overlay">
   <div class="pokedex-window">
     <div class="pokedex-header">
-      <span>📖 POKÉDEX</span>
+      <button class="pokedex-close" id="pokedex-back-btn" onclick="pokedexBack()" style="display:none">◀ Back</button>
+      <span id="pokedex-title">📖 POKÉDEX</span>
       <button class="pokedex-close" onclick="togglePokedex()">✕</button>
     </div>
     <div class="pokedex-list" id="pokedex-list"></div>
+    <div class="pokedex-detail" id="pokedex-detail" style="display:none;overflow-y:auto;padding:12px;flex:1;"></div>
   </div>
 </div>
 
@@ -526,6 +547,23 @@
       <div style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.8vw,9px);color:#f080a0;margin-bottom:6px;">Nurse Joy</div>
       <div id="nurse-dialogue-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,2.2vw,11px);color:#111;line-height:1.9;white-space:pre-wrap;"></div>
       <div id="nurse-tap" class="tap-indicator">&#9660;</div>
+    </div>
+  </div>
+</div>
+
+<!-- DUKE NPC CUTSCENE SCREEN -->
+<div id="duke-screen" class="screen" style="flex-direction:column;align-items:center;justify-content:flex-end;background:#000;overflow:hidden;">
+  <div class="gba-bar-top"></div>
+  <div class="gba-bar-mid"></div>
+  <div class="professor-area" style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;width:100%;">
+    <div class="spotlight"></div>
+    <canvas id="duke-prof-canvas" width="64" height="96" style="image-rendering:pixelated;width:clamp(80px,22vw,140px);height:auto;"></canvas>
+  </div>
+  <div class="dialogue-box" style="flex-shrink:0;">
+    <div class="dialogue-inner">
+      <div style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.8vw,9px);color:#c8a820;margin-bottom:6px;">Duke</div>
+      <div id="duke-dialogue-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,2.2vw,11px);color:#111;line-height:1.9;white-space:pre-wrap;"></div>
+      <div id="duke-tap" class="tap-indicator">&#9660;</div>
     </div>
   </div>
 </div>
@@ -770,7 +808,8 @@ var maps = {
     ],
     collision: [
       {x:1,y:1,w:2,h:8},{x:9,y:1,w:2,h:8}, // side pillars
-      {x:2,y:1,w:8,h:1}                      // top banner
+      {x:2,y:1,w:8,h:1},                      // top banner
+      {x:7.5,y:6.8,w:1.2,h:1.4}              // Duke NPC
     ],
     spawn: {x:5.5,y:7.5},
     hasDoorTrigger: true
@@ -788,6 +827,45 @@ var nurseDialogueActive = false;
 var nurseSeen = false;
 var caughtPokemon = []; // list of caught pokemon names
 var pokedexOpen = false;
+
+// Rank system
+var RANKS = ['Bronze','Silver','Gold','Platinum','Diamond','Master','King'];
+var playerRank = 'Bronze';
+
+// Duke NPC state
+var dukeDialogueActive = false;
+var dukeSeenFirst = false;
+
+// Pokemon data (level, xp, moves)
+var POKEMON_DATA = {
+  Charmander: { type:'Fire',   moves:[{name:'Scratch',dmg:40},{name:'Ember',dmg:60},{name:'Growl',dmg:0},{name:'Flamethrower',dmg:90}] },
+  Froakie:    { type:'Water',  moves:[{name:'Pound',dmg:40},{name:'Water Pulse',dmg:60},{name:'Lick',dmg:30},{name:'Hydro Pump',dmg:110}] },
+  Treecko:    { type:'Grass',  moves:[{name:'Pound',dmg:40},{name:'Absorb',dmg:55},{name:'Leer',dmg:0},{name:'Leaf Blade',dmg:90}] },
+  Bulbasaur:  { type:'Grass',  moves:[{name:'Tackle',dmg:40},{name:'Vine Whip',dmg:55},{name:'Leech Seed',dmg:20},{name:'Razor Leaf',dmg:75}] },
+  Pikachu:    { type:'Electric',moves:[{name:'Quick Attack',dmg:40},{name:'Thunder Shock',dmg:55},{name:'Tail Whip',dmg:0},{name:'Thunderbolt',dmg:90}] },
+  Squirtle:   { type:'Water',  moves:[{name:'Tackle',dmg:40},{name:'Water Gun',dmg:55},{name:'Tail Whip',dmg:0},{name:'Hydro Pump',dmg:110}] },
+  Eevee:      { type:'Normal', moves:[{name:'Tackle',dmg:40},{name:'Swift',dmg:60},{name:'Growl',dmg:0},{name:'Last Resort',dmg:140}] },
+  Pikachu:    { type:'Electric',moves:[{name:'Quick Attack',dmg:40},{name:'Thunder Shock',dmg:55},{name:'Tail Whip',dmg:0},{name:'Thunderbolt',dmg:90}] },
+  Jigglypuff: { type:'Normal', moves:[{name:'Pound',dmg:40},{name:'Sing',dmg:0},{name:'Disarming Voice',dmg:40},{name:'Body Slam',dmg:85}] },
+  Caterpie:   { type:'Bug',    moves:[{name:'Tackle',dmg:35},{name:'String Shot',dmg:0},{name:'Bug Bite',dmg:60},{name:'Electroweb',dmg:55}] },
+  Geodude:    { type:'Rock',   moves:[{name:'Tackle',dmg:40},{name:'Rock Throw',dmg:50},{name:'Rollout',dmg:30},{name:'Rock Blast',dmg:90}] },
+  Gastly:     { type:'Ghost',  moves:[{name:'Lick',dmg:30},{name:'Hypnosis',dmg:0},{name:'Shadow Ball',dmg:80},{name:'Night Shade',dmg:70}] },
+  Magikarp:   { type:'Water',  moves:[{name:'Splash',dmg:0},{name:'Tackle',dmg:35},{name:'Flail',dmg:30},{name:'Bounce',dmg:85}] },
+  Snorlax:    { type:'Normal', moves:[{name:'Tackle',dmg:50},{name:'Body Slam',dmg:85},{name:'Rest',dmg:0},{name:'Giga Impact',dmg:150}] },
+  Psyduck:    { type:'Water',  moves:[{name:'Scratch',dmg:40},{name:'Water Gun',dmg:55},{name:'Confusion',dmg:50},{name:'Psychic',dmg:90}] },
+  Abra:       { type:'Psychic',moves:[{name:'Teleport',dmg:0},{name:'Confusion',dmg:50},{name:'Psybeam',dmg:65},{name:'Psychic',dmg:90}] },
+  Chikorita:  { type:'Grass',  moves:[{name:'Tackle',dmg:40},{name:'Razor Leaf',dmg:60},{name:'Reflect',dmg:0},{name:'Solar Beam',dmg:120}] },
+  Cyndaquil:  { type:'Fire',   moves:[{name:'Tackle',dmg:40},{name:'Ember',dmg:60},{name:'Smokescreen',dmg:0},{name:'Flamethrower',dmg:90}] },
+  Totodile:   { type:'Water',  moves:[{name:'Scratch',dmg:40},{name:'Water Gun',dmg:55},{name:'Bite',dmg:60},{name:'Hydro Pump',dmg:110}] },
+  Togepi:     { type:'Fairy',  moves:[{name:'Pound',dmg:35},{name:'Charm',dmg:0},{name:'Sweet Kiss',dmg:0},{name:'Dazzling Gleam',dmg:80}] },
+  Torchic:    { type:'Fire',   moves:[{name:'Scratch',dmg:40},{name:'Ember',dmg:60},{name:'Sand Attack',dmg:0},{name:'Blaze Kick',dmg:85}] },
+  Mudkip:     { type:'Water',  moves:[{name:'Tackle',dmg:40},{name:'Water Gun',dmg:55},{name:'Mud Slap',dmg:20},{name:'Surf',dmg:90}] },
+  Bunnelby:   { type:'Normal', moves:[{name:'Quick Attack',dmg:40},{name:'Tackle',dmg:40},{name:'Dig',dmg:80},{name:'Return',dmg:102}] },
+  Fletchling: { type:'Fire',   moves:[{name:'Tackle',dmg:40},{name:'Ember',dmg:60},{name:'Agility',dmg:0},{name:'Flare Blitz',dmg:120}] },
+  Scatterbug: { type:'Bug',    moves:[{name:'Tackle',dmg:35},{name:'String Shot',dmg:0},{name:'Stun Spore',dmg:0},{name:'Bug Buzz',dmg:90}] }
+};
+// Pokemon level+xp storage (keyed by name)
+var pokemonProgress = {};
 var joystick = { dx:0, dy:0, active:false };
 var travelMenuOpen = false;
 var oakCutsceneActive = false;
@@ -897,7 +975,7 @@ function gameLoop(ts) {
   var dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen) {
+  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen && !dukeDialogueActive) {
     var speed = 4;
     var dx = joystick.dx;
     var dy = joystick.dy;
@@ -926,6 +1004,11 @@ function gameLoop(ts) {
     if (currentMap === 'center' && !nurseDialogueActive
         && player.x > 3.5 && player.x < 8.5 && player.y > 2.2 && player.y < 3.5) {
       startNurseCutscene();
+    }
+    // Duke NPC trigger
+    if (currentMap === 'castle' && !dukeDialogueActive
+        && player.x > 6.8 && player.x < 9.2 && player.y > 6.0 && player.y < 8.0) {
+      startDukeCutscene();
     }
     // Wild sign trigger
     if (currentMap === 'wild' && !oakCutsceneActive
@@ -1131,6 +1214,117 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
+// DUKE NPC CUTSCENE
+// ============================================================
+var dukeLines = [];
+var dukeIndex = 0;
+var dukeTyping = false;
+var dukeTimer = null;
+var dukeWaitTap = false;
+
+function startDukeCutscene() {
+  dukeDialogueActive = true;
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+  dukeIndex = 0;
+  if (!dukeSeenFirst) {
+    dukeSeenFirst = true;
+    dukeLines = [
+      'Hello ' + username + '!\nWelcome to The\nFighting Castle Arena!',
+      'This is where you\nwill climb the ranks\nand maybe become\nKing of this Castle!',
+      'Your current rank\nis: ' + playerRank + '!\nTrain hard and\nfight well!'
+    ];
+  } else {
+    dukeLines = [
+      'Welcome back\n' + username + '!',
+      'Your current rank\nis: ' + playerRank + '!\nKeep fighting to\nclimb higher!'
+    ];
+  }
+  document.getElementById('duke-screen').classList.add('active');
+  drawDukeCanvas();
+  setTimeout(function(){ dukeRunLine(); }, 300);
+}
+
+function drawDukeCanvas() {
+  var canvas = document.getElementById('duke-prof-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  function dp(x,y,w,h,col){ ctx.fillStyle=col; ctx.fillRect(x,y,w,h); }
+  ctx.clearRect(0,0,64,96);
+  // Boots
+  dp(16,86,10,8,'#3a2010'); dp(38,86,10,8,'#3a2010');
+  // Legs
+  dp(14,60,14,28,'#5030a0'); dp(36,60,14,28,'#5030a0');
+  // Gold belt
+  dp(12,58,40,5,'#c8a820'); dp(28,56,8,7,'#f0d040');
+  // Body robe
+  dp(10,30,44,30,'#5030a0');
+  // White fur trim top
+  dp(10,30,44,5,'#f0f0f0');
+  // Fur sides
+  dp(10,35,6,24,'#f0f0f0'); dp(48,35,6,24,'#f0f0f0');
+  // Gold epaulettes
+  dp(6,30,8,10,'#c8a820'); dp(50,30,8,10,'#c8a820');
+  // Arms
+  dp(4,32,8,24,'#5030a0'); dp(52,32,8,24,'#5030a0');
+  // Hands
+  dp(4,54,8,8,'#f0c8a0'); dp(52,54,8,8,'#f0c8a0');
+  // Neck
+  dp(28,22,8,10,'#f0c8a0');
+  // Head
+  dp(20,4,24,22,'#f0c8a0');
+  // Crown
+  dp(20,2,24,6,'#c8a820');
+  dp(20,-4,6,8,'#c8a820'); dp(29,-6,6,10,'#c8a820'); dp(38,-4,6,8,'#c8a820');
+  dp(30,-5,4,5,'#e03030');
+  // Moustache
+  dp(20,18,8,3,'#8b5010'); dp(36,18,8,3,'#8b5010');
+  // Eyes
+  dp(24,12,4,4,'#333'); dp(36,12,4,4,'#333');
+  // Smile
+  dp(26,24,12,2,'#c07050');
+}
+
+function dukeRunLine() {
+  var el = document.getElementById('duke-dialogue-text');
+  var tap = document.getElementById('duke-tap');
+  el.textContent = '';
+  tap.classList.remove('show');
+  dukeTyping = true; dukeWaitTap = false;
+  var text = dukeLines[dukeIndex];
+  var i = 0;
+  function type() {
+    if (i < text.length) { el.textContent += text[i++]; dukeTimer = setTimeout(type, 30); }
+    else { dukeTyping = false; tap.classList.add('show'); dukeWaitTap = true; }
+  }
+  type();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('duke-screen').addEventListener('click', function() {
+    if (!dukeDialogueActive) return;
+    if (dukeTyping) {
+      clearTimeout(dukeTimer); dukeTyping = false;
+      document.getElementById('duke-dialogue-text').textContent = dukeLines[dukeIndex];
+      document.getElementById('duke-tap').classList.add('show');
+      dukeWaitTap = true; return;
+    }
+    if (!dukeWaitTap) return;
+    dukeWaitTap = false;
+    document.getElementById('duke-tap').classList.remove('show');
+    dukeIndex++;
+    if (dukeIndex < dukeLines.length) { dukeRunLine(); }
+    else {
+      document.getElementById('duke-screen').classList.remove('active');
+      dukeDialogueActive = false;
+      joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+      document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
+      player.y = 5.5; player.x = 5.5;
+    }
+  });
+});
+
+// ============================================================
 // POKÉDEX
 // ============================================================
 var allPokemon = [
@@ -1168,33 +1362,81 @@ function togglePokedex() {
     renderPokedex();
   } else {
     overlay.classList.remove('show');
+    pokedexBack();
   }
 }
 
+function pokedexBack() {
+  document.getElementById('pokedex-list').style.display = 'flex';
+  document.getElementById('pokedex-detail').style.display = 'none';
+  document.getElementById('pokedex-back-btn').style.display = 'none';
+  document.getElementById('pokedex-title').textContent = '📖 POKÉDEX';
+}
+
 function renderPokedex() {
+  pokedexBack();
   var list = document.getElementById('pokedex-list');
   list.innerHTML = '';
   allPokemon.forEach(function(p) {
     var caught = caughtPokemon.indexOf(p.name) !== -1;
-    // Also count starter as caught
     if (starterChosen && p.name === starterChosen) caught = true;
     var entry = document.createElement('div');
     entry.className = 'pokedex-entry ' + (caught ? 'caught' : 'locked');
-    var sprite = '';
-    if (caught) {
-      var cv = document.createElement('canvas');
-      cv.width = 32; cv.height = 32;
-      cv.className = 'pokedex-sprite';
-      drawPokedexSprite(cv.getContext('2d'), p.name, p.color);
-      sprite = cv.outerHTML;
-    } else {
-      sprite = '<div class="pokedex-locked-icon">?</div>';
-    }
+    var cv = document.createElement('canvas');
+    cv.width = 32; cv.height = 32; cv.className = 'pokedex-sprite';
+    if (caught) drawPokedexSprite(cv.getContext('2d'), p.name, p.color);
+    else { var ctx2=cv.getContext('2d'); ctx2.fillStyle='#444'; ctx2.font='20px sans-serif'; ctx2.fillText('?',8,24); }
     entry.innerHTML = '<span class="pokedex-num">' + p.num + '</span>'
-      + sprite
+      + cv.outerHTML
       + '<span class="pokedex-name">' + (caught ? p.name : '???') + '</span>';
+    if (caught) entry.addEventListener('click', function(){ showPokedexDetail(p); });
     list.appendChild(entry);
   });
+}
+
+function showPokedexDetail(p) {
+  var prog = getPokemonProgress(p.name);
+  var data = POKEMON_DATA[p.name] || { type:'Normal', moves:[{name:'Tackle',dmg:40}] };
+  var xpNeeded = prog.level * 100;
+  var xpPct = Math.min(100, Math.round(prog.xp / xpNeeded * 100));
+
+  // Big sprite canvas
+  var cv = document.createElement('canvas');
+  cv.width = 48; cv.height = 48; cv.style.cssText = 'image-rendering:pixelated;width:72px;height:72px;';
+  drawPokedexSpriteBig(cv.getContext('2d'), p.name, p.color);
+
+  var movesHTML = data.moves.map(function(m) {
+    var barW = m.dmg === 0 ? 0 : Math.round(m.dmg / 150 * 100);
+    return '<div class="poke-stat-row">'
+      + '<span class="poke-move-name">' + m.name + '</span>'
+      + '<div class="poke-move-bar-wrap"><div class="poke-move-bar" style="width:' + barW + '%"></div></div>'
+      + '<span class="poke-move-dmg">' + (m.dmg === 0 ? 'Status' : m.dmg + ' dmg') + '</span>'
+      + '</div>';
+  }).join('');
+
+  var detail = document.getElementById('pokedex-detail');
+  detail.innerHTML = '<div class="poke-detail-header">'
+    + cv.outerHTML
+    + '<div>'
+    + '<div class="poke-detail-num">' + p.num + '</div>'
+    + '<div class="poke-detail-name">' + p.name + '</div>'
+    + '<span class="poke-detail-type">' + data.type + '</span>'
+    + '</div></div>'
+    + '<div class="poke-level-row"><span class="poke-level-label">Level</span><span class="poke-level-val">' + prog.level + '</span></div>'
+    + '<div class="poke-level-row"><span class="poke-level-label">XP</span><span class="poke-level-val">' + prog.xp + ' / ' + xpNeeded + '</span></div>'
+    + '<div class="poke-xp-bar-wrap"><div class="poke-xp-bar" style="width:' + xpPct + '%"></div></div>'
+    + '<div class="poke-detail-section">⚔ MOVESET</div>'
+    + movesHTML;
+
+  document.getElementById('pokedex-list').style.display = 'none';
+  detail.style.display = 'block';
+  document.getElementById('pokedex-back-btn').style.display = 'inline-block';
+  document.getElementById('pokedex-title').textContent = p.name.toUpperCase();
+}
+
+function getPokemonProgress(name) {
+  if (!pokemonProgress[name]) pokemonProgress[name] = { level: 1, xp: 0 };
+  return pokemonProgress[name];
 }
 
 function drawPokedexSprite(ctx, name, color) {
@@ -1202,14 +1444,18 @@ function drawPokedexSprite(ctx, name, color) {
   ctx.fillRect(8, 8, 16, 16);
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.fillRect(8, 20, 16, 4);
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(10, 10, 4, 4);
-  ctx.fillRect(18, 10, 4, 4);
-  // Simple face
+  ctx.fillStyle = '#fff'; ctx.fillRect(10, 10, 4, 4); ctx.fillRect(18, 10, 4, 4);
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(11, 11, 2, 2);
-  ctx.fillRect(19, 11, 2, 2);
-  ctx.fillRect(12, 18, 8, 2);
+  ctx.fillRect(11, 11, 2, 2); ctx.fillRect(19, 11, 2, 2); ctx.fillRect(12, 18, 8, 2);
+}
+
+function drawPokedexSpriteBig(ctx, name, color) {
+  ctx.fillStyle = color; ctx.fillRect(10,10,28,28);
+  ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(10,30,28,8);
+  ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillRect(13,13,8,8); ctx.fillRect(27,13,8,8);
+  ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(15,15,4,4); ctx.fillRect(29,15,4,4);
+  ctx.fillRect(17,28,14,3);
+  ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fillRect(10,10,6,28);
 }
 
 function updateHUD() {
@@ -1908,6 +2154,8 @@ function drawCastleDecorations(c) {
   // Suits of armor
   drawArmor(c, 2*TILE+6, 7*TILE+2);
   drawArmor(c, 9*TILE+6, 7*TILE+2);
+  // Duke NPC — stands bottom-right area
+  drawDukeNPC(c, 8*TILE+8, 7*TILE+4);
   // Return mat
   c.fillStyle='#8b1020'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
   c.strokeStyle='#c8a820'; c.lineWidth=1.5;
@@ -1981,23 +2229,57 @@ function drawWoodTable(c, x, y) {
 
 function drawArmor(c, x, y) {
   var S = TILE;
-  // Base/feet
   c.fillStyle='#888898'; c.fillRect(x-4,y+S*0.8,10,6);
-  // Legs
   c.fillStyle='#9090a0'; c.fillRect(x-3,y+S*0.5,8,S*0.32);
-  // Body
   c.fillStyle='#a0a0b0'; c.fillRect(x-6,y+S*0.25,12,S*0.28);
   c.strokeStyle='#606070'; c.lineWidth=1; c.strokeRect(x-6,y+S*0.25,12,S*0.28);
-  // Center ridge
   c.fillStyle='#c8c8d8'; c.fillRect(x-1,y+S*0.25,2,S*0.28);
-  // Shoulders
   c.fillStyle='#808090'; c.fillRect(x-9,y+S*0.25,4,7); c.fillRect(x+5,y+S*0.25,4,7);
-  // Head/helmet
   c.fillStyle='#9090a0'; c.fillRect(x-5,y+4,10,S*0.22);
-  // Visor slit
   c.fillStyle='#303040'; c.fillRect(x-4,y+10,8,3);
-  // Plume
   c.fillStyle='#cc2020'; c.fillRect(x-1,y,2,6);
+}
+
+function drawDukeNPC(c, x, y) {
+  var S = TILE;
+  // Boots
+  c.fillStyle='#3a2010'; c.fillRect(x-5,y+S*0.82,5,6); c.fillRect(x+1,y+S*0.82,5,6);
+  // Royal purple legs
+  c.fillStyle='#5030a0'; c.fillRect(x-5,y+S*0.5,11,S*0.35);
+  // Gold belt
+  c.fillStyle='#c8a820'; c.fillRect(x-6,y+S*0.48,13,4);
+  c.fillStyle='#f0d040'; c.fillRect(x-1,y+S*0.47,3,5);
+  // Royal purple robe body
+  c.fillStyle='#5030a0'; c.fillRect(x-7,y+S*0.18,15,S*0.34);
+  // White fur trim
+  c.fillStyle='#f0f0f0'; c.fillRect(x-7,y+S*0.18,15,4);
+  c.fillRect(x-7,y+S*0.5,3,S*0.33); c.fillRect(x+5,y+S*0.5,3,S*0.33);
+  // Gold epaulettes
+  c.fillStyle='#c8a820'; c.fillRect(x-9,y+S*0.2,4,8); c.fillRect(x+6,y+S*0.2,4,8);
+  // Arms
+  c.fillStyle='#5030a0'; c.fillRect(x-10,y+S*0.22,4,S*0.28); c.fillRect(x+7,y+S*0.22,4,S*0.28);
+  // Hands
+  c.fillStyle='#f0c8a0'; c.fillRect(x-10,y+S*0.48,4,5); c.fillRect(x+7,y+S*0.48,4,5);
+  // Neck
+  c.fillStyle='#f0c8a0'; c.fillRect(x-2,y+S*0.14,5,6);
+  // Head
+  c.fillStyle='#f0c8a0'; c.fillRect(x-5,y+2,11,S*0.18);
+  // Crown
+  c.fillStyle='#c8a820'; c.fillRect(x-5,y-2,11,5);
+  c.fillStyle='#f0d040';
+  c.fillRect(x-4,y-6,3,6); c.fillRect(x,y-8,2,8); c.fillRect(x+3,y-6,3,6);
+  // Jewel on crown
+  c.fillStyle='#e03030'; c.fillRect(x,y-7,2,3);
+  // Eyes
+  c.fillStyle='#333'; c.fillRect(x-3,y+6,2,2); c.fillRect(x+2,y+6,2,2);
+  // Moustache
+  c.fillStyle='#8b5010'; c.fillRect(x-4,y+10,4,2); c.fillRect(x+1,y+10,4,2);
+  // Smile
+  c.fillStyle='#c07050'; c.fillRect(x-2,y+13,5,1);
+  // Name tag
+  c.fillStyle='rgba(0,0,0,0.5)'; c.fillRect(x-12,y-18,26,10);
+  c.fillStyle='#c8a820'; c.font='5px "Press Start 2P",cursive';
+  c.textAlign='center'; c.fillText('DUKE',x+1,y-11); c.textAlign='left';
 }
 
 function drawHomeDecorations_mat(c) {
