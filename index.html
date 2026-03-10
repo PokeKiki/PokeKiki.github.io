@@ -568,6 +568,52 @@
   </div>
 </div>
 
+<!-- ENCOUNTER POPUP -->
+<div id="encounter-popup" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+  <div style="background:#1a1a2e;border:3px solid #f8d030;border-radius:12px;padding:20px 24px;max-width:320px;width:90%;text-align:center;">
+    <div id="enc-sprite-wrap" style="margin-bottom:12px;"></div>
+    <div id="enc-title" style="font-family:'Press Start 2P',cursive;font-size:clamp(8px,2.2vw,11px);color:#f8d030;margin-bottom:8px;line-height:1.7;"></div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:14px;">
+      <button onclick="encounterFight()" style="font-family:'Press Start 2P',cursive;font-size:clamp(8px,2vw,10px);background:#c02020;color:#fff;border:2px solid #fff;border-radius:8px;padding:10px 18px;cursor:pointer;">⚔ Fight</button>
+      <button onclick="encounterRun()"  style="font-family:'Press Start 2P',cursive;font-size:clamp(8px,2vw,10px);background:#444;color:#fff;border:2px solid #aaa;border-radius:8px;padding:10px 18px;cursor:pointer;">🏃 Run</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATTLE SCREEN -->
+<div id="battle-screen" style="display:none;position:fixed;inset:0;z-index:350;flex-direction:column;background:#1a2a1a;">
+  <!-- Battle field -->
+  <div id="battle-field" style="flex:1;position:relative;background:linear-gradient(180deg,#2a4a2a 0%,#3a6a3a 50%,#4a7a3a 100%);display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 20px;">
+    <!-- Enemy platform -->
+    <div style="display:flex;flex-direction:column;align-items:center;position:absolute;top:20px;right:24px;">
+      <div id="battle-enemy-hud" style="background:rgba(0,0,0,0.7);border:2px solid #f8d030;border-radius:8px;padding:6px 10px;margin-bottom:6px;min-width:140px;">
+        <div id="battle-enemy-name" style="font-family:'Press Start 2P',cursive;font-size:8px;color:#f8d030;"></div>
+        <div style="font-family:'Press Start 2P',cursive;font-size:7px;color:#aaa;margin-top:2px;">HP <span id="battle-enemy-hp-val"></span></div>
+        <div style="background:#333;border-radius:3px;height:7px;margin-top:3px;overflow:hidden;"><div id="battle-enemy-hp-bar" style="height:100%;background:#40d060;border-radius:3px;transition:width 0.4s;"></div></div>
+      </div>
+      <canvas id="battle-enemy-sprite" width="64" height="64" style="image-rendering:pixelated;width:96px;height:96px;"></canvas>
+    </div>
+    <!-- Player platform -->
+    <div style="display:flex;flex-direction:column;align-items:center;position:absolute;bottom:20px;left:24px;">
+      <canvas id="battle-player-sprite" width="64" height="64" style="image-rendering:pixelated;width:80px;height:80px;"></canvas>
+      <div id="battle-player-hud" style="background:rgba(0,0,0,0.7);border:2px solid #60c060;border-radius:8px;padding:6px 10px;margin-top:6px;min-width:140px;">
+        <div id="battle-player-name" style="font-family:'Press Start 2P',cursive;font-size:8px;color:#60c060;"></div>
+        <div style="font-family:'Press Start 2P',cursive;font-size:7px;color:#aaa;margin-top:2px;">HP <span id="battle-player-hp-val"></span></div>
+        <div style="background:#333;border-radius:3px;height:7px;margin-top:3px;overflow:hidden;"><div id="battle-player-hp-bar" style="height:100%;background:#40d060;border-radius:3px;transition:width 0.4s;"></div></div>
+      </div>
+    </div>
+  </div>
+  <!-- Battle log + actions -->
+  <div style="background:#0a1a0a;border-top:3px solid #f8d030;padding:10px 14px;min-height:120px;display:flex;flex-direction:column;gap:8px;">
+    <div id="battle-log" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);color:#e0e0e0;line-height:1.8;min-height:36px;"></div>
+    <div id="battle-actions" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;" id="battle-actions"></div>
+    <div id="battle-catch-btn" style="display:none;">
+      <button onclick="battleCatch()" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);background:#e63020;color:#fff;border:2px solid #fff;border-radius:8px;padding:8px 16px;cursor:pointer;width:100%;">🔴 Throw Pokéball!</button>
+    </div>
+    <button id="battle-continue-btn" onclick="battleContinue()" style="display:none;font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);background:#333;color:#fff;border:2px solid #aaa;border-radius:8px;padding:8px;cursor:pointer;">▼ Continue</button>
+  </div>
+</div>
+
 <!-- TRAVEL MENU - GBA Pokemon Style -->
 <div id="travel-menu">
   <div class="travel-window">
@@ -821,6 +867,7 @@ var roomMap = maps.home.data;
 var collisionBoxes = maps.home.collision;
 var player = { x:5.5, y:7.5, dir:0, frame:0, frameTimer:0 };
 var companion = null; // { name, x, y, frame, frameTimer }
+var activePokemon = null; // currently selected pokemon name (for battle + following)
 var inventory = { pokeballs: 0 };
 var pokeballs_claimed = false;
 var nurseDialogueActive = false;
@@ -862,7 +909,15 @@ var POKEMON_DATA = {
   Mudkip:     { type:'Water',  moves:[{name:'Tackle',dmg:40},{name:'Water Gun',dmg:55},{name:'Mud Slap',dmg:20},{name:'Surf',dmg:90}] },
   Bunnelby:   { type:'Normal', moves:[{name:'Quick Attack',dmg:40},{name:'Tackle',dmg:40},{name:'Dig',dmg:80},{name:'Return',dmg:102}] },
   Fletchling: { type:'Fire',   moves:[{name:'Tackle',dmg:40},{name:'Ember',dmg:60},{name:'Agility',dmg:0},{name:'Flare Blitz',dmg:120}] },
-  Scatterbug: { type:'Bug',    moves:[{name:'Tackle',dmg:35},{name:'String Shot',dmg:0},{name:'Stun Spore',dmg:0},{name:'Bug Buzz',dmg:90}] }
+  Scatterbug: { type:'Bug',    moves:[{name:'Tackle',dmg:35},{name:'String Shot',dmg:0},{name:'Stun Spore',dmg:0},{name:'Bug Buzz',dmg:90}] },
+  Ralts:      { type:'Psychic',moves:[{name:'Growl',dmg:0},{name:'Confusion',dmg:50},{name:'Psybeam',dmg:65},{name:'Psychic',dmg:90}] },
+  Gossifleur: { type:'Grass',  moves:[{name:'Leafage',dmg:40},{name:'Razorleaf',dmg:60},{name:'Sing',dmg:0},{name:'Petal Blizzard',dmg:90}] },
+  Wooper:     { type:'Water',  moves:[{name:'Tackle',dmg:40},{name:'Water Gun',dmg:55},{name:'Mud Shot',dmg:55},{name:'Earthquake',dmg:100}] },
+  Shinx:      { type:'Electric',moves:[{name:'Tackle',dmg:40},{name:'Spark',dmg:65},{name:'Bite',dmg:60},{name:'Thunderbolt',dmg:90}] },
+  Beldum:     { type:'Steel',  moves:[{name:'Take Down',dmg:45},{name:'Iron Head',dmg:80},{name:'Zen Headbutt',dmg:80},{name:'Meteor Mash',dmg:90}] },
+  Greavard:   { type:'Ghost',  moves:[{name:'Lick',dmg:30},{name:'Bite',dmg:60},{name:'Shadow Ball',dmg:80},{name:'Phantom Force',dmg:90}] },
+  Wobbuffet:  { type:'Psychic',moves:[{name:'Counter',dmg:0},{name:'Mirror Coat',dmg:0},{name:'Safeguard',dmg:0},{name:'Destiny Bond',dmg:0}] },
+  Delibird:   { type:'Ice',    moves:[{name:'Present',dmg:40},{name:'Ice Shard',dmg:40},{name:'Aerial Ace',dmg:60},{name:'Blizzard',dmg:110}] }
 };
 // Pokemon level+xp storage (keyed by name)
 var pokemonProgress = {};
@@ -975,7 +1030,7 @@ function gameLoop(ts) {
   var dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen && !dukeDialogueActive) {
+  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen && !dukeDialogueActive && !battleActive && !encounterActive) {
     var speed = 4;
     var dx = joystick.dx;
     var dy = joystick.dy;
@@ -1025,6 +1080,9 @@ function gameLoop(ts) {
       startMomCutscene();
     }
   }
+
+  // Wild encounter check (outside the main block so dt is always checked)
+  checkWildEncounter(dt);
 
   // Companion follow logic
   if (companion) {
@@ -1104,6 +1162,352 @@ function changeMap(name, spawnX, spawnY) {
   player.y = spawnY;
   player.dir = 0;
   player.frame = 0;
+}
+
+// ============================================================
+// WILD ENCOUNTER & BATTLE SYSTEM
+// ============================================================
+
+// Wild Pokemon that can appear (base forms only)
+var WILD_POKEMON = [
+  { name:'Fletchling', color:'#f05030' },
+  { name:'Caterpie',   color:'#a8b820' },
+  { name:'Pikachu',    color:'#f8d030' },
+  { name:'Geodude',    color:'#b8a038' },
+  { name:'Gastly',     color:'#705898' },
+  { name:'Magikarp',   color:'#f08030' },
+  { name:'Abra',       color:'#f8d030' },
+  { name:'Ralts',      color:'#f0f0f0' },
+  { name:'Bunnelby',   color:'#c8a040' },
+  { name:'Gossifleur', color:'#f0a0c0' },
+  { name:'Wooper',     color:'#7090e0' },
+  { name:'Shinx',      color:'#6060e0' },
+  { name:'Beldum',     color:'#788090' },
+  { name:'Greavard',   color:'#707080' },
+  { name:'Wobbuffet',  color:'#70c8f0' }
+];
+
+var battleActive = false;
+var encounterActive = false;
+var wildStepTimer = 0;
+var WILD_STEP_INTERVAL = 3.5; // seconds between possible encounters
+var currentWildPokemon = null;
+
+// Battle state
+var battle = {
+  playerHP: 0, playerMaxHP: 0,
+  enemyHP: 0,  enemyMaxHP: 0,
+  enemyPokemon: null,
+  playerTurn: true,
+  phase: 'action', // 'action','log','catch','end'
+  logQueue: [],
+  enemyFainted: false
+};
+
+// ---- ENCOUNTER TRIGGER ----
+function checkWildEncounter(dt) {
+  if (!starterChosen || !pokeballs_claimed) return;
+  if (currentMap !== 'wild') return;
+  if (battleActive || encounterActive || travelMenuOpen) return;
+
+  var col = Math.floor(player.x);
+  var row = Math.floor(player.y);
+  if (row < 0||row>=ROWS||col<0||col>=COLS) return;
+  var tile = roomMap[row][col];
+  if (tile !== T_TALL_GRASS) return;
+
+  var moving = Math.abs(joystick.dx) > 0.05 || Math.abs(joystick.dy) > 0.05;
+  if (!moving) return;
+
+  wildStepTimer += dt;
+  if (wildStepTimer < WILD_STEP_INTERVAL) return;
+  wildStepTimer = 0;
+
+  if (Math.random() < 0.45) {
+    triggerWildEncounter();
+  }
+}
+
+function triggerWildEncounter() {
+  var p = WILD_POKEMON[Math.floor(Math.random() * WILD_POKEMON.length)];
+  currentWildPokemon = p;
+  encounterActive = true;
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+
+  var popup = document.getElementById('encounter-popup');
+  document.getElementById('enc-title').innerHTML =
+    'A Wild <span style="color:#f8d030">' + p.name + '</span><br>has Appeared!<br><br>What will you do?';
+
+  // Draw sprite in popup
+  var wrap = document.getElementById('enc-sprite-wrap');
+  var cv = document.createElement('canvas');
+  cv.width = 48; cv.height = 48;
+  cv.style.cssText = 'image-rendering:pixelated;width:80px;height:80px;';
+  drawPokedexSpriteBig(cv.getContext('2d'), p.name, p.color);
+  wrap.innerHTML = ''; wrap.appendChild(cv);
+
+  popup.style.display = 'flex';
+}
+
+function encounterRun() {
+  document.getElementById('encounter-popup').style.display = 'none';
+  encounterActive = false;
+  currentWildPokemon = null;
+  wildStepTimer = 0;
+}
+
+function encounterFight() {
+  document.getElementById('encounter-popup').style.display = 'none';
+  encounterActive = false;
+  startBattle(currentWildPokemon);
+}
+
+// ---- BATTLE SYSTEM ----
+function startBattle(wildPoke) {
+  battleActive = true;
+  battle.enemyPokemon = wildPoke;
+  battle.enemyFainted = false;
+
+  // Player pokemon = starter or first caught
+  var myName = activePokemon || starterChosen;
+  var myProg = getPokemonProgress(myName);
+  battle.playerMaxHP = 120 + (myProg.level - 1) * 15;
+  battle.playerHP = battle.playerMaxHP;
+  battle.playerName = myName;
+
+  // Enemy level = 1-5
+  var enemyLevel = Math.floor(Math.random() * 5) + 1;
+  battle.enemyMaxHP = 90 + (enemyLevel - 1) * 12;
+  battle.enemyHP = battle.enemyMaxHP;
+  battle.enemyLevel = enemyLevel;
+  battle.playerTurn = true;
+  battle.phase = 'action';
+  battle.logQueue = [];
+
+  var bs = document.getElementById('battle-screen');
+  bs.style.display = 'flex';
+
+  // Draw sprites
+  drawBattleSprite('battle-player-sprite', myName,
+    (POKEMON_DATA[myName] || {color:'#f08030'}).color || '#f08030', false);
+  drawBattleSprite('battle-enemy-sprite', wildPoke.name, wildPoke.color, true);
+
+  // Set HUD
+  document.getElementById('battle-player-name').textContent = myName + ' Lv.' + myProg.level;
+  document.getElementById('battle-enemy-name').textContent  = wildPoke.name + ' Lv.' + enemyLevel;
+  updateBattleHUD();
+
+  showBattleLog('A wild ' + wildPoke.name + ' appeared!', function(){
+    showBattleActions();
+  });
+}
+
+function drawBattleSprite(canvasId, name, color, flip) {
+  var cv = document.getElementById(canvasId);
+  if (!cv) return;
+  var ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,64,64);
+  if (flip) { ctx.save(); ctx.scale(-1,1); ctx.translate(-64,0); }
+  // Body
+  ctx.fillStyle = color; ctx.fillRect(14,14,36,32);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(14,36,36,10);
+  // Eyes
+  ctx.fillStyle = '#fff'; ctx.fillRect(18,18,10,10); ctx.fillRect(36,18,10,10);
+  ctx.fillStyle = '#111'; ctx.fillRect(21,21,5,5); ctx.fillRect(39,21,5,5);
+  ctx.fillStyle = '#fff'; ctx.fillRect(22,22,2,2); ctx.fillRect(40,22,2,2);
+  // Mouth
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(22,36,20,3);
+  // Shine
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(14,14,8,32);
+  // Shadow below
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(32,54,18,5,0,0,Math.PI*2); ctx.fill();
+  if (flip) ctx.restore();
+}
+
+function updateBattleHUD() {
+  var pp = Math.max(0, Math.round(battle.playerHP / battle.playerMaxHP * 100));
+  var ep = Math.max(0, Math.round(battle.enemyHP  / battle.enemyMaxHP  * 100));
+  document.getElementById('battle-player-hp-val').textContent = battle.playerHP + '/' + battle.playerMaxHP;
+  document.getElementById('battle-enemy-hp-val').textContent  = battle.enemyHP  + '/' + battle.enemyMaxHP;
+  document.getElementById('battle-player-hp-bar').style.width = pp + '%';
+  document.getElementById('battle-enemy-hp-bar').style.width  = ep + '%';
+  document.getElementById('battle-player-hp-bar').style.background = pp > 50 ? '#40d060' : pp > 25 ? '#f8c030' : '#e03020';
+  document.getElementById('battle-enemy-hp-bar').style.background  = ep > 50 ? '#40d060' : ep > 25 ? '#f8c030' : '#e03020';
+}
+
+function showBattleLog(msg, callback) {
+  var log = document.getElementById('battle-log');
+  log.textContent = msg;
+  hideBattleActions();
+  document.getElementById('battle-continue-btn').style.display = 'block';
+  battle._pendingCallback = callback || null;
+}
+
+function hideBattleActions() {
+  document.getElementById('battle-actions').style.display = 'none';
+  document.getElementById('battle-catch-btn').style.display = 'none';
+  document.getElementById('battle-continue-btn').style.display = 'none';
+}
+
+function battleContinue() {
+  document.getElementById('battle-continue-btn').style.display = 'none';
+  if (battle._pendingCallback) { var cb = battle._pendingCallback; battle._pendingCallback = null; cb(); }
+}
+
+function showBattleActions() {
+  if (battle.phase === 'end') return;
+  hideBattleActions();
+  document.getElementById('battle-log').textContent = 'What will ' + battle.playerName + ' do?';
+  // Build move buttons
+  var data = POKEMON_DATA[battle.playerName] || { moves:[{name:'Tackle',dmg:40}] };
+  var actDiv = document.getElementById('battle-actions');
+  actDiv.innerHTML = '';
+  actDiv.style.display = 'grid';
+  data.moves.forEach(function(m) {
+    var btn = document.createElement('button');
+    btn.style.cssText = 'font-family:"Press Start 2P",cursive;font-size:clamp(6px,1.5vw,8px);background:#1a3a1a;color:#fff;border:2px solid #60a060;border-radius:6px;padding:7px 5px;cursor:pointer;';
+    btn.textContent = m.name + (m.dmg > 0 ? ' (' + m.dmg + ')' : ' (Status)');
+    btn.onclick = function(){ playerAttack(m); };
+    actDiv.appendChild(btn);
+  });
+
+  // Catch button if enemy fainted
+  if (battle.enemyFainted && inventory.pokeballs > 0) {
+    document.getElementById('battle-catch-btn').style.display = 'block';
+  }
+}
+
+function playerAttack(move) {
+  if (!battle.playerTurn || battle.phase !== 'action') return;
+  hideBattleActions();
+  battle.playerTurn = false;
+
+  var dmg = move.dmg === 0 ? 0 : Math.max(1, move.dmg + Math.floor(Math.random()*10) - 5);
+  battle.enemyHP = Math.max(0, battle.enemyHP - dmg);
+  updateBattleHUD();
+
+  var msg = battle.playerName + ' used ' + move.name + '!';
+  if (dmg > 0) msg += '\nDealt ' + dmg + ' damage!';
+  else msg += '\n' + battle.enemyPokemon.name + '\'s stats changed!';
+
+  if (battle.enemyHP <= 0) {
+    battle.enemyFainted = true;
+    showBattleLog(msg + '\n' + battle.enemyPokemon.name + ' fainted!', function(){
+      endBattleWin();
+    });
+  } else {
+    showBattleLog(msg, function(){ enemyAttack(); });
+  }
+}
+
+function enemyAttack() {
+  // Enemy picks random move from its data
+  var data = POKEMON_DATA[battle.enemyPokemon.name] || { moves:[{name:'Tackle',dmg:35}] };
+  var move = data.moves[Math.floor(Math.random() * data.moves.length)];
+  var dmg = move.dmg === 0 ? 0 : Math.max(1, Math.floor(move.dmg * 0.6) + Math.floor(Math.random()*6) - 3);
+  battle.playerHP = Math.max(0, battle.playerHP - dmg);
+  updateBattleHUD();
+
+  var msg = battle.enemyPokemon.name + ' used ' + move.name + '!';
+  if (dmg > 0) msg += '\nDealt ' + dmg + ' damage!';
+
+  if (battle.playerHP <= 0) {
+    showBattleLog(msg + '\n' + battle.playerName + ' fainted!', function(){
+      endBattleLose();
+    });
+  } else {
+    battle.playerTurn = true;
+    showBattleLog(msg, function(){ showBattleActions(); });
+  }
+}
+
+function endBattleWin() {
+  battle.phase = 'end';
+  var myProg = getPokemonProgress(battle.playerName);
+  var xpGain = 30 + battle.enemyLevel * 10;
+  myProg.xp += xpGain;
+  var levelled = false;
+  while (myProg.xp >= myProg.level * 100) {
+    myProg.xp -= myProg.level * 100;
+    myProg.level++;
+    levelled = true;
+  }
+  var msg = battle.enemyPokemon.name + ' was defeated!\n+' + xpGain + ' XP for ' + battle.playerName + '!';
+  if (levelled) msg += '\n' + battle.playerName + ' grew to Lv.' + myProg.level + '!';
+
+  if (inventory.pokeballs > 0) {
+    msg += '\nThrow a Pokéball to catch it!';
+    showBattleLog(msg, function(){
+      document.getElementById('battle-log').textContent = 'Throw a Pokéball?';
+      document.getElementById('battle-catch-btn').style.display = 'block';
+      // Also add "leave" option
+      var skipBtn = document.createElement('button');
+      skipBtn.style.cssText = 'font-family:"Press Start 2P",cursive;font-size:clamp(7px,1.8vw,9px);background:#333;color:#fff;border:2px solid #aaa;border-radius:8px;padding:8px;cursor:pointer;margin-top:6px;width:100%';
+      skipBtn.textContent = 'Leave it';
+      skipBtn.onclick = closeBattle;
+      document.getElementById('battle-catch-btn').after(skipBtn);
+    });
+  } else {
+    showBattleLog(msg + '\n(No Pokéballs left!)', closeBattle);
+  }
+}
+
+function endBattleLose() {
+  battle.phase = 'end';
+  showBattleLog(battle.playerName + ' fainted!\nYou blacked out...', function(){
+    // Heal player pokemon back
+    var myProg = getPokemonProgress(battle.playerName);
+    closeBattle();
+  });
+}
+
+function battleCatch() {
+  if (inventory.pokeballs <= 0) return;
+  inventory.pokeballs--;
+  updateHUD();
+  document.getElementById('battle-catch-btn').style.display = 'none';
+
+  var catchChance = 0.65;
+  var caught = Math.random() < catchChance;
+
+  if (caught) {
+    if (caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
+      caughtPokemon.push(battle.enemyPokemon.name);
+    }
+    // XP for catching
+    var myProg = getPokemonProgress(battle.playerName);
+    var xpGain = 50 + battle.enemyLevel * 15;
+    myProg.xp += xpGain;
+    var levelled = false;
+    while (myProg.xp >= myProg.level * 100) {
+      myProg.xp -= myProg.level * 100;
+      myProg.level++;
+      levelled = true;
+    }
+    var msg = 'Gotcha! ' + battle.enemyPokemon.name + '\nwas caught!\n+' + xpGain + ' XP!';
+    if (levelled) msg += '\n' + battle.playerName + ' grew to Lv.' + myProg.level + '!';
+    showBattleLog(msg, closeBattle);
+  } else {
+    showBattleLog(battle.enemyPokemon.name + ' broke free!\nTry again?', function(){
+      document.getElementById('battle-catch-btn').style.display = inventory.pokeballs > 0 ? 'block' : 'none';
+      if (inventory.pokeballs === 0) {
+        document.getElementById('battle-log').textContent = 'No more Pokéballs!';
+        document.getElementById('battle-continue-btn').style.display = 'block';
+        battle._pendingCallback = closeBattle;
+      }
+    });
+  }
+}
+
+function closeBattle() {
+  document.getElementById('battle-screen').style.display = 'none';
+  battleActive = false;
+  battle.phase = 'action';
+  currentWildPokemon = null;
+  wildStepTimer = 0;
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+  document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
 }
 
 // ============================================================
@@ -1327,41 +1731,57 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================================
 // POKÉDEX
 // ============================================================
-var allPokemon = [
-  // Starters (caught by choosing)
-  { num:'#001', name:'Charmander',  color:'#f08030', how:'starter', evo:'Charmeleon',  evoLevel:16 },
-  { num:'#002', name:'Charmeleon',  color:'#e06020', how:'evo',     evo:'Charizard',   evoLevel:36 },
-  { num:'#003', name:'Charizard',   color:'#c04010', how:'evo',     evo:null,          evoLevel:null },
-  { num:'#001', name:'Froakie',     color:'#6890f0', how:'starter', evo:'Frogadier',   evoLevel:16 },
-  { num:'#002', name:'Frogadier',   color:'#5070d0', how:'evo',     evo:'Greninja',    evoLevel:36 },
-  { num:'#003', name:'Greninja',    color:'#4060c0', how:'evo',     evo:null,          evoLevel:null },
-  { num:'#001', name:'Treecko',     color:'#78c850', how:'starter', evo:'Grovyle',     evoLevel:16 },
-  { num:'#002', name:'Grovyle',     color:'#58a030', how:'evo',     evo:'Sceptile',    evoLevel:36 },
-  { num:'#003', name:'Sceptile',    color:'#38801a', how:'evo',     evo:null,          evoLevel:null },
-  // Wild Pokemon
-  { num:'#004', name:'Fletchling',  color:'#f05030', how:'wild',    evo:'Fletchinder', evoLevel:17 },
-  { num:'#005', name:'Fletchinder', color:'#d03010', how:'evo',     evo:'Talonflame',  evoLevel:35 },
-  { num:'#006', name:'Talonflame',  color:'#b02008', how:'evo',     evo:null,          evoLevel:null },
-  { num:'#007', name:'Hawlucha',    color:'#78c850', how:'wild',    evo:null,          evoLevel:null },
-  { num:'#008', name:'Shinx',       color:'#6060e0', how:'wild',    evo:'Luxio',       evoLevel:15 },
-  { num:'#009', name:'Luxio',       color:'#4040c0', how:'evo',     evo:'Luxray',      evoLevel:30 },
-  { num:'#010', name:'Luxray',      color:'#2020a0', how:'evo',     evo:null,          evoLevel:null },
-  { num:'#011', name:'Beldum',      color:'#788090', how:'wild',    evo:'Metang',      evoLevel:20 },
-  { num:'#012', name:'Metang',      color:'#6070a0', how:'evo',     evo:'Metagross',   evoLevel:45 },
-  { num:'#013', name:'Metagross',   color:'#4050a0', how:'evo',     evo:null,          evoLevel:null },
-  { num:'#014', name:'Pikachu',     color:'#f8d030', how:'wild',    evo:null,          evoLevel:null },
-  { num:'#015', name:'Wobbuffet',   color:'#70c8f0', how:'wild',    evo:null,          evoLevel:null },
-  { num:'#016', name:'Delibird',    color:'#f05050', how:'wild',    evo:null,          evoLevel:null },
-  { num:'#017', name:'Ralts',       color:'#f0f0f0', how:'wild',    evo:'Kirlia',      evoLevel:20 },
-  { num:'#018', name:'Kirlia',      color:'#e0d0f0', how:'evo',     evo:'Gardevoir',   evoLevel:30 },
-  { num:'#019', name:'Gardevoir',   color:'#c0b0f0', how:'evo',     evo:null,          evoLevel:null },
-  { num:'#020', name:'Gossifleur',  color:'#f0a0c0', how:'wild',    evo:'Eldegoss',    evoLevel:20 },
-  { num:'#021', name:'Eldegoss',    color:'#e090b0', how:'evo',     evo:null,          evoLevel:null },
-  { num:'#022', name:'Wooper',      color:'#7090e0', how:'wild',    evo:'Quagsire',    evoLevel:20 },
-  { num:'#023', name:'Quagsire',    color:'#5070c0', how:'evo',     evo:null,          evoLevel:null },
-  { num:'#024', name:'Greavard',    color:'#707080', how:'wild',    evo:'Houndstone',  evoLevel:30 },
-  { num:'#025', name:'Houndstone',  color:'#505060', how:'evo',     evo:null,          evoLevel:null }
+var ALL_STARTERS = {
+  Charmander: [
+    { num:'#001', name:'Charmander',  color:'#f08030', how:'starter', evo:'Charmeleon',  evoLevel:16 },
+    { num:'#002', name:'Charmeleon',  color:'#e06020', how:'evo',     evo:'Charizard',   evoLevel:36 },
+    { num:'#003', name:'Charizard',   color:'#c04010', how:'evo',     evo:null,          evoLevel:null }
+  ],
+  Froakie: [
+    { num:'#001', name:'Froakie',     color:'#6890f0', how:'starter', evo:'Frogadier',   evoLevel:16 },
+    { num:'#002', name:'Frogadier',   color:'#5070d0', how:'evo',     evo:'Greninja',    evoLevel:36 },
+    { num:'#003', name:'Greninja',    color:'#4060c0', how:'evo',     evo:null,          evoLevel:null }
+  ],
+  Treecko: [
+    { num:'#001', name:'Treecko',     color:'#78c850', how:'starter', evo:'Grovyle',     evoLevel:16 },
+    { num:'#002', name:'Grovyle',     color:'#58a030', how:'evo',     evo:'Sceptile',    evoLevel:36 },
+    { num:'#003', name:'Sceptile',    color:'#38801a', how:'evo',     evo:null,          evoLevel:null }
+  ]
+};
+
+var WILD_POKEMON = [
+  { num:'#004', name:'Fletchling',  color:'#f05030', how:'wild', evo:'Fletchinder', evoLevel:17 },
+  { num:'#005', name:'Fletchinder', color:'#d03010', how:'evo',  evo:'Talonflame',  evoLevel:35 },
+  { num:'#006', name:'Talonflame',  color:'#b02008', how:'evo',  evo:null,          evoLevel:null },
+  { num:'#007', name:'Hawlucha',    color:'#78c850', how:'wild', evo:null,          evoLevel:null },
+  { num:'#008', name:'Shinx',       color:'#6060e0', how:'wild', evo:'Luxio',       evoLevel:15 },
+  { num:'#009', name:'Luxio',       color:'#4040c0', how:'evo',  evo:'Luxray',      evoLevel:30 },
+  { num:'#010', name:'Luxray',      color:'#2020a0', how:'evo',  evo:null,          evoLevel:null },
+  { num:'#011', name:'Beldum',      color:'#788090', how:'wild', evo:'Metang',      evoLevel:20 },
+  { num:'#012', name:'Metang',      color:'#6070a0', how:'evo',  evo:'Metagross',   evoLevel:45 },
+  { num:'#013', name:'Metagross',   color:'#4050a0', how:'evo',  evo:null,          evoLevel:null },
+  { num:'#014', name:'Pikachu',     color:'#f8d030', how:'wild', evo:null,          evoLevel:null },
+  { num:'#015', name:'Wobbuffet',   color:'#70c8f0', how:'wild', evo:null,          evoLevel:null },
+  { num:'#016', name:'Delibird',    color:'#f05050', how:'wild', evo:null,          evoLevel:null },
+  { num:'#017', name:'Ralts',       color:'#f0f0f0', how:'wild', evo:'Kirlia',      evoLevel:20 },
+  { num:'#018', name:'Kirlia',      color:'#e0d0f0', how:'evo',  evo:'Gardevoir',   evoLevel:30 },
+  { num:'#019', name:'Gardevoir',   color:'#c0b0f0', how:'evo',  evo:null,          evoLevel:null },
+  { num:'#020', name:'Gossifleur',  color:'#f0a0c0', how:'wild', evo:'Eldegoss',    evoLevel:20 },
+  { num:'#021', name:'Eldegoss',    color:'#e090b0', how:'evo',  evo:null,          evoLevel:null },
+  { num:'#022', name:'Wooper',      color:'#7090e0', how:'wild', evo:'Quagsire',    evoLevel:20 },
+  { num:'#023', name:'Quagsire',    color:'#5070c0', how:'evo',  evo:null,          evoLevel:null },
+  { num:'#024', name:'Greavard',    color:'#707080', how:'wild', evo:'Houndstone',  evoLevel:30 },
+  { num:'#025', name:'Houndstone',  color:'#505060', how:'evo',  evo:null,          evoLevel:null }
 ];
+
+function getAllPokemon() {
+  var starterLine = starterChosen && ALL_STARTERS[starterChosen] ? ALL_STARTERS[starterChosen] : [
+    { num:'#001', name:'???', color:'#888', how:'starter', evo:null, evoLevel:null },
+    { num:'#002', name:'???', color:'#777', how:'evo',     evo:null, evoLevel:null },
+    { num:'#003', name:'???', color:'#666', how:'evo',     evo:null, evoLevel:null }
+  ];
+  return starterLine.concat(WILD_POKEMON);
+}
 
 function togglePokedex() {
   pokedexOpen = !pokedexOpen;
@@ -1382,23 +1802,60 @@ function pokedexBack() {
   document.getElementById('pokedex-title').textContent = '📖 POKÉDEX';
 }
 
+function resolveEntry(p) {
+  // For starter slots (#001-003), show the correct pokemon based on chosen starter
+  if (p.how === 'starter' || (p.alt && p.num <= '#003')) {
+    if (!starterChosen) return { name: p.name, color: p.color, p: p }; // default
+    // #001 = starter itself
+    if (p.num === '#001') {
+      var name = starterChosen;
+      var color = p.colorAlt && p.colorAlt[name] ? p.colorAlt[name] : p.color;
+      if (name === p.name) color = p.color;
+      return { name: name, color: color, p: p };
+    }
+    // #002 = evo of starter
+    if (p.num === '#002') {
+      var evoMap = { Charmander:'Charmeleon', Froakie:'Frogadier', Treecko:'Grovyle' };
+      var colorMap = { Charmeleon:'#e06020', Frogadier:'#5070d0', Grovyle:'#58a030' };
+      var name = evoMap[starterChosen] || p.name;
+      return { name: name, color: colorMap[name] || p.color, p: p };
+    }
+    // #003 = final evo
+    if (p.num === '#003') {
+      var evoMap = { Charmander:'Charizard', Froakie:'Greninja', Treecko:'Sceptile' };
+      var colorMap = { Charizard:'#c04010', Greninja:'#4060c0', Sceptile:'#38801a' };
+      var name = evoMap[starterChosen] || p.name;
+      return { name: name, color: colorMap[name] || p.color, p: p };
+    }
+  }
+  return { name: p.name, color: p.color, p: p };
+}
+
 function renderPokedex() {
   pokedexBack();
   var list = document.getElementById('pokedex-list');
   list.innerHTML = '';
-  allPokemon.forEach(function(p) {
-    var caught = caughtPokemon.indexOf(p.name) !== -1;
-    if (starterChosen && p.name === starterChosen) caught = true;
+  getAllPokemon().forEach(function(p) {
+    var resolved = resolveEntry(p);
+    var rname = resolved.name;
+    var rcolor = resolved.color;
+    var caught = caughtPokemon.indexOf(rname) !== -1;
+    if (starterChosen && rname === starterChosen) caught = true;
+    // Evo lines: caught if previous evo is in caughtPokemon (for display - actual catch needed separately)
     var entry = document.createElement('div');
     entry.className = 'pokedex-entry ' + (caught ? 'caught' : 'locked');
     var cv = document.createElement('canvas');
     cv.width = 32; cv.height = 32; cv.className = 'pokedex-sprite';
-    if (caught) drawPokedexSprite(cv.getContext('2d'), p.name, p.color);
-    else { var ctx2=cv.getContext('2d'); ctx2.fillStyle='#444'; ctx2.font='20px sans-serif'; ctx2.fillText('?',8,24); }
+    if (caught) drawPokedexSprite(cv.getContext('2d'), rname, rcolor);
+    else { var ctx2=cv.getContext('2d'); ctx2.fillStyle='#555'; ctx2.font='18px sans-serif'; ctx2.textAlign='center'; ctx2.fillText('?',16,24); }
+    var isActive = (activePokemon === rname);
     entry.innerHTML = '<span class="pokedex-num">' + p.num + '</span>'
       + cv.outerHTML
-      + '<span class="pokedex-name">' + (caught ? p.name : '???') + '</span>';
-    if (caught) entry.addEventListener('click', function(){ showPokedexDetail(p); });
+      + '<span class="pokedex-name">' + (caught ? rname : '???') + '</span>'
+      + (isActive ? '<span style="font-family:\'Press Start 2P\',cursive;font-size:9px;color:#f8d030;margin-left:auto;">★</span>' : '');
+    if (caught) {
+      (function(rn, rc, pp){ entry.addEventListener('click', function(){ showPokedexDetail({name:rn,color:rc,num:pp.num}); }); })(rname, rcolor, p);
+    }
     list.appendChild(entry);
   });
 }
@@ -1409,7 +1866,10 @@ function showPokedexDetail(p) {
   var xpNeeded = prog.level * 100;
   var xpPct = Math.min(100, Math.round(prog.xp / xpNeeded * 100));
 
-  // Big sprite canvas
+  var maxHP = 120 + (prog.level - 1) * 15;
+  var currentHP = maxHP;
+  var hpColor = '#40d060';
+
   var cv = document.createElement('canvas');
   cv.width = 48; cv.height = 48; cv.style.cssText = 'image-rendering:pixelated;width:72px;height:72px;';
   drawPokedexSpriteBig(cv.getContext('2d'), p.name, p.color);
@@ -1423,6 +1883,11 @@ function showPokedexDetail(p) {
       + '</div>';
   }).join('');
 
+  var isActive = (activePokemon === p.name);
+  var activeBtnHTML = isActive
+    ? '<div style="font-family:\'Press Start 2P\',cursive;font-size:8px;color:#40d060;text-align:center;padding:10px;border:2px solid #40d060;border-radius:8px;margin-bottom:10px;">✓ Currently Active</div>'
+    : '<button onclick="setActivePokemon(\'' + p.name + '\',\'' + (p.color||'#f08030') + '\')" style="font-family:\'Press Start 2P\',cursive;font-size:clamp(7px,1.8vw,9px);width:100%;background:#1a4a2a;color:#80ff80;border:2px solid #40d060;border-radius:8px;padding:10px;cursor:pointer;margin-bottom:10px;">▶ Set as Active Pokémon</button>';
+
   var detail = document.getElementById('pokedex-detail');
   detail.innerHTML = '<div class="poke-detail-header">'
     + cv.outerHTML
@@ -1431,7 +1896,11 @@ function showPokedexDetail(p) {
     + '<div class="poke-detail-name">' + p.name + '</div>'
     + '<span class="poke-detail-type">' + data.type + '</span>'
     + '</div></div>'
-    + '<div class="poke-level-row"><span class="poke-level-label">Level</span><span class="poke-level-val">' + prog.level + '</span></div>'
+    + activeBtnHTML
+    + '<div class="poke-detail-section">❤ STATS</div>'
+    + '<div class="poke-level-row"><span class="poke-level-label">HP</span><span class="poke-level-val">' + currentHP + ' / ' + maxHP + '</span></div>'
+    + '<div class="poke-xp-bar-wrap"><div class="poke-xp-bar" style="width:100%;background:linear-gradient(90deg,' + hpColor + ',#80ff80)"></div></div>'
+    + '<div class="poke-level-row" style="margin-top:8px"><span class="poke-level-label">Level</span><span class="poke-level-val">' + prog.level + '</span></div>'
     + '<div class="poke-level-row"><span class="poke-level-label">XP</span><span class="poke-level-val">' + prog.xp + ' / ' + xpNeeded + '</span></div>'
     + '<div class="poke-xp-bar-wrap"><div class="poke-xp-bar" style="width:' + xpPct + '%"></div></div>'
     + '<div class="poke-detail-section">⚔ MOVESET</div>'
@@ -1441,6 +1910,17 @@ function showPokedexDetail(p) {
   detail.style.display = 'block';
   document.getElementById('pokedex-back-btn').style.display = 'inline-block';
   document.getElementById('pokedex-title').textContent = p.name.toUpperCase();
+}
+
+function setActivePokemon(name, color) {
+  activePokemon = name;
+  // Update companion follower
+  companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
+  // Refresh detail view to show "Currently Active"
+  var pData = null;
+  allPokemon.forEach(function(p){ if(p.name===name) pData=p; });
+  if (!pData) pData = { name:name, color:color, num:'???' };
+  showPokedexDetail(pData);
 }
 
 function getPokemonProgress(name) {
@@ -1699,6 +2179,7 @@ function selectStarter(name) {
   document.getElementById('oak-starter-area').style.display = 'none';
   document.getElementById('oak-dialogue-box').style.display = 'block';
   starterChosen = name;
+  activePokemon = name;
   companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
   oakPhase = 'congrats';
   oakCongratsLines = [
