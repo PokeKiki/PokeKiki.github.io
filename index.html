@@ -8,18 +8,19 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+  html { height: -webkit-fill-available; }
   body {
     background: #000;
     font-family: 'Press Start 2P', cursive;
     overflow: hidden;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%; min-height: 100vh; min-height: -webkit-fill-available;
     touch-action: manipulation;
     user-select: none;
   }
 
   /* ===== SCREEN MANAGER ===== */
-  .screen { position: absolute; inset: 0; display: none; }
+  .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; }
   .screen.active { display: flex; }
 
   /* ===== TITLE SCREEN ===== */
