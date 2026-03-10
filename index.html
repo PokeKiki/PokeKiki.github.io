@@ -344,6 +344,69 @@
     transform: translate(-50%, -50%);
     pointer-events: none;
   }
+
+  /* ===== TRAVEL MENU ===== */
+  #travel-menu {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+  }
+  #travel-menu.show { display: flex; }
+
+  .travel-box {
+    background: #1a1a2e;
+    border: 3px solid #5555aa;
+    border-radius: 12px;
+    padding: 24px 28px;
+    max-width: 320px;
+    width: 88vw;
+    box-shadow: 0 0 40px rgba(80,80,200,0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .travel-question {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(7px, 2vw, 10px);
+    color: #fff;
+    text-align: center;
+    line-height: 1.9;
+  }
+
+  .travel-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .travel-btn {
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(7px, 2vw, 9px);
+    background: #2a2a4a;
+    color: #fff;
+    border: 2px solid #5555aa;
+    border-radius: 8px;
+    padding: 10px 8px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .travel-btn:active, .travel-btn:hover {
+    background: #4444aa;
+    border-color: #aaaaff;
+  }
+  .travel-icon { font-size: 18px; }
 </style>
 <script>
   // Fix iOS/iPad full screen height
@@ -811,6 +874,11 @@ function gameLoop(ts) {
     player.frameTimer = 0;
   }
 
+  // Door trigger — red mat is at row 9, cols 5-6 (tile units)
+  if (!travelMenuOpen && player.y > 8.7 && player.x > 4.8 && player.x < 7.2) {
+    showTravelMenu();
+  }
+
   drawGame();
 }
 
@@ -1064,5 +1132,25 @@ function drawPlayer(c, px, py, dir, frame) {
 }
 
 </script>
+<!-- ===== TRAVEL MENU ===== -->
+<div id="travel-menu">
+  <div class="travel-box">
+    <div class="travel-question">Where do you want to go?</div>
+    <div class="travel-options">
+      <button class="travel-btn" onclick="travelTo('castle')">
+        <span class="travel-icon">🏰</span> Go to the Castle
+      </button>
+      <button class="travel-btn" onclick="travelTo('center')">
+        <span class="travel-icon">🏥</span> Pokémon Center
+      </button>
+      <button class="travel-btn" onclick="travelTo('wild')">
+        <span class="travel-icon">🌿</span> Go in the Wild
+      </button>
+      <button class="travel-btn" onclick="travelTo('stay')">
+        <span class="travel-icon">🏠</span> Stay where you are
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
