@@ -394,17 +394,17 @@
 </div>
 
 <!-- MOM CUTSCENE SCREEN -->
-<div id="mom-screen" class="screen" style="flex-direction:column;align-items:center;justify-content:flex-end;background:#000;">
+<div id="mom-screen" class="screen" style="flex-direction:column;align-items:center;justify-content:flex-end;background:#000;overflow:hidden;">
   <div class="gba-bar-top"></div>
   <div class="gba-bar-mid"></div>
   <div class="professor-area" style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;width:100%;">
     <div class="spotlight"></div>
     <canvas id="mom-prof-canvas" width="64" height="96" style="image-rendering:pixelated;width:clamp(80px,22vw,140px);height:auto;"></canvas>
   </div>
-  <div class="dialogue-box">
+  <div class="dialogue-box" style="flex-shrink:0;">
     <div class="dialogue-inner">
       <div style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.8vw,9px);color:#9050c0;margin-bottom:6px;">Mom</div>
-      <div id="mom-dialogue-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,2.2vw,11px);color:#111;line-height:1.9;white-space:pre-wrap;min-height:50px;"></div>
+      <div id="mom-dialogue-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,2.2vw,11px);color:#111;line-height:1.9;white-space:pre-wrap;"></div>
       <div id="mom-tap" class="tap-indicator">&#9660;</div>
     </div>
   </div>
@@ -689,7 +689,7 @@ function resizeCanvas() {
   gameCanvas.height = ROWS * TILE;
   var scaleX = wrap.clientWidth  / gameCanvas.width;
   var scaleY = wrap.clientHeight / gameCanvas.height;
-  var scale = Math.max(scaleX, scaleY); // fill entire screen
+  var scale = Math.min(scaleX, scaleY); // fit entire map on screen
   var w = Math.round(gameCanvas.width  * scale);
   var h = Math.round(gameCanvas.height * scale);
   gameCanvas.style.width  = w + 'px';
