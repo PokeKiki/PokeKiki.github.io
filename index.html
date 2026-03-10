@@ -141,12 +141,13 @@
   #username-confirm:active { transform:scale(0.95); }
 
   /* ===== GAME SCREEN ===== */
-  #game-screen { flex-direction: column; background: #000; align-items: center; justify-content: flex-start; }
-  #game-canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; width:100%; flex:1; min-height:0; }
+  #game-screen { background: #000; align-items: center; justify-content: center; }
+  #game-canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; position:absolute; top:0; left:0; }
   .joystick-wrap {
-    width: 100%; background: #1a1a2e; padding: 10px 0 18px;
-    display: flex; align-items: center; justify-content: flex-start;
-    padding-left: 30px; flex-shrink: 0; height: 140px;
+    position: absolute; bottom: 20px; left: 20px; z-index: 50;
+    width: 140px; height: 140px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; padding: 0;
   }
   #joystick-zone {
     position: relative; width: 120px; height: 120px; border-radius: 50%;
@@ -684,13 +685,18 @@ function startGame() {
 
 function resizeCanvas() {
   var wrap = document.getElementById('game-screen');
-  var jWrap = document.querySelector('.joystick-wrap');
   gameCanvas.width  = COLS * TILE;
   gameCanvas.height = ROWS * TILE;
-  var availH = wrap.clientHeight - jWrap.clientHeight;
-  var scale = Math.min(wrap.clientWidth / gameCanvas.width, availH / gameCanvas.height);
-  gameCanvas.style.width  = (gameCanvas.width  * scale) + 'px';
-  gameCanvas.style.height = (gameCanvas.height * scale) + 'px';
+  var scaleX = wrap.clientWidth  / gameCanvas.width;
+  var scaleY = wrap.clientHeight / gameCanvas.height;
+  var scale = Math.max(scaleX, scaleY); // fill entire screen
+  var w = Math.round(gameCanvas.width  * scale);
+  var h = Math.round(gameCanvas.height * scale);
+  gameCanvas.style.width  = w + 'px';
+  gameCanvas.style.height = h + 'px';
+  // Center canvas
+  gameCanvas.style.left = Math.round((wrap.clientWidth  - w) / 2) + 'px';
+  gameCanvas.style.top  = Math.round((wrap.clientHeight - h) / 2) + 'px';
 }
 
 function setupJoystick() {
