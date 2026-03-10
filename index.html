@@ -160,7 +160,60 @@
     top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none;
   }
 
-  /* ===== TRAVEL MENU - GBA Pokemon Style ===== */
+  /* ===== OAK CUTSCENE SCREEN ===== */
+  #oak-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    background: #000;
+    z-index: 300;
+  }
+  #oak-screen .professor-area { position: relative; width:100%; flex:1; display:flex; align-items:center; justify-content:center; }
+  #oak-screen .spotlight {
+    position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+    width:180px; height:80px;
+    background:radial-gradient(ellipse,rgba(255,240,150,0.7) 0%,transparent 70%); border-radius:50%;
+  }
+  #oak-prof-canvas { image-rendering:pixelated; width:clamp(80px,22vw,140px); height:auto; }
+  #oak-dialogue-box {
+    width:100%; background:#f8f8f8;
+    border-top:4px solid #38c070; border-bottom:4px solid #38c070;
+    padding:16px 20px 20px; position:relative; min-height:110px;
+  }
+  #oak-dialogue-box::before { content:''; position:absolute; top:-8px; left:0; right:0; height:4px; background:#1a8040; }
+  #oak-dialogue-box::after  { content:''; position:absolute; bottom:-8px; left:0; right:0; height:4px; background:#1a8040; }
+  .oak-dialogue-inner { border:3px solid #38c070; padding:12px 14px; background:#fff; min-height:80px; position:relative; }
+  #oak-dialogue-text { font-family:'Press Start 2P',cursive; font-size:clamp(7px,2.2vw,11px); color:#111; line-height:1.9; white-space:pre-wrap; min-height:50px; }
+  #oak-tap { position:absolute; bottom:8px; right:10px; font-size:10px; color:#38c070; display:none; animation:bounce 0.6s ease-in-out infinite alternate; }
+  #oak-tap.show { display:block; }
+
+  /* Starter choice area */
+  #oak-starter-area {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    background: #f8f8f8;
+    border-top: 4px solid #38c070;
+    padding: 14px 10px 20px;
+    gap: 12px;
+  }
+  .starter-label { font-family:'Press Start 2P',cursive; font-size:clamp(7px,2vw,10px); color:#111; text-align:center; line-height:1.9; }
+  .starter-balls { display:flex; gap:20px; justify-content:center; align-items:flex-end; margin-top:6px; }
+  .starter-ball {
+    display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer;
+    padding:8px 10px; border:2px solid transparent; border-radius:8px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .starter-ball:active, .starter-ball:hover { border-color:#38c070; background:rgba(56,192,112,0.1); }
+  .starter-ball canvas { image-rendering:pixelated; width:56px; height:56px; }
+  .starter-ball-label { font-family:'Press Start 2P',cursive; font-size:clamp(6px,1.8vw,8px); color:#111; text-align:center; }
+  .pokeball-icon { width:28px; height:28px; }
+
+  /* Fade in */
+  #oak-screen { animation: fadeInBlack 0.5s ease; }
+  @keyframes fadeInBlack { from{opacity:0} to{opacity:1} }
+
   #travel-menu {
     display: none; position: fixed; inset: 0; z-index: 200;
     background: rgba(0,0,0,0.5);
@@ -299,6 +352,59 @@
   <div class="joystick-wrap">
     <div id="joystick-zone">
       <div id="joystick-knob"></div>
+    </div>
+  </div>
+</div>
+
+<!-- OAK CUTSCENE SCREEN -->
+<div id="oak-screen" class="screen">
+  <div class="gba-bar-top"></div>
+  <div class="gba-bar-mid"></div>
+  <div class="professor-area">
+    <div class="spotlight"></div>
+    <canvas id="oak-prof-canvas" width="64" height="96"></canvas>
+  </div>
+  <div id="oak-dialogue-box">
+    <div class="oak-dialogue-inner">
+      <div id="oak-dialogue-text"></div>
+      <div id="oak-tap" class="tap-indicator">&#9660;</div>
+    </div>
+  </div>
+  <div id="oak-starter-area">
+    <div class="starter-label">Choose your first Pokemon!</div>
+    <div class="starter-balls">
+      <div class="starter-ball" onclick="selectStarter('Charmander')">
+        <canvas id="charm-canvas" width="48" height="48"></canvas>
+        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#f05050" stroke="#222" stroke-width="1.5"/><path d="M1 14 h26" stroke="#222" stroke-width="1.5"/><path d="M1 14 Q14 1 27 14" fill="#f05050"/><path d="M1 14 Q14 27 27 14" fill="#f0f0f0"/><circle cx="14" cy="14" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="#f0f0f0"/></svg>
+        <div class="starter-ball-label">Charmander</div>
+      </div>
+      <div class="starter-ball" onclick="selectStarter('Froakie')">
+        <canvas id="froakie-canvas" width="48" height="48"></canvas>
+        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#5080f0" stroke="#222" stroke-width="1.5"/><path d="M1 14 h26" stroke="#222" stroke-width="1.5"/><path d="M1 14 Q14 1 27 14" fill="#5080f0"/><path d="M1 14 Q14 27 27 14" fill="#f0f0f0"/><circle cx="14" cy="14" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="#f0f0f0"/></svg>
+        <div class="starter-ball-label">Froakie</div>
+      </div>
+      <div class="starter-ball" onclick="selectStarter('Treecko')">
+        <canvas id="treecko-canvas" width="48" height="48"></canvas>
+        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#40b840" stroke="#222" stroke-width="1.5"/><path d="M1 14 h26" stroke="#222" stroke-width="1.5"/><path d="M1 14 Q14 1 27 14" fill="#40b840"/><path d="M1 14 Q14 27 27 14" fill="#f0f0f0"/><circle cx="14" cy="14" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="#f0f0f0"/></svg>
+        <div class="starter-ball-label">Treecko</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOM CUTSCENE SCREEN -->
+<div id="mom-screen" class="screen" style="flex-direction:column;align-items:center;justify-content:flex-end;background:#000;">
+  <div class="gba-bar-top"></div>
+  <div class="gba-bar-mid"></div>
+  <div class="professor-area" style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;width:100%;">
+    <div class="spotlight"></div>
+    <canvas id="mom-prof-canvas" width="64" height="96" style="image-rendering:pixelated;width:clamp(80px,22vw,140px);height:auto;"></canvas>
+  </div>
+  <div class="dialogue-box">
+    <div class="dialogue-inner">
+      <div style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.8vw,9px);color:#9050c0;margin-bottom:6px;">Mom</div>
+      <div id="mom-dialogue-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,2.2vw,11px);color:#111;line-height:1.9;white-space:pre-wrap;min-height:50px;"></div>
+      <div id="mom-tap" class="tap-indicator">&#9660;</div>
     </div>
   </div>
 </div>
@@ -462,36 +568,108 @@ document.getElementById('username-field').addEventListener('keydown', function(e
 var TILE = 32;
 var COLS = 12;
 var ROWS = 10;
-var T_FLOOR = 0, T_WALL = 1, T_RUG = 2;
+var T_FLOOR=0, T_WALL=1, T_RUG=2, T_GRASS=3, T_TREE=4, T_WATER=5, T_CASTLE_FLOOR=6, T_CARPET=7, T_PC_FLOOR=8, T_PC_COUNTER=9, T_TALL_GRASS=10;
 
-var roomMap = [
-  [1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,2,2,2,2,0,0,0,1],
-  [1,0,0,0,2,2,2,2,0,0,0,1],
-  [1,0,0,0,2,2,2,2,0,0,0,1],
-  [1,0,0,0,2,2,2,2,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,1],
-  [1,1,1,1,1,0,0,1,1,1,1,1]
-];
+// ---- MAPS ----
+var maps = {
+  home: {
+    data: [
+      [1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,2,2,2,2,0,0,0,1],
+      [1,0,0,0,2,2,2,2,0,0,0,1],
+      [1,0,0,0,2,2,2,2,0,0,0,1],
+      [1,0,0,0,2,2,2,2,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,0,0,1,1,1,1,1]
+    ],
+    collision: [
+      {x:1.0,y:1.0,w:1.5,h:2.0},{x:5.0,y:1.0,w:2.0,h:1.5},{x:9.0,y:1.0,w:1.5,h:2.0},
+      {x:1.1,y:4.1,w:0.8,h:0.8},{x:1.1,y:6.1,w:0.8,h:0.8},
+      {x:10.1,y:4.1,w:0.8,h:0.8},{x:10.1,y:6.1,w:0.8,h:0.8}
+    ],
+    spawn: {x:5.5,y:7.5},
+    hasDoorTrigger: true
+  },
+  center: {
+    data: [
+      [1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,9,9,9,9,9,9,9,9,9,9,1],
+      [1,9,9,9,9,9,9,9,9,9,9,1],
+      [1,8,8,8,8,8,8,8,8,8,8,1],
+      [1,8,8,8,8,8,8,8,8,8,8,1],
+      [1,8,8,8,8,8,8,8,8,8,8,1],
+      [1,8,8,8,8,8,8,8,8,8,8,1],
+      [1,8,8,8,8,8,8,8,8,8,8,1],
+      [1,8,8,8,8,8,8,8,8,8,8,1],
+      [1,1,1,1,1,0,0,1,1,1,1,1]
+    ],
+    collision: [
+      {x:1,y:1,w:10,h:2},    // counter
+      {x:1,y:1,w:1,h:2},{x:10,y:1,w:1,h:2} // side walls of counter
+    ],
+    spawn: {x:5.5,y:7.5},
+    hasDoorTrigger: false,
+    hasReturnTrigger: true
+  },
+  wild: {
+    data: [
+      [4,4,4,4,4,4,4,4,4,4,4,4],
+      [4,3,3,3,3,3,3,3,3,3,3,4],
+      [4,3,10,10,3,3,3,10,10,3,3,4],
+      [4,3,10,10,3,3,3,10,10,3,3,4],
+      [4,3,3,3,3,3,3,3,3,3,3,4],
+      [4,3,3,3,5,5,3,3,3,3,3,4],
+      [4,3,3,3,5,5,3,10,10,3,3,4],
+      [4,3,10,3,3,3,3,10,10,3,3,4],
+      [4,3,3,3,3,3,3,3,3,3,3,4],
+      [4,4,4,4,4,0,0,4,4,4,4,4]
+    ],
+    collision: [
+      // trees (T=4 handled in isWalkable), water
+      {x:4,y:5,w:2,h:2}
+    ],
+    spawn: {x:5.5,y:7.5},
+    hasDoorTrigger: false,
+    hasReturnTrigger: true
+  },
+  castle: {
+    data: [
+      [1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,6,6,6,6,6,6,6,6,6,6,1],
+      [1,6,6,6,6,6,6,6,6,6,6,1],
+      [1,6,6,7,7,7,7,7,7,6,6,1],
+      [1,6,6,7,7,7,7,7,7,6,6,1],
+      [1,6,6,7,7,7,7,7,7,6,6,1],
+      [1,6,6,7,7,7,7,7,7,6,6,1],
+      [1,6,6,6,6,6,6,6,6,6,6,1],
+      [1,6,6,6,6,6,6,6,6,6,6,1],
+      [1,1,1,1,1,0,0,1,1,1,1,1]
+    ],
+    collision: [
+      {x:1,y:1,w:2,h:8},{x:9,y:1,w:2,h:8}, // side pillars
+      {x:2,y:1,w:8,h:1}                      // top banner
+    ],
+    spawn: {x:5.5,y:7.5},
+    hasDoorTrigger: false,
+    hasReturnTrigger: true
+  }
+};
 
-// Furniture collision boxes (in tile units)
-var collisionBoxes = [
-  { x:1.0, y:1.0, w:1.5, h:2.0 },  // bookshelf
-  { x:5.0, y:1.0, w:2.0, h:1.5 },  // TV
-  { x:9.0, y:1.0, w:1.5, h:2.0 },  // cabinet
-  { x:1.1, y:4.1, w:0.8, h:0.8 },  // plant left top
-  { x:1.1, y:6.1, w:0.8, h:0.8 },  // plant left bottom
-  { x:10.1,y:4.1, w:0.8, h:0.8 },  // plant right top
-  { x:10.1,y:6.1, w:0.8, h:0.8 }   // plant right bottom
-];
-
+var currentMap = 'home';
+var roomMap = maps.home.data;
+var collisionBoxes = maps.home.collision;
 var player = { x:5.5, y:7.5, dir:0, frame:0, frameTimer:0 };
+var companion = null; // { name, x, y, frame, frameTimer }
 var joystick = { dx:0, dy:0, active:false };
 var travelMenuOpen = false;
+var oakCutsceneActive = false;
+var starterChosen = false;
 var gameCanvas, gctx, lastTime = 0;
+var momCutsceneActive = false;
+var momCutsceneSeen = false;
 
 function startGame() {
   gameCanvas = document.getElementById('game-canvas');
@@ -500,6 +678,7 @@ function startGame() {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   setupJoystick();
+  // Mom cutscene uses its own click handler on mom-screen
   requestAnimationFrame(gameLoop);
 }
 
@@ -572,7 +751,8 @@ function isWalkable(nx, ny) {
     var col = Math.floor(corners[i][0]);
     var row = Math.floor(corners[i][1]);
     if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
-    if (roomMap[row][col] === T_WALL) return false;
+    var t = roomMap[row][col];
+    if (t === T_WALL || t === T_TREE || t === T_WATER || t === T_PC_COUNTER) return false;
   }
   for (var j = 0; j < collisionBoxes.length; j++) {
     var b = collisionBoxes[j];
@@ -586,7 +766,7 @@ function gameLoop(ts) {
   var dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  if (!travelMenuOpen) {
+  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive) {
     var speed = 4;
     var dx = joystick.dx;
     var dy = joystick.dy;
@@ -605,9 +785,39 @@ function gameLoop(ts) {
       player.frame = 0; player.frameTimer = 0;
     }
 
-    // Door trigger — bottom center mat
-    if (player.y > 8.72 && player.x > 4.6 && player.x < 7.4) {
+    // Door/return triggers
+    var mapCfg = maps[currentMap];
+    if (mapCfg.hasDoorTrigger && player.y > 8.6 && player.x > 4.6 && player.x < 7.4 && player.dir === 0) {
       showTravelMenu();
+    }
+    if (mapCfg.hasReturnTrigger && player.y > 8.6 && player.x > 4.6 && player.x < 7.4) {
+      changeMap('home', 5.5, 7.5);
+    }
+    // Wild sign trigger — player can walk through freely, no collision
+    if (currentMap === 'wild' && !starterChosen && !oakCutsceneActive
+        && player.x > 4.6 && player.x < 6.4 && player.y > 2.6 && player.y < 3.8) {
+      startOakCutscene();
+    }
+    // Mom NPC trigger — mom stands at col 8, row 7
+    if (currentMap === 'home' && !momCutsceneActive && !momCutsceneSeen
+        && player.x > 6.8 && player.x < 9.2 && player.y > 6.2 && player.y < 8.0) {
+      startMomCutscene();
+    }
+  }
+
+  // Companion follow logic
+  if (companion) {
+    var cdx = player.x - companion.x;
+    var cdy = player.y - companion.y;
+    var cdist = Math.sqrt(cdx*cdx + cdy*cdy);
+    if (cdist > 1.2) {
+      var cspeed = 3.5;
+      companion.x += (cdx/cdist) * cspeed * dt;
+      companion.y += (cdy/cdist) * cspeed * dt;
+      companion.frameTimer += dt;
+      if (companion.frameTimer > 0.18) { companion.frameTimer = 0; companion.frame = (companion.frame+1)%4; }
+    } else {
+      companion.frame = 0;
     }
   }
 
@@ -641,13 +851,293 @@ function showTravelMenu() {
 function travelTo(dest) {
   document.getElementById('travel-menu').classList.remove('show');
   travelMenuOpen = false;
-  player.y = 8.0; // push player back up from door
-
-  if (dest === 'castle') { alert('The Castle awaits... (coming soon!)'); }
-  else if (dest === 'center') { alert('Pokemon Center... (coming soon!)'); }
-  else if (dest === 'wild') { alert('Into the Wild... (coming soon!)'); }
-  // stay = do nothing, just close menu
+  if (dest === 'castle') { changeMap('castle', 5.5, 7.5); }
+  else if (dest === 'center') { changeMap('center', 5.5, 7.5); }
+  else if (dest === 'wild') { changeMap('wild', 5.5, 7.5); }
+  else { player.y = 7.8; } // stay
 }
+
+function changeMap(name, spawnX, spawnY) {
+  currentMap = name;
+  roomMap = maps[name].data;
+  collisionBoxes = maps[name].collision;
+  player.x = spawnX;
+  player.y = spawnY;
+  player.dir = 0;
+  player.frame = 0;
+}
+
+// ============================================================
+// MOM NPC DIALOGUE
+// ============================================================
+// ============================================================
+// MOM CUTSCENE
+// ============================================================
+var momDialogLines = [
+  "Head over to the red\ncarpet to discover\nnew areas!",
+  "But first, head to\nthe Wild Area to\nfind your first\nPokemon!"
+];
+var momDialogIndex = 0;
+var momTyping = false;
+var momTypeTimer = null;
+var momWaitTap = false;
+
+function startMomCutscene() {
+  momCutsceneActive = true;
+  momCutsceneSeen = true;
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+  momDialogIndex = 0;
+  document.getElementById('mom-screen').classList.add('active');
+  drawMomCanvas();
+  setTimeout(function(){ momRunLine(); }, 300);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('mom-screen').addEventListener('click', function() {
+    if (momCutsceneActive) advanceMomCutscene();
+  });
+});
+
+function drawMomCanvas() {
+  var canvas = document.getElementById('mom-prof-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  function dp(x,y,w,h,col){ ctx.fillStyle=col; ctx.fillRect(x,y,w,h); }
+  ctx.clearRect(0,0,64,96);
+  // Shoes
+  dp(18,88,10,6,'#3a2a1a'); dp(36,88,10,6,'#3a2a1a');
+  // Legs/skirt
+  dp(16,65,14,24,'#9050c0'); dp(34,65,14,24,'#9050c0');
+  // Dress body
+  dp(12,38,40,30,'#9050c0');
+  // Apron
+  dp(22,40,20,26,'#f0f0f0'); dp(24,42,16,22,'#e8e8e8');
+  // Arms
+  dp(6,40,8,20,'#9050c0'); dp(50,40,8,20,'#9050c0');
+  // Hands
+  dp(6,58,8,8,'#e8b090'); dp(50,58,8,8,'#e8b090');
+  // Neck
+  dp(26,30,12,10,'#e8b090');
+  // Head
+  dp(18,10,28,24,'#e8b090');
+  // Hair
+  dp(16,8,32,12,'#5a2a10');
+  dp(14,12,6,14,'#5a2a10'); dp(44,12,6,14,'#5a2a10');
+  // Bun top-right
+  dp(40,4,12,12,'#5a2a10'); dp(42,2,8,8,'#7a3a18');
+  // Eyes
+  dp(22,20,5,4,'#111'); dp(37,20,5,4,'#111');
+  dp(23,20,3,2,'#fff'); dp(38,20,3,2,'#fff');
+  // Smile
+  dp(24,28,4,2,'#c07060'); dp(36,28,4,2,'#c07060'); dp(28,30,8,2,'#c07060');
+}
+
+function momRunLine() {
+  var el = document.getElementById('mom-dialogue-text');
+  var tap = document.getElementById('mom-tap');
+  el.textContent = '';
+  tap.style.display = 'none';
+  momTyping = true;
+  momWaitTap = false;
+  var text = momDialogLines[momDialogIndex];
+  var i = 0;
+  function type() {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      momTypeTimer = setTimeout(type, 30);
+    } else {
+      momTyping = false;
+      tap.classList.add('show');
+      momWaitTap = true;
+    }
+  }
+  type();
+}
+
+function advanceMomCutscene() {
+  if (momTyping) {
+    clearTimeout(momTypeTimer);
+    momTyping = false;
+    document.getElementById('mom-dialogue-text').textContent = momDialogLines[momDialogIndex];
+    document.getElementById('mom-tap').classList.add('show');
+    momWaitTap = true;
+    return;
+  }
+  if (!momWaitTap) return;
+  momWaitTap = false;
+  momDialogIndex++;
+  if (momDialogIndex < momDialogLines.length) {
+    momRunLine();
+  } else {
+    // End cutscene
+    document.getElementById('mom-screen').classList.remove('active');
+    momCutsceneActive = false;
+    joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+    document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
+  }
+}
+
+// ============================================================
+// OAK CUTSCENE
+// ============================================================
+var oakDialogIndex = 0;
+var oakIsTyping = false;
+var oakTypeTimeout = null;
+var oakWaitingTap = false;
+var oakPhase = 'intro'; // 'intro' | 'choose'
+
+function startOakCutscene() {
+  oakCutsceneActive = true;
+  joystick.dx = 0; joystick.dy = 0;
+  oakPhase = 'intro';
+  oakDialogIndex = 0;
+  document.getElementById('oak-screen').classList.add('active');
+  drawOakProfCanvas();
+  setTimeout(function(){ oakRunDialogue(); }, 400);
+}
+
+function getOakDialogues() {
+  return [
+    'Hello again ' + username + '!',
+    'I see you have found your way here!',
+    'This is the Wild Area! Where you can catch Pokemon!',
+    'But first... I think you are ready to get your first Pokemon!'
+  ];
+}
+
+function oakRunDialogue() {
+  var lines = getOakDialogues();
+  if (oakDialogIndex >= lines.length) {
+    oakPhase = 'choose';
+    showStarterChoice();
+    return;
+  }
+  oakTypeText(lines[oakDialogIndex], function() {
+    document.getElementById('oak-tap').classList.add('show');
+    oakWaitingTap = true;
+  });
+}
+
+function oakTypeText(text, onDone) {
+  var el = document.getElementById('oak-dialogue-text');
+  el.textContent = '';
+  document.getElementById('oak-tap').classList.remove('show');
+  oakIsTyping = true;
+  var i = 0;
+  function type() {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      oakTypeTimeout = setTimeout(type, 30);
+    } else {
+      oakIsTyping = false;
+      if (onDone) onDone();
+    }
+  }
+  type();
+}
+
+function showStarterChoice() {
+  document.getElementById('oak-dialogue-box').style.display = 'none';
+  document.getElementById('oak-starter-area').style.display = 'flex';
+  drawStarterPreview('charm-canvas', 'Charmander');
+  drawStarterPreview('froakie-canvas', 'Froakie');
+  drawStarterPreview('treecko-canvas', 'Treecko');
+}
+
+function drawStarterPreview(canvasId, name) {
+  var cv = document.getElementById(canvasId);
+  if (!cv) return;
+  var c = cv.getContext('2d');
+  c.clearRect(0,0,48,48);
+  c.save();
+  c.translate(24, 32);
+  if (name === 'Charmander') {
+    c.fillStyle='#f86820'; c.fillRect(-8,-8,16,14);
+    c.fillStyle='#f8c070'; c.fillRect(-5,-3,10,8);
+    c.fillStyle='#f86820'; c.fillRect(-7,-18,14,12);
+    c.fillStyle='#111'; c.fillRect(-4,-13,3,3); c.fillRect(1,-13,3,3);
+    c.fillStyle='#fff'; c.fillRect(-3,-12,2,2); c.fillRect(2,-12,2,2);
+    c.fillStyle='#f86820'; c.fillRect(7,0,6,7);
+    c.fillStyle='#f8c020'; c.fillRect(9,-5,5,7);
+    c.fillStyle='#f84020'; c.fillRect(10,-8,4,5);
+    c.fillStyle='#f86820'; c.fillRect(-7,6,5,6); c.fillRect(2,6,5,6);
+    c.fillStyle='#c85010'; c.fillRect(-7,11,5,2); c.fillRect(2,11,5,2);
+  } else if (name === 'Froakie') {
+    c.fillStyle='#3878d8'; c.fillRect(-8,-6,16,14);
+    c.fillStyle='#f0f0f0';
+    c.beginPath(); c.arc(-3,3,5,0,Math.PI*2); c.fill();
+    c.beginPath(); c.arc(4,2,4,0,Math.PI*2); c.fill();
+    c.beginPath(); c.arc(0,0,4,0,Math.PI*2); c.fill();
+    c.fillStyle='#3070c8'; c.fillRect(-8,-18,16,14);
+    c.fillStyle='#fff'; c.fillRect(-7,-16,6,6); c.fillRect(1,-16,6,6);
+    c.fillStyle='#3878d8'; c.fillRect(-6,-15,4,4); c.fillRect(2,-15,4,4);
+    c.fillStyle='#111'; c.fillRect(-5,-14,2,2); c.fillRect(3,-14,2,2);
+    c.fillStyle='#3878d8'; c.fillRect(-8,8,6,7); c.fillRect(2,8,6,7);
+    c.fillStyle='#2060b8'; c.fillRect(-8,13,6,2); c.fillRect(2,13,6,2);
+  } else if (name === 'Treecko') {
+    c.fillStyle='#40b840'; c.fillRect(-7,-7,14,14);
+    c.fillStyle='#98e060'; c.fillRect(-4,-2,8,8);
+    c.fillStyle='#40b840'; c.fillRect(-8,-19,16,14);
+    c.fillStyle='#e04040'; c.fillRect(-6,-9,12,5);
+    c.fillStyle='#fff'; c.fillRect(-6,-17,5,5); c.fillRect(1,-17,5,5);
+    c.fillStyle='#111'; c.fillRect(-5,-16,3,3); c.fillRect(2,-16,3,3);
+    c.fillStyle='#309030'; c.fillRect(6,-3,8,12);
+    c.fillStyle='#40b840'; c.fillRect(7,-5,6,10);
+    c.fillStyle='#40b840'; c.fillRect(-7,7,5,7); c.fillRect(2,7,5,7);
+    c.fillStyle='#309030'; c.fillRect(-7,12,5,2); c.fillRect(2,12,5,2);
+  }
+  c.restore();
+}
+
+function selectStarter(name) {
+  document.getElementById('oak-starter-area').style.display = 'none';
+  document.getElementById('oak-dialogue-box').style.display = 'block';
+  var congrats = 'Congratulations! You have chosen ' + name + '!\nTake good care of your partner!';
+  oakTypeText(congrats, function(){
+    document.getElementById('oak-tap').classList.add('show');
+    document.getElementById('oak-tap').textContent = '▼ Tap to continue';
+    oakWaitingTap = true;
+    oakPhase = 'congrats';
+    starterChosen = name;
+    // Spawn companion behind player
+    companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('oak-screen').addEventListener('click', function(e) {
+    if (e.target.closest('.starter-ball')) return;
+    if (oakIsTyping) {
+      clearTimeout(oakTypeTimeout);
+      oakIsTyping = false;
+      var lines = getOakDialogues();
+      if (oakPhase === 'intro' && oakDialogIndex < lines.length) {
+        document.getElementById('oak-dialogue-text').textContent = lines[oakDialogIndex];
+        document.getElementById('oak-tap').classList.add('show');
+        oakWaitingTap = true;
+      }
+      return;
+    }
+    if (oakWaitingTap) {
+      oakWaitingTap = false;
+      document.getElementById('oak-tap').classList.remove('show');
+      if (oakPhase === 'intro') {
+        oakDialogIndex++;
+        oakRunDialogue();
+      } else if (oakPhase === 'congrats') {
+        // End cutscene — reset everything so player can move
+        document.getElementById('oak-screen').classList.remove('active');
+        oakCutsceneActive = false;
+        joystick.dx = 0;
+        joystick.dy = 0;
+        joystick.active = false;
+        document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
+        player.y = 4.8;
+      }
+    }
+  });
+});
 
 // ============================================================
 // DRAW GAME
@@ -662,47 +1152,413 @@ function drawGame() {
     for (var col = 0; col < COLS; col++) {
       var t = roomMap[r][col];
       var px = col*TILE, py = r*TILE;
-      if (t === T_WALL) {
-        c.fillStyle = '#5a6878';
-        c.fillRect(px,py,TILE,TILE);
-        c.fillStyle = '#4a5868';
-        c.fillRect(px+1,py+1,TILE-2,TILE/2-1);
-        c.fillRect(px+1,py+TILE/2+1,TILE-2,TILE/2-2);
-        c.strokeStyle = '#3a4858'; c.lineWidth = 1;
-        c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
-        c.beginPath(); c.moveTo(px,py+TILE/2); c.lineTo(px+TILE,py+TILE/2); c.stroke();
-      } else if (t === T_FLOOR) {
-        c.fillStyle = (r+col)%2===0 ? '#c8a878' : '#c0a070';
-        c.fillRect(px,py,TILE,TILE);
-        c.strokeStyle = '#a88858'; c.lineWidth = 0.5;
-        c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
-      } else if (t === T_RUG) {
-        c.fillStyle = '#8ab0d0';
-        c.fillRect(px,py,TILE,TILE);
-        c.strokeStyle = '#6090b8'; c.lineWidth = 1;
-        c.strokeRect(px+1,py+1,TILE-2,TILE-2);
-      }
+      drawTile(c, t, px, py, r, col);
     }
   }
 
-  // Red door mat - at very bottom of room in the wall gap
-  c.fillStyle = '#c05030';
-  c.fillRect(5*TILE+2, 9*TILE+2, TILE*2-4, 12);
-  c.fillStyle = '#a03010';
-  c.fillRect(5*TILE+5, 9*TILE+4, TILE*2-10, 7);
+  // Map-specific decorations
+  if (currentMap === 'home') drawHomeDecorations(c);
+  if (currentMap === 'center') drawCenterDecorations(c);
+  if (currentMap === 'wild') drawWildDecorations(c);
+  if (currentMap === 'castle') drawCastleDecorations(c);
 
-  // Furniture
+  drawPlayer(c, player.x*TILE, player.y*TILE, player.dir, player.frame);
+  if (companion) drawCompanion(c, companion.x*TILE, companion.y*TILE, companion.frame);
+}
+
+function drawTile(c, t, px, py, r, col) {
+  if (t === T_WALL) {
+    c.fillStyle = currentMap==='castle' ? '#606070' : '#5a6878';
+    c.fillRect(px,py,TILE,TILE);
+    c.fillStyle = currentMap==='castle' ? '#505060' : '#4a5868';
+    c.fillRect(px+1,py+1,TILE-2,TILE/2-1);
+    c.fillRect(px+1,py+TILE/2+1,TILE-2,TILE/2-2);
+    c.strokeStyle = currentMap==='castle' ? '#404050' : '#3a4858'; c.lineWidth=1;
+    c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+    c.beginPath(); c.moveTo(px,py+TILE/2); c.lineTo(px+TILE,py+TILE/2); c.stroke();
+  } else if (t === T_FLOOR) {
+    c.fillStyle = (r+col)%2===0 ? '#c8a878' : '#c0a070';
+    c.fillRect(px,py,TILE,TILE);
+    c.strokeStyle='#a88858'; c.lineWidth=0.5;
+    c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+  } else if (t === T_RUG) {
+    c.fillStyle='#8ab0d0'; c.fillRect(px,py,TILE,TILE);
+    c.strokeStyle='#6090b8'; c.lineWidth=1;
+    c.strokeRect(px+1,py+1,TILE-2,TILE-2);
+  } else if (t === T_GRASS) {
+    c.fillStyle = (r+col)%2===0 ? '#58a838' : '#50a030';
+    c.fillRect(px,py,TILE,TILE);
+    c.strokeStyle='#409020'; c.lineWidth=0.5;
+    c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+  } else if (t === T_TREE) {
+    // ground under tree
+    c.fillStyle='#409020'; c.fillRect(px,py,TILE,TILE);
+    // trunk
+    c.fillStyle='#6b3a1f'; c.fillRect(px+10,py+18,12,14);
+    // canopy
+    c.fillStyle='#2a8020'; c.fillRect(px+4,py+4,24,20);
+    c.fillStyle='#38a030'; c.fillRect(px+6,py+2,20,8);
+    c.fillStyle='#2a8020'; c.fillRect(px+2,py+8,28,14);
+  } else if (t === T_WATER) {
+    c.fillStyle = (r+col)%2===0 ? '#4080d8' : '#3878d0';
+    c.fillRect(px,py,TILE,TILE);
+    // wave lines
+    c.strokeStyle='rgba(255,255,255,0.3)'; c.lineWidth=1.5;
+    c.beginPath(); c.moveTo(px+4,py+10); c.quadraticCurveTo(px+12,py+6,px+20,py+10); c.stroke();
+    c.beginPath(); c.moveTo(px+8,py+20); c.quadraticCurveTo(px+16,py+16,px+24,py+20); c.stroke();
+  } else if (t === T_CASTLE_FLOOR) {
+    // grey stone floor
+    c.fillStyle = (r+col)%2===0 ? '#909090' : '#888888';
+    c.fillRect(px,py,TILE,TILE);
+    c.strokeStyle='#707070'; c.lineWidth=0.5;
+    c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+  } else if (t === T_CARPET) {
+    // Red royal carpet
+    c.fillStyle='#8b1020'; c.fillRect(px,py,TILE,TILE);
+    c.fillStyle='#aa1828'; c.fillRect(px+3,py+3,TILE-6,TILE-6);
+    // gold border detail
+    c.strokeStyle='#c8a820'; c.lineWidth=1.5;
+    c.strokeRect(px+2,py+2,TILE-4,TILE-4);
+  } else if (t === T_PC_FLOOR) {
+    // Pokemon center cream floor
+    c.fillStyle = (r+col)%2===0 ? '#f0ecd8' : '#ece8d4';
+    c.fillRect(px,py,TILE,TILE);
+    c.strokeStyle='#d8d4c0'; c.lineWidth=0.5;
+    c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+    // pokeball circle in center area
+    if (r===5 && col===5) {
+      c.strokeStyle='rgba(200,180,160,0.5)'; c.lineWidth=2;
+      c.beginPath(); c.arc(px+TILE/2,py+TILE/2,TILE/2-4,0,Math.PI*2); c.stroke();
+    }
+  } else if (t === T_PC_COUNTER) {
+    // Pink/red counter top
+    c.fillStyle='#e05870'; c.fillRect(px,py,TILE,TILE);
+    c.fillStyle='#f07080'; c.fillRect(px+2,py+2,TILE-4,TILE/2);
+    c.strokeStyle='#c04060'; c.lineWidth=1;
+    c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+  } else if (t === T_TALL_GRASS) {
+    c.fillStyle='#409020'; c.fillRect(px,py,TILE,TILE);
+    // tall grass blades
+    c.fillStyle='#50b828';
+    for (var gx=0; gx<4; gx++) {
+      c.fillRect(px+4+gx*7, py+8, 3, TILE-10);
+      c.fillRect(px+6+gx*7, py+4, 3, TILE-8);
+    }
+    c.fillStyle='#38a020';
+    for (var gx2=0; gx2<3; gx2++) {
+      c.fillRect(px+8+gx2*8, py+6, 2, TILE-10);
+    }
+  }
+}
+
+// ---- HOME DECORATIONS ----
+function drawHomeDecorations(c) {
+  // Red door mat at bottom gap
+  c.fillStyle='#c05030'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
+  c.fillStyle='#a03010'; c.fillRect(5*TILE+5,9*TILE+4,TILE*2-10,7);
   drawBookshelf(c, 1*TILE, 1*TILE);
   drawTV(c, 5*TILE, 1*TILE);
   drawCabinet(c, 9*TILE, 1*TILE);
-  drawPlant(c, 1*TILE,  4*TILE);
-  drawPlant(c, 1*TILE,  6*TILE);
+  drawPlant(c, 1*TILE, 4*TILE);
+  drawPlant(c, 1*TILE, 6*TILE);
   drawPlant(c, 10*TILE, 4*TILE);
   drawPlant(c, 10*TILE, 6*TILE);
   drawBed(c, 4*TILE, 4*TILE);
+  // Mom NPC — stands at col 8, row 7
+  drawMom(c, 8*TILE + TILE/2, 7*TILE + TILE/2);
+}
 
-  // Player
-  drawPlayer(c, player.x*TILE, player.y*TILE, player.dir, player.frame);
+function drawMom(c, px, py) {
+  var x = Math.round(px - TILE/2);
+  var y = Math.round(py - TILE*0.8);
+  var S = TILE;
+  var cx = x + S/2;
+  var cy = y;
+  // Shadow
+  c.fillStyle='rgba(0,0,0,0.15)';
+  c.beginPath(); c.ellipse(cx, y+S+2, S/3, 4, 0, 0, Math.PI*2); c.fill();
+  // Shoes
+  c.fillStyle='#3a2a1a'; c.fillRect(cx-6,cy+S-6,5,4); c.fillRect(cx+1,cy+S-6,5,4);
+  // Legs / skirt bottom
+  c.fillStyle='#7040a0'; c.fillRect(cx-7,cy+S*0.55,14,S*0.3);
+  // Dress body
+  c.fillStyle='#9050c0'; c.fillRect(cx-8,cy+S*0.28,16,S*0.32);
+  // White apron
+  c.fillStyle='#f0f0f0'; c.fillRect(cx-4,cy+S*0.3,8,S*0.26);
+  c.fillStyle='#e0e0e0'; c.fillRect(cx-3,cy+S*0.32,6,S*0.22);
+  // Arms
+  c.fillStyle='#9050c0'; c.fillRect(cx-11,cy+S*0.3,3,S*0.2); c.fillRect(cx+8,cy+S*0.3,3,S*0.2);
+  c.fillStyle='#e8b090'; c.fillRect(cx-11,cy+S*0.48,3,4); c.fillRect(cx+8,cy+S*0.48,3,4);
+  // Neck
+  c.fillStyle='#e8b090'; c.fillRect(cx-3,cy+S*0.2,6,S*0.1);
+  // Head
+  c.fillStyle='#e8b090'; c.fillRect(cx-7,cy+S*0.03,14,13);
+  // Hair - brown bun
+  c.fillStyle='#5a2a10'; c.fillRect(cx-7,cy,14,7);
+  c.fillStyle='#7a3a18'; c.fillRect(cx-6,cy-3,12,5);
+  // Bun
+  c.fillStyle='#5a2a10';
+  c.beginPath(); c.arc(cx+5,cy-2,5,0,Math.PI*2); c.fill();
+  c.fillStyle='#7a3a18';
+  c.beginPath(); c.arc(cx+5,cy-2,3,0,Math.PI*2); c.fill();
+  // Eyes (looking left toward player area)
+  c.fillStyle='#111'; c.fillRect(cx-4,cy+S*0.1,3,3); c.fillRect(cx+1,cy+S*0.1,3,3);
+  c.fillStyle='#fff'; c.fillRect(cx-3,cy+S*0.1,2,2); c.fillRect(cx+2,cy+S*0.1,2,2);
+  // Smile
+  c.fillStyle='#c07060'; c.fillRect(cx-2,cy+S*0.17,5,1);
+}
+
+// ---- POKEMON CENTER DECORATIONS ----
+function drawCenterDecorations(c) {
+  // Nurse Joy counter with equipment
+  // Counter front face (3D effect)
+  c.fillStyle='#c04060';
+  c.fillRect(1*TILE, 3*TILE, 10*TILE, 6);
+  // Nurse Joy sprite (simple)
+  drawNurseJoy(c, 5*TILE+8, 1*TILE+4);
+  // PC machine left
+  drawPCMachine(c, 1*TILE+4, 1*TILE+2);
+  // PC machine right
+  drawPCMachine(c, 9*TILE-4, 1*TILE+2);
+  // Plants on counter ends
+  drawSmallPlant(c, 1*TILE+6, 2*TILE-4);
+  drawSmallPlant(c, 10*TILE-10, 2*TILE-4);
+  // Pokeball logo on floor (centered)
+  var cx = 6*TILE, cy = 6*TILE;
+  c.strokeStyle='rgba(180,160,140,0.6)'; c.lineWidth=3;
+  c.beginPath(); c.arc(cx,cy,28,0,Math.PI*2); c.stroke();
+  c.beginPath(); c.moveTo(cx-28,cy); c.lineTo(cx+28,cy); c.stroke();
+  c.fillStyle='rgba(200,160,150,0.3)';
+  c.beginPath(); c.arc(cx,cy,28,-Math.PI,0); c.fill();
+  c.fillStyle='rgba(200,200,200,0.3)';
+  c.beginPath(); c.arc(cx,cy,28,0,Math.PI); c.fill();
+  c.fillStyle='rgba(180,160,140,0.5)';
+  c.beginPath(); c.arc(cx,cy,8,0,Math.PI*2); c.fill();
+  // Healing machine bottom right
+  drawHealingMachine(c, 9*TILE, 7*TILE);
+  // Return mat label
+  c.fillStyle='rgba(0,0,0,0.4)';
+  c.fillRect(5*TILE, 9*TILE+14, TILE*2, 10);
+}
+
+function drawNurseJoy(c, x, y) {
+  var S = TILE;
+  // Body - white uniform
+  c.fillStyle='#f8f8f8'; c.fillRect(x-7,y+S*0.3,14,S*0.35);
+  // Pink trim
+  c.fillStyle='#f080a0'; c.fillRect(x-7,y+S*0.3,14,4);
+  // Head
+  c.fillStyle='#f0c8a0'; c.fillRect(x-5,y+4,10,11);
+  // Pink hair
+  c.fillStyle='#f08898'; c.fillRect(x-6,y,12,8);
+  c.fillRect(x-7,y+4,3,8); c.fillRect(x+4,y+4,3,8);
+  // Nurse hat
+  c.fillStyle='#fff'; c.fillRect(x-5,y-2,10,5);
+  c.fillStyle='#f080a0'; c.fillRect(x-3,y-2,6,3);
+  // Eyes
+  c.fillStyle='#333'; c.fillRect(x-3,y+8,2,2); c.fillRect(x+1,y+8,2,2);
+  // Smile
+  c.fillStyle='#c06070'; c.fillRect(x-2,y+12,4,1);
+  // Arms
+  c.fillStyle='#f8f8f8'; c.fillRect(x-10,y+S*0.32,3,8); c.fillRect(x+7,y+S*0.32,3,8);
+}
+
+function drawPCMachine(c, x, y) {
+  // Base
+  c.fillStyle='#556677'; c.fillRect(x,y,20,22);
+  // Screen
+  c.fillStyle='#80d8f0'; c.fillRect(x+2,y+2,16,12);
+  c.fillStyle='rgba(255,255,255,0.3)'; c.fillRect(x+2,y+2,6,5);
+  // Buttons
+  c.fillStyle='#88aacc'; c.fillRect(x+3,y+16,4,3);
+  c.fillStyle='#aaccee'; c.fillRect(x+9,y+16,4,3);
+  c.fillStyle='#cc4444'; c.fillRect(x+15,y+16,3,3);
+}
+
+function drawSmallPlant(c, x, y) {
+  c.fillStyle='#805060'; c.fillRect(x+2,y+10,8,8);
+  c.fillStyle='#30a030';
+  c.beginPath(); c.arc(x+6,y+8,6,0,Math.PI*2); c.fill();
+  c.fillStyle='#50c050';
+  c.beginPath(); c.arc(x+3,y+5,4,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(x+9,y+5,4,0,Math.PI*2); c.fill();
+}
+
+function drawHealingMachine(c, x, y) {
+  // Base
+  c.fillStyle='#e8e0d8'; c.fillRect(x,y,TILE,TILE);
+  c.strokeStyle='#c0b8b0'; c.lineWidth=1; c.strokeRect(x,y,TILE,TILE);
+  // Pokeball slots
+  c.fillStyle='#d0c8c0'; c.fillRect(x+4,y+4,TILE-8,10);
+  for (var i=0;i<6;i++) {
+    c.fillStyle='#b0a8a0';
+    c.beginPath(); c.arc(x+7+i*4,y+9,3,0,Math.PI*2); c.fill();
+  }
+  // Screen
+  c.fillStyle='#80d880'; c.fillRect(x+6,y+18,20,10);
+  c.fillStyle='rgba(255,255,255,0.4)'; c.fillRect(x+6,y+18,8,4);
+}
+
+// ---- WILD AREA DECORATIONS ----
+function drawWildDecorations(c) {
+  // Animated water shimmer hint
+  var t = Date.now()/1000;
+  c.fillStyle='rgba(255,255,255,'+(0.05+0.05*Math.sin(t*2))+')';
+  c.fillRect(4*TILE,5*TILE,2*TILE,2*TILE);
+  // Path sign
+  drawSign(c, 5*TILE+4, 3*TILE+4);
+  // Flowers scattered on grass
+  var flowers = [{x:2,y:2},{x:7,y:3},{x:3,y:6},{x:8,y:7},{x:6,y:2},{x:9,y:5}];
+  flowers.forEach(function(f){
+    if (roomMap[f.y] && roomMap[f.y][f.x]===T_GRASS) drawFlower(c,f.x*TILE+8,f.y*TILE+16);
+  });
+  // Return mat label
+  c.fillStyle='#8b5020'; c.fillRect(5*TILE,9*TILE+2,TILE*2,12);
+  c.fillStyle='#6b3010'; c.fillRect(5*TILE+3,9*TILE+4,TILE*2-6,7);
+}
+
+function drawSign(c, x, y) {
+  // Post
+  c.fillStyle='#8b5020'; c.fillRect(x+6,y+8,4,16);
+  // Board
+  c.fillStyle='#c8903a'; c.fillRect(x,y,20,12);
+  c.strokeStyle='#8b5020'; c.lineWidth=1.5; c.strokeRect(x,y,20,12);
+  // Lines of text
+  c.fillStyle='#5a3010'; c.fillRect(x+3,y+3,14,2); c.fillRect(x+3,y+7,10,2);
+}
+
+function drawFlower(c, x, y) {
+  var colors = ['#f8d020','#f05050','#f0a0f0','#80d8f0'];
+  var col = colors[Math.floor((x+y)%4)];
+  c.fillStyle=col;
+  c.beginPath(); c.arc(x,y,3,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(x+4,y,2,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(x-4,y,2,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(x,y-4,2,0,Math.PI*2); c.fill();
+  c.fillStyle='#f8f030';
+  c.beginPath(); c.arc(x,y,1.5,0,Math.PI*2); c.fill();
+}
+
+// ---- CASTLE DECORATIONS ----
+function drawCastleDecorations(c) {
+  // Stone pillars on sides
+  drawPillar(c, 1*TILE, 1*TILE);
+  drawPillar(c, 1*TILE, 4*TILE);
+  drawPillar(c, 1*TILE, 7*TILE);
+  drawPillar(c, 10*TILE, 1*TILE);
+  drawPillar(c, 10*TILE, 4*TILE);
+  drawPillar(c, 10*TILE, 7*TILE);
+  // Royal throne at top center
+  drawThrone(c, 4*TILE+8, 1*TILE+4);
+  // Banners on walls
+  drawBanner(c, 3*TILE, 0);
+  drawBanner(c, 7*TILE, 0);
+  // Torches
+  drawTorch(c, 2*TILE+8, 2*TILE);
+  drawTorch(c, 9*TILE+8, 2*TILE);
+  drawTorch(c, 2*TILE+8, 6*TILE);
+  drawTorch(c, 9*TILE+8, 6*TILE);
+  // Wooden tables
+  drawWoodTable(c, 3*TILE, 5*TILE);
+  drawWoodTable(c, 7*TILE, 5*TILE);
+  // Suits of armor
+  drawArmor(c, 2*TILE+6, 7*TILE+2);
+  drawArmor(c, 9*TILE+6, 7*TILE+2);
+  // Return mat
+  c.fillStyle='#8b1020'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
+  c.strokeStyle='#c8a820'; c.lineWidth=1.5;
+  c.strokeRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
+}
+
+function drawPillar(c, x, y) {
+  c.fillStyle='#888898'; c.fillRect(x+4,y+2,TILE-8,TILE-4);
+  c.fillStyle='#a0a0b0'; c.fillRect(x+4,y+2,6,TILE-4);
+  c.fillStyle='#707080'; c.fillRect(x+2,y,TILE-4,4);
+  c.fillStyle='#707080'; c.fillRect(x+2,y+TILE-4,TILE-4,4);
+}
+
+function drawThrone(c, x, y) {
+  var W=TILE*4, H=TILE*2;
+  // Back
+  c.fillStyle='#6b3010'; c.fillRect(x,y,W,H*0.7);
+  c.fillStyle='#8b4010'; c.fillRect(x+4,y+4,W-8,H*0.6);
+  // Seat
+  c.fillStyle='#8b1020'; c.fillRect(x+4,y+H*0.5,W-8,H*0.35);
+  // Gold trim
+  c.strokeStyle='#c8a820'; c.lineWidth=2;
+  c.strokeRect(x+2,y+2,W-4,H*0.65);
+  // Crown top
+  c.fillStyle='#c8a820';
+  for (var i=0;i<5;i++) c.fillRect(x+8+i*16,y-6,8,8);
+  c.fillRect(x,y,W,4);
+  // Cushion
+  c.fillStyle='#aa1828'; c.fillRect(x+8,y+H*0.5+2,W-16,H*0.28);
+}
+
+function drawBanner(c, x, y) {
+  c.fillStyle='#8b1020'; c.fillRect(x+8,y,16,24);
+  c.fillStyle='#c8a820';
+  // Diamond pattern
+  c.fillRect(x+14,y+4,4,4);
+  c.fillRect(x+12,y+8,8,2);
+  c.fillRect(x+14,y+14,4,4);
+  c.strokeStyle='#c8a820'; c.lineWidth=1;
+  c.strokeRect(x+8,y,16,24);
+  // Tassel
+  c.fillStyle='#c8a820';
+  c.fillRect(x+8,y+24,4,4); c.fillRect(x+14,y+24,4,4); c.fillRect(x+20,y+24,4,4);
+}
+
+function drawTorch(c, x, y) {
+  // Mount
+  c.fillStyle='#888898'; c.fillRect(x-2,y,6,8);
+  // Handle
+  c.fillStyle='#6b4010'; c.fillRect(x,y+6,2,10);
+  // Cup
+  c.fillStyle='#c8a820'; c.fillRect(x-2,y+4,6,4);
+  // Flame
+  c.fillStyle='#f86010';
+  c.beginPath(); c.moveTo(x+1,y+4); c.lineTo(x-3,y-2); c.lineTo(x+1,y); c.lineTo(x+5,y-4); c.lineTo(x+1,y+4); c.fill();
+  c.fillStyle='#f8e020';
+  c.beginPath(); c.moveTo(x+1,y+2); c.lineTo(x-1,y-1); c.lineTo(x+1,y+1); c.lineTo(x+3,y-1); c.lineTo(x+1,y+2); c.fill();
+}
+
+function drawWoodTable(c, x, y) {
+  var W=TILE*2, H=TILE;
+  c.fillStyle='#8b5a1a'; c.fillRect(x,y,W,H);
+  c.fillStyle='#a06820'; c.fillRect(x+2,y+2,W-4,H-4);
+  // Wood grain
+  c.strokeStyle='#8b5a1a'; c.lineWidth=1;
+  for (var i=0;i<3;i++) { c.beginPath(); c.moveTo(x+4+i*16,y+4); c.lineTo(x+4+i*16,y+H-4); c.stroke(); }
+  // Legs
+  c.fillStyle='#6b3a0a';
+  c.fillRect(x+2,y+H-4,4,6); c.fillRect(x+W-6,y+H-4,4,6);
+}
+
+function drawArmor(c, x, y) {
+  var S = TILE;
+  // Base/feet
+  c.fillStyle='#888898'; c.fillRect(x-4,y+S*0.8,10,6);
+  // Legs
+  c.fillStyle='#9090a0'; c.fillRect(x-3,y+S*0.5,8,S*0.32);
+  // Body
+  c.fillStyle='#a0a0b0'; c.fillRect(x-6,y+S*0.25,12,S*0.28);
+  c.strokeStyle='#606070'; c.lineWidth=1; c.strokeRect(x-6,y+S*0.25,12,S*0.28);
+  // Center ridge
+  c.fillStyle='#c8c8d8'; c.fillRect(x-1,y+S*0.25,2,S*0.28);
+  // Shoulders
+  c.fillStyle='#808090'; c.fillRect(x-9,y+S*0.25,4,7); c.fillRect(x+5,y+S*0.25,4,7);
+  // Head/helmet
+  c.fillStyle='#9090a0'; c.fillRect(x-5,y+4,10,S*0.22);
+  // Visor slit
+  c.fillStyle='#303040'; c.fillRect(x-4,y+10,8,3);
+  // Plume
+  c.fillStyle='#cc2020'; c.fillRect(x-1,y,2,6);
+}
+
+function drawHomeDecorations_mat(c) {
+  c.fillStyle='#c05030'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
+  c.fillStyle='#a03010'; c.fillRect(5*TILE+5,9*TILE+4,TILE*2-10,7);
 }
 
 function drawBookshelf(c, x, y) {
@@ -799,6 +1655,73 @@ function drawPlayer(c, px, py, dir, frame) {
   } else if (dir!==1) {
     c.fillStyle='#111'; c.fillRect(dir===3?cx+2:cx-5,cy+S*0.12,3,3);
   }
+}
+
+function drawCompanion(c, px, py, frame) {
+  if (!companion) return;
+  var name = companion.name;
+  var x = Math.round(px - TILE*0.28);
+  var y = Math.round(py - TILE*0.28);
+  var bob = (frame===1||frame===3) ? -1 : 0;
+  c.save();
+  c.scale(0.6, 0.6);
+  c.translate(x / 0.6, (y + bob) / 0.6);
+  if (name === 'Charmander') {
+    c.fillStyle='#f86820'; c.fillRect(-7,-6,14,12);
+    c.fillStyle='#f8c070'; c.fillRect(-4,-2,8,6);
+    c.fillStyle='#f86820'; c.fillRect(-6,-14,12,10);
+    c.fillStyle='#111'; c.fillRect(-4,-10,3,3); c.fillRect(1,-10,3,3);
+    c.fillStyle='#fff'; c.fillRect(-3,-10,2,2); c.fillRect(2,-10,2,2);
+    c.fillStyle='#f86820'; c.fillRect(6,0,5,6);
+    c.fillStyle='#f8c020'; c.fillRect(8,-4,4,6);
+    c.fillStyle='#f84020'; c.fillRect(9,-6,3,4);
+    c.fillStyle='#f86820'; c.fillRect(-6,6,4,5); c.fillRect(2,6,4,5);
+    c.fillStyle='#c85010'; c.fillRect(-6,10,4,2); c.fillRect(2,10,4,2);
+  } else if (name === 'Froakie') {
+    c.fillStyle='#3878d8'; c.fillRect(-7,-6,14,12);
+    c.fillStyle='#f0f0f0';
+    c.beginPath(); c.arc(-3,2,4,0,Math.PI*2); c.fill();
+    c.beginPath(); c.arc(3,1,3,0,Math.PI*2); c.fill();
+    c.beginPath(); c.arc(0,-1,3,0,Math.PI*2); c.fill();
+    c.fillStyle='#3070c8'; c.fillRect(-7,-16,14,12);
+    c.fillStyle='#fff'; c.fillRect(-6,-13,5,5); c.fillRect(1,-13,5,5);
+    c.fillStyle='#3878d8'; c.fillRect(-5,-12,3,3); c.fillRect(2,-12,3,3);
+    c.fillStyle='#111'; c.fillRect(-4,-11,2,2); c.fillRect(3,-11,2,2);
+    c.fillStyle='#3878d8'; c.fillRect(-7,6,5,6); c.fillRect(2,6,5,6);
+    c.fillStyle='#2060b8'; c.fillRect(-7,10,5,2); c.fillRect(2,10,5,2);
+  } else if (name === 'Treecko') {
+    c.fillStyle='#40b840'; c.fillRect(-6,-6,12,12);
+    c.fillStyle='#98e060'; c.fillRect(-3,-2,6,6);
+    c.fillStyle='#40b840'; c.fillRect(-7,-16,14,12);
+    c.fillStyle='#e04040'; c.fillRect(-5,-8,10,4);
+    c.fillStyle='#fff'; c.fillRect(-5,-14,4,4); c.fillRect(1,-14,4,4);
+    c.fillStyle='#111'; c.fillRect(-4,-13,2,2); c.fillRect(2,-13,2,2);
+    c.fillStyle='#309030'; c.fillRect(5,-2,7,10);
+    c.fillStyle='#40b840'; c.fillRect(6,-4,5,8);
+    c.fillStyle='#40b840'; c.fillRect(-6,6,4,6); c.fillRect(2,6,4,6);
+    c.fillStyle='#309030'; c.fillRect(-6,10,4,2); c.fillRect(2,10,4,2);
+  }
+  c.restore();
+}
+
+function drawOakProfCanvas() {
+  var canvas = document.getElementById('oak-prof-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  function dp(x,y,w,h,color){ ctx.fillStyle=color; ctx.fillRect(x,y,w,h); }
+  ctx.clearRect(0,0,64,96);
+  dp(18,86,10,8,'#2a1a0a'); dp(36,86,10,8,'#2a1a0a');
+  dp(18,65,10,22,'#a07840'); dp(36,65,10,22,'#a07840');
+  dp(14,36,36,34,'#d0d0e0'); dp(24,36,16,20,'#333');
+  dp(14,36,10,18,'#c0c0d0'); dp(40,36,10,18,'#c0c0d0');
+  dp(6,38,10,26,'#d0d0e0'); dp(48,38,10,26,'#d0d0e0');
+  dp(6,62,10,8,'#c8a070'); dp(48,56,10,10,'#c8a070');
+  dp(26,28,12,10,'#c8a070'); dp(18,8,28,26,'#c8a070');
+  dp(18,6,28,10,'#6b3a1f'); dp(16,10,6,12,'#6b3a1f'); dp(18,8,4,6,'#6b3a1f');
+  dp(24,18,4,4,'#111'); dp(36,18,4,4,'#111');
+  dp(26,26,3,2,'#8a5040'); dp(35,26,3,2,'#8a5040'); dp(29,28,6,2,'#8a5040');
+  dp(18,46,8,6,'#b0b0c0'); dp(19,47,6,4,'#c8c8d8');
 }
 </script>
 </body>
