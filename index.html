@@ -222,10 +222,8 @@
   .pokedex-name { font-family:'Press Start 2P',cursive; font-size:clamp(7px,1.8vw,9px); color:#fff; flex:1; }
   .pokedex-entry.locked .pokedex-name { color:#888; }
   .pokedex-sprite { width:32px; height:32px; image-rendering:pixelated; }
-  .pokedex-locked-icon { width:32px; height:32px; font-size:20px; display:flex; align-items:center; justify-content:center; }
   .pokedex-entry { cursor: pointer; transition: background 0.1s; }
   .pokedex-entry.caught:active { background: rgba(255,255,255,0.3); }
-  /* Detail view */
   .poke-detail-header { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
   .poke-detail-name { font-family:'Press Start 2P',cursive; font-size:clamp(9px,2.2vw,12px); color:#fff; }
   .poke-detail-type { font-family:'Press Start 2P',cursive; font-size:8px; background:rgba(255,255,255,0.2); border-radius:4px; padding:3px 7px; color:#fff; margin-top:4px; display:inline-block; }
@@ -270,7 +268,6 @@
   #oak-tap { position:absolute; bottom:8px; right:10px; font-size:10px; color:#38c070; display:none; animation:bounce 0.6s ease-in-out infinite alternate; }
   #oak-tap.show { display:block; }
 
-  /* Starter choice area */
   #oak-starter-area {
     display: none;
     width: 100%;
@@ -293,7 +290,6 @@
   .starter-ball-label { font-family:'Press Start 2P',cursive; font-size:clamp(6px,1.8vw,8px); color:#111; text-align:center; }
   .pokeball-icon { width:28px; height:28px; }
 
-  /* Fade in */
   #oak-screen { animation: fadeInBlack 0.5s ease; }
   @keyframes fadeInBlack { from{opacity:0} to{opacity:1} }
 
@@ -311,8 +307,6 @@
     width: min(320px, 88vw);
     overflow: hidden;
   }
-
-  /* Question at top */
   .travel-question {
     font-family: 'Press Start 2P', cursive;
     font-size: clamp(7px, 2vw, 10px);
@@ -322,18 +316,8 @@
     text-align: left;
     background: #f8f8f8;
   }
-
-  /* Black divider line */
-  .travel-divider {
-    height: 3px;
-    background: #000;
-  }
-
-  /* Options below divider */
-  .travel-options-box {
-    background: #f8f8f8;
-    padding: 6px 0 8px;
-  }
+  .travel-divider { height: 3px; background: #000; }
+  .travel-options-box { background: #f8f8f8; padding: 6px 0 8px; }
   .travel-option {
     font-family: 'Press Start 2P', cursive;
     font-size: clamp(7px, 2vw, 9px);
@@ -437,7 +421,6 @@
       <div id="joystick-knob"></div>
     </div>
   </div>
-  <!-- HUD: pokeball count + pokedex button -->
   <div id="game-hud">
     <div id="hud-balls">
       <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" fill="#f05050" stroke="#222" stroke-width="1"/><path d="M.5 7h13" stroke="#222" stroke-width="1"/><circle cx="7" cy="7" r="2.5" fill="#fff" stroke="#222" stroke-width="1"/></svg>
@@ -445,22 +428,14 @@
     </div>
     <button id="pokedex-btn" onclick="togglePokedex()">
       <svg width="52" height="44" viewBox="0 0 52 44" xmlns="http://www.w3.org/2000/svg">
-        <!-- Book shadow -->
         <ellipse cx="26" cy="40" rx="20" ry="4" fill="rgba(0,0,0,0.4)"/>
-        <!-- Book bottom white half -->
         <rect x="4" y="22" width="44" height="16" rx="3" fill="#f0f0f0"/>
-        <!-- Book top red half -->
         <rect x="4" y="6" width="44" height="16" rx="3" fill="#e82010"/>
-        <!-- Black divider line -->
         <rect x="4" y="20" width="44" height="4" fill="#111"/>
-        <!-- Book spine left -->
         <rect x="4" y="6" width="5" height="32" rx="2" fill="#c01008"/>
-        <!-- Pokeball center button -->
         <circle cx="26" cy="22" r="6" fill="#fff" stroke="#111" stroke-width="2"/>
         <circle cx="26" cy="22" r="3" fill="#ddd" stroke="#111" stroke-width="1.5"/>
-        <!-- Belt buckle on spine -->
         <rect x="6" y="19" width="3" height="6" rx="1" fill="#c8a820"/>
-        <!-- Shine on red -->
         <rect x="10" y="9" width="14" height="3" rx="1" fill="rgba(255,255,255,0.25)"/>
       </svg>
       <div id="pokedex-btn-label">POKéDEX</div>
@@ -500,17 +475,17 @@
     <div class="starter-balls">
       <div class="starter-ball" onclick="selectStarter('Charmander')">
         <canvas id="charm-canvas" width="48" height="48"></canvas>
-        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#f05050" stroke="#222" stroke-width="1.5"/><path d="M1 14 h26" stroke="#222" stroke-width="1.5"/><path d="M1 14 Q14 1 27 14" fill="#f05050"/><path d="M1 14 Q14 27 27 14" fill="#f0f0f0"/><circle cx="14" cy="14" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="#f0f0f0"/></svg>
+        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#e02020" stroke="#111" stroke-width="1.5"/><path d="M1 14 h26" stroke="#111" stroke-width="2"/><path d="M1 14 Q14 1 27 14" fill="#e02020"/><path d="M1 14 Q14 27 27 14" fill="#f8f8f8"/><circle cx="14" cy="14" r="5" fill="#f8f8f8" stroke="#111" stroke-width="2"/><circle cx="14" cy="14" r="2.5" fill="#dddddd" stroke="#111" stroke-width="1"/></svg>
         <div class="starter-ball-label">Charmander</div>
       </div>
       <div class="starter-ball" onclick="selectStarter('Froakie')">
         <canvas id="froakie-canvas" width="48" height="48"></canvas>
-        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#5080f0" stroke="#222" stroke-width="1.5"/><path d="M1 14 h26" stroke="#222" stroke-width="1.5"/><path d="M1 14 Q14 1 27 14" fill="#5080f0"/><path d="M1 14 Q14 27 27 14" fill="#f0f0f0"/><circle cx="14" cy="14" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="#f0f0f0"/></svg>
+        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#e02020" stroke="#111" stroke-width="1.5"/><path d="M1 14 h26" stroke="#111" stroke-width="2"/><path d="M1 14 Q14 1 27 14" fill="#e02020"/><path d="M1 14 Q14 27 27 14" fill="#f8f8f8"/><circle cx="14" cy="14" r="5" fill="#f8f8f8" stroke="#111" stroke-width="2"/><circle cx="14" cy="14" r="2.5" fill="#dddddd" stroke="#111" stroke-width="1"/></svg>
         <div class="starter-ball-label">Froakie</div>
       </div>
       <div class="starter-ball" onclick="selectStarter('Treecko')">
         <canvas id="treecko-canvas" width="48" height="48"></canvas>
-        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#40b840" stroke="#222" stroke-width="1.5"/><path d="M1 14 h26" stroke="#222" stroke-width="1.5"/><path d="M1 14 Q14 1 27 14" fill="#40b840"/><path d="M1 14 Q14 27 27 14" fill="#f0f0f0"/><circle cx="14" cy="14" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/><circle cx="14" cy="14" r="2" fill="#f0f0f0"/></svg>
+        <svg class="pokeball-icon" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#e02020" stroke="#111" stroke-width="1.5"/><path d="M1 14 h26" stroke="#111" stroke-width="2"/><path d="M1 14 Q14 1 27 14" fill="#e02020"/><path d="M1 14 Q14 27 27 14" fill="#f8f8f8"/><circle cx="14" cy="14" r="5" fill="#f8f8f8" stroke="#111" stroke-width="2"/><circle cx="14" cy="14" r="2.5" fill="#dddddd" stroke="#111" stroke-width="1"/></svg>
         <div class="starter-ball-label">Treecko</div>
       </div>
     </div>
@@ -544,7 +519,7 @@
   </div>
   <div class="dialogue-box" style="flex-shrink:0;">
     <div class="dialogue-inner">
-      <div style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.8vw,9px);color:#f080a0;margin-bottom:6px;">Nurse Joy</div>
+      <div style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.8vw,9px);color:#f080a0;margin-bottom:6px;">Nurse</div>
       <div id="nurse-dialogue-text" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,2.2vw,11px);color:#111;line-height:1.9;white-space:pre-wrap;"></div>
       <div id="nurse-tap" class="tap-indicator">&#9660;</div>
     </div>
@@ -582,9 +557,7 @@
 
 <!-- BATTLE SCREEN -->
 <div id="battle-screen" style="display:none;position:fixed;inset:0;z-index:350;flex-direction:column;background:#1a2a1a;">
-  <!-- Battle field -->
   <div id="battle-field" style="flex:1;position:relative;background:linear-gradient(180deg,#2a4a2a 0%,#3a6a3a 50%,#4a7a3a 100%);display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 20px;">
-    <!-- Enemy platform -->
     <div style="display:flex;flex-direction:column;align-items:center;position:absolute;top:20px;right:24px;">
       <div id="battle-enemy-hud" style="background:rgba(0,0,0,0.7);border:2px solid #f8d030;border-radius:8px;padding:6px 10px;margin-bottom:6px;min-width:140px;">
         <div id="battle-enemy-name" style="font-family:'Press Start 2P',cursive;font-size:8px;color:#f8d030;"></div>
@@ -593,7 +566,6 @@
       </div>
       <canvas id="battle-enemy-sprite" width="64" height="64" style="image-rendering:pixelated;width:96px;height:96px;"></canvas>
     </div>
-    <!-- Player platform -->
     <div style="display:flex;flex-direction:column;align-items:center;position:absolute;bottom:20px;left:24px;">
       <canvas id="battle-player-sprite" width="64" height="64" style="image-rendering:pixelated;width:80px;height:80px;"></canvas>
       <div id="battle-player-hud" style="background:rgba(0,0,0,0.7);border:2px solid #60c060;border-radius:8px;padding:6px 10px;margin-top:6px;min-width:140px;">
@@ -603,10 +575,9 @@
       </div>
     </div>
   </div>
-  <!-- Battle log + actions -->
   <div style="background:#0a1a0a;border-top:3px solid #f8d030;padding:10px 14px;min-height:120px;display:flex;flex-direction:column;gap:8px;">
     <div id="battle-log" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);color:#e0e0e0;line-height:1.8;min-height:36px;"></div>
-    <div id="battle-actions" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;" id="battle-actions"></div>
+    <div id="battle-actions" style="display:none;grid-template-columns:1fr 1fr;gap:6px;"></div>
     <div id="battle-catch-btn" style="display:none;">
       <button onclick="battleCatch()" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);background:#e63020;color:#fff;border:2px solid #fff;border-radius:8px;padding:8px 16px;cursor:pointer;width:100%;">🔴 Throw Pokéball!</button>
     </div>
@@ -626,17 +597,12 @@
   </div>
 </div>
 
-<!-- TRAVEL MENU - GBA Pokemon Style -->
+<!-- TRAVEL MENU -->
 <div id="travel-menu">
   <div class="travel-window">
     <div class="travel-question">Where do you<br>want to go?</div>
     <div class="travel-divider"></div>
-    <div class="travel-options-box" id="travel-options-box">
-      <button class="travel-option selected" onclick="travelTo('castle')">Go to the Castle</button>
-      <button class="travel-option" onclick="travelTo('center')">Go to Pokemon Center</button>
-      <button class="travel-option" onclick="travelTo('wild')">Go to the Wild Area</button>
-      <button class="travel-option" onclick="travelTo('stay')">Stay here</button>
-    </div>
+    <div class="travel-options-box" id="travel-options-box"></div>
   </div>
 </div>
 
@@ -787,7 +753,6 @@ var COLS = 12;
 var ROWS = 10;
 var T_FLOOR=0, T_WALL=1, T_RUG=2, T_GRASS=3, T_TREE=4, T_WATER=5, T_CASTLE_FLOOR=6, T_CARPET=7, T_PC_FLOOR=8, T_PC_COUNTER=9, T_TALL_GRASS=10;
 
-// ---- MAPS ----
 var maps = {
   home: {
     data: [
@@ -825,8 +790,8 @@ var maps = {
       [1,1,1,1,1,0,0,1,1,1,1,1]
     ],
     collision: [
-      {x:1,y:1,w:10,h:2},    // counter
-      {x:1,y:1,w:1,h:2},{x:10,y:1,w:1,h:2} // side walls of counter
+      {x:1,y:1,w:10,h:2},
+      {x:1,y:1,w:1,h:2},{x:10,y:1,w:1,h:2}
     ],
     spawn: {x:5.5,y:7.5},
     hasDoorTrigger: true
@@ -845,7 +810,6 @@ var maps = {
       [4,4,4,4,4,0,0,4,4,4,4,4]
     ],
     collision: [
-      // trees (T=4 handled in isWalkable), water
       {x:4,y:5,w:2,h:2}
     ],
     spawn: {x:5.5,y:7.5},
@@ -865,9 +829,9 @@ var maps = {
       [1,1,1,1,1,0,0,1,1,1,1,1]
     ],
     collision: [
-      {x:1,y:1,w:2,h:8},{x:9,y:1,w:2,h:8}, // side pillars
-      {x:2,y:1,w:8,h:1},                      // top banner
-      {x:7.5,y:6.8,w:1.2,h:1.4}              // Duke NPC
+      {x:1,y:1,w:2,h:8},{x:9,y:1,w:2,h:8},
+      {x:2,y:1,w:8,h:1},
+      {x:7.5,y:6.8,w:1.2,h:1.4}
     ],
     spawn: {x:5.5,y:7.5},
     hasDoorTrigger: true
@@ -878,84 +842,86 @@ var currentMap = 'home';
 var roomMap = maps.home.data;
 var collisionBoxes = maps.home.collision;
 var player = { x:5.5, y:7.5, dir:0, frame:0, frameTimer:0 };
-var companion = null; // { name, x, y, frame, frameTimer }
-var activePokemon = null; // currently selected pokemon name (for battle + following)
+var companion = null;
+var activePokemon = null;
 var inventory = { pokeballs: 0 };
 var pokeballs_claimed = false;
 var nurseDialogueActive = false;
 var pokeballMachineActive = false;
 var nurseSeen = false;
-var caughtPokemon = []; // list of caught pokemon names
+var caughtPokemon = [];
 var pokedexOpen = false;
 
-// Rank system
 var RANKS = ['Bronze','Silver','Gold','Platinum','Diamond','Master','King'];
 var playerRank = 'Bronze';
 
-// Duke NPC state
 var dukeDialogueActive = false;
 var dukeSeenFirst = false;
 
-// Pokemon data (level, xp, moves)
+// ============================================================
+// POKEMON DATA — only the 25 Pokedex Pokemon + starters/evos
+// ============================================================
 var POKEMON_DATA = {
-  Charmander: { type:'Fire',   moves:[{name:'Scratch',dmg:40},{name:'Ember',dmg:60},{name:'Growl',dmg:0},{name:'Flamethrower',dmg:90}] },
-  Froakie:    { type:'Water',  moves:[{name:'Pound',dmg:40},{name:'Water Pulse',dmg:60},{name:'Lick',dmg:30},{name:'Hydro Pump',dmg:110}] },
-  Treecko:    { type:'Grass',  moves:[{name:'Pound',dmg:40},{name:'Absorb',dmg:55},{name:'Leer',dmg:0},{name:'Leaf Blade',dmg:90}] },
-  Bulbasaur:  { type:'Grass',  moves:[{name:'Tackle',dmg:40},{name:'Vine Whip',dmg:55},{name:'Leech Seed',dmg:20},{name:'Razor Leaf',dmg:75}] },
-  Pikachu:    { type:'Electric',moves:[{name:'Quick Attack',dmg:40},{name:'Thunder Shock',dmg:55},{name:'Tail Whip',dmg:0},{name:'Thunderbolt',dmg:90}] },
-  Squirtle:   { type:'Water',  moves:[{name:'Tackle',dmg:40},{name:'Water Gun',dmg:55},{name:'Tail Whip',dmg:0},{name:'Hydro Pump',dmg:110}] },
-  Eevee:      { type:'Normal', moves:[{name:'Tackle',dmg:40},{name:'Swift',dmg:60},{name:'Growl',dmg:0},{name:'Last Resort',dmg:140}] },
-  Pikachu:    { type:'Electric',moves:[{name:'Quick Attack',dmg:40},{name:'Thunder Shock',dmg:55},{name:'Tail Whip',dmg:0},{name:'Thunderbolt',dmg:90}] },
-  Jigglypuff: { type:'Normal', moves:[{name:'Pound',dmg:40},{name:'Sing',dmg:0},{name:'Disarming Voice',dmg:40},{name:'Body Slam',dmg:85}] },
-  Caterpie:   { type:'Bug',    moves:[{name:'Tackle',dmg:35},{name:'String Shot',dmg:0},{name:'Bug Bite',dmg:60},{name:'Electroweb',dmg:55}] },
-  Geodude:    { type:'Rock',   moves:[{name:'Tackle',dmg:40},{name:'Rock Throw',dmg:50},{name:'Rollout',dmg:30},{name:'Rock Blast',dmg:90}] },
-  Gastly:     { type:'Ghost',  moves:[{name:'Lick',dmg:30},{name:'Hypnosis',dmg:0},{name:'Shadow Ball',dmg:80},{name:'Night Shade',dmg:70}] },
-  Magikarp:   { type:'Water',  moves:[{name:'Splash',dmg:0},{name:'Tackle',dmg:35},{name:'Flail',dmg:30},{name:'Bounce',dmg:85}] },
-  Snorlax:    { type:'Normal', moves:[{name:'Tackle',dmg:50},{name:'Body Slam',dmg:85},{name:'Rest',dmg:0},{name:'Giga Impact',dmg:150}] },
-  Psyduck:    { type:'Water',  moves:[{name:'Scratch',dmg:40},{name:'Water Gun',dmg:55},{name:'Confusion',dmg:50},{name:'Psychic',dmg:90}] },
-  Abra:       { type:'Psychic',moves:[{name:'Teleport',dmg:0},{name:'Confusion',dmg:50},{name:'Psybeam',dmg:65},{name:'Psychic',dmg:90}] },
-  Chikorita:  { type:'Grass',  moves:[{name:'Tackle',dmg:40},{name:'Razor Leaf',dmg:60},{name:'Reflect',dmg:0},{name:'Solar Beam',dmg:120}] },
-  Cyndaquil:  { type:'Fire',   moves:[{name:'Tackle',dmg:40},{name:'Ember',dmg:60},{name:'Smokescreen',dmg:0},{name:'Flamethrower',dmg:90}] },
-  Totodile:   { type:'Water',  moves:[{name:'Scratch',dmg:40},{name:'Water Gun',dmg:55},{name:'Bite',dmg:60},{name:'Hydro Pump',dmg:110}] },
-  Togepi:     { type:'Fairy',  moves:[{name:'Pound',dmg:35},{name:'Charm',dmg:0},{name:'Sweet Kiss',dmg:0},{name:'Dazzling Gleam',dmg:80}] },
-  Torchic:    { type:'Fire',   moves:[{name:'Scratch',dmg:40},{name:'Ember',dmg:60},{name:'Sand Attack',dmg:0},{name:'Blaze Kick',dmg:85}] },
-  Mudkip:     { type:'Water',  moves:[{name:'Tackle',dmg:40},{name:'Water Gun',dmg:55},{name:'Mud Slap',dmg:20},{name:'Surf',dmg:90}] },
-  Bunnelby:   { type:'Normal', moves:[{name:'Quick Attack',dmg:40},{name:'Tackle',dmg:40},{name:'Dig',dmg:80},{name:'Return',dmg:102}] },
-  Fletchling: { type:'Fire',   moves:[{name:'Tackle',dmg:40},{name:'Ember',dmg:60},{name:'Agility',dmg:0},{name:'Flare Blitz',dmg:120}] },
-  Scatterbug: { type:'Bug',    moves:[{name:'Tackle',dmg:35},{name:'String Shot',dmg:0},{name:'Stun Spore',dmg:0},{name:'Bug Buzz',dmg:90}] },
-  Ralts:      { type:'Psychic',moves:[{name:'Growl',dmg:0},{name:'Confusion',dmg:50},{name:'Psybeam',dmg:65},{name:'Psychic',dmg:90}] },
-  Gossifleur: { type:'Grass',  moves:[{name:'Leafage',dmg:40},{name:'Razorleaf',dmg:60},{name:'Sing',dmg:0},{name:'Petal Blizzard',dmg:90}] },
-  Wooper:     { type:'Water',  moves:[{name:'Tackle',dmg:40},{name:'Water Gun',dmg:55},{name:'Mud Shot',dmg:55},{name:'Earthquake',dmg:100}] },
-  Shinx:      { type:'Electric',moves:[{name:'Tackle',dmg:40},{name:'Spark',dmg:65},{name:'Bite',dmg:60},{name:'Thunderbolt',dmg:90}] },
-  Beldum:     { type:'Steel',  moves:[{name:'Take Down',dmg:45},{name:'Iron Head',dmg:80},{name:'Zen Headbutt',dmg:80},{name:'Meteor Mash',dmg:90}] },
-  Greavard:   { type:'Ghost',  moves:[{name:'Lick',dmg:30},{name:'Bite',dmg:60},{name:'Shadow Ball',dmg:80},{name:'Phantom Force',dmg:90}] },
-  Wobbuffet:  { type:'Psychic',moves:[{name:'Counter',dmg:0},{name:'Mirror Coat',dmg:0},{name:'Safeguard',dmg:0},{name:'Destiny Bond',dmg:0}] },
-  Delibird:   { type:'Ice',    moves:[{name:'Present',dmg:40},{name:'Ice Shard',dmg:40},{name:'Aerial Ace',dmg:60},{name:'Blizzard',dmg:110}] }
+  // Starters
+  Charmander:  { type:'Fire',    moves:[{name:'Scratch',dmg:40},{name:'Ember',dmg:60},{name:'Growl',dmg:0},{name:'Flamethrower',dmg:90}] },
+  Charmeleon:  { type:'Fire',    moves:[{name:'Scratch',dmg:50},{name:'Ember',dmg:65},{name:'Slash',dmg:70},{name:'Flamethrower',dmg:95}] },
+  Charizard:   { type:'Fire',    moves:[{name:'Slash',dmg:70},{name:'Fire Fang',dmg:80},{name:'Wing Attack',dmg:85},{name:'Flamethrower',dmg:110}] },
+  Froakie:     { type:'Water',   moves:[{name:'Pound',dmg:40},{name:'Water Pulse',dmg:60},{name:'Lick',dmg:30},{name:'Hydro Pump',dmg:110}] },
+  Frogadier:   { type:'Water',   moves:[{name:'Pound',dmg:50},{name:'Water Pulse',dmg:65},{name:'Aerial Ace',dmg:60},{name:'Hydro Pump',dmg:115}] },
+  Greninja:    { type:'Water',   moves:[{name:'Double Team',dmg:0},{name:'Night Slash',dmg:70},{name:'Water Shuriken',dmg:80},{name:'Hydro Pump',dmg:120}] },
+  Treecko:     { type:'Grass',   moves:[{name:'Pound',dmg:40},{name:'Absorb',dmg:55},{name:'Leer',dmg:0},{name:'Leaf Blade',dmg:90}] },
+  Grovyle:     { type:'Grass',   moves:[{name:'Quick Attack',dmg:40},{name:'Absorb',dmg:60},{name:'Fury Cutter',dmg:55},{name:'Leaf Blade',dmg:95}] },
+  Sceptile:    { type:'Grass',   moves:[{name:'Quick Attack',dmg:50},{name:'Leaf Storm',dmg:90},{name:'Agility',dmg:0},{name:'Leaf Blade',dmg:110}] },
+  // Wild Pokemon (base forms only — catchable)
+  Fletchling:  { type:'Fire',    moves:[{name:'Tackle',dmg:40},{name:'Ember',dmg:60},{name:'Agility',dmg:0},{name:'Flare Blitz',dmg:120}] },
+  Hawlucha:    { type:'Fighting',moves:[{name:'Karate Chop',dmg:50},{name:'Wing Attack',dmg:60},{name:'High Jump Kick',dmg:90},{name:'Flying Press',dmg:100}] },
+  Shinx:       { type:'Electric',moves:[{name:'Tackle',dmg:40},{name:'Spark',dmg:65},{name:'Bite',dmg:60},{name:'Thunderbolt',dmg:90}] },
+  Beldum:      { type:'Steel',   moves:[{name:'Take Down',dmg:45},{name:'Iron Head',dmg:80},{name:'Zen Headbutt',dmg:80},{name:'Meteor Mash',dmg:90}] },
+  Pikachu:     { type:'Electric',moves:[{name:'Quick Attack',dmg:40},{name:'Thunder Shock',dmg:55},{name:'Tail Whip',dmg:0},{name:'Thunderbolt',dmg:90}] },
+  Wobbuffet:   { type:'Psychic', moves:[{name:'Counter',dmg:0},{name:'Mirror Coat',dmg:0},{name:'Safeguard',dmg:0},{name:'Destiny Bond',dmg:0}] },
+  Delibird:    { type:'Ice',     moves:[{name:'Present',dmg:40},{name:'Ice Shard',dmg:40},{name:'Aerial Ace',dmg:60},{name:'Blizzard',dmg:110}] },
+  Ralts:       { type:'Psychic', moves:[{name:'Growl',dmg:0},{name:'Confusion',dmg:50},{name:'Psybeam',dmg:65},{name:'Psychic',dmg:90}] },
+  Gossifleur:  { type:'Grass',   moves:[{name:'Leafage',dmg:40},{name:'Razorleaf',dmg:60},{name:'Sing',dmg:0},{name:'Petal Blizzard',dmg:90}] },
+  Wooper:      { type:'Water',   moves:[{name:'Tackle',dmg:40},{name:'Water Gun',dmg:55},{name:'Mud Shot',dmg:55},{name:'Earthquake',dmg:100}] },
+  Greavard:    { type:'Ghost',   moves:[{name:'Lick',dmg:30},{name:'Bite',dmg:60},{name:'Shadow Ball',dmg:80},{name:'Phantom Force',dmg:90}] },
+  // Evolutions (not catchable, only via leveling)
+  Fletchinder: { type:'Fire',    moves:[{name:'Tackle',dmg:45},{name:'Ember',dmg:65},{name:'Agility',dmg:0},{name:'Flare Blitz',dmg:125}] },
+  Talonflame:  { type:'Fire',    moves:[{name:'Flare Blitz',dmg:120},{name:'Brave Bird',dmg:120},{name:'Agility',dmg:0},{name:'Sky Attack',dmg:140}] },
+  Luxio:       { type:'Electric',moves:[{name:'Spark',dmg:65},{name:'Crunch',dmg:80},{name:'Charge',dmg:0},{name:'Thunderbolt',dmg:90}] },
+  Luxray:      { type:'Electric',moves:[{name:'Crunch',dmg:80},{name:'Thunder Fang',dmg:80},{name:'Charge',dmg:0},{name:'Thunder',dmg:110}] },
+  Metang:      { type:'Steel',   moves:[{name:'Iron Head',dmg:80},{name:'Bullet Punch',dmg:40},{name:'Zen Headbutt',dmg:80},{name:'Meteor Mash',dmg:90}] },
+  Metagross:   { type:'Steel',   moves:[{name:'Iron Head',dmg:80},{name:'Bullet Punch',dmg:40},{name:'Zen Headbutt',dmg:80},{name:'Meteor Mash',dmg:100}] },
+  Kirlia:      { type:'Psychic', moves:[{name:'Confusion',dmg:50},{name:'Double Team',dmg:0},{name:'Psybeam',dmg:65},{name:'Psychic',dmg:90}] },
+  Gardevoir:   { type:'Psychic', moves:[{name:'Confusion',dmg:50},{name:'Moonblast',dmg:95},{name:'Psychic',dmg:90},{name:'Future Sight',dmg:120}] },
+  Eldegoss:    { type:'Grass',   moves:[{name:'Leafage',dmg:40},{name:'Pollen Puff',dmg:90},{name:'Sing',dmg:0},{name:'Energy Ball',dmg:90}] },
+  Quagsire:    { type:'Water',   moves:[{name:'Water Gun',dmg:55},{name:'Mud Shot',dmg:55},{name:'Amnesia',dmg:0},{name:'Earthquake',dmg:100}] },
+  Houndstone:  { type:'Ghost',   moves:[{name:'Shadow Ball',dmg:80},{name:'Crunch',dmg:80},{name:'Phantom Force',dmg:90},{name:'Last Respects',dmg:150}] }
 };
-// Pokemon level+xp storage (keyed by name)
+
+// Pokemon level+xp storage
 var pokemonProgress = {};
 
-// Evolution map: name -> { into, level }
+// ============================================================
+// EVOLUTION MAP
+// ============================================================
 var EVOLUTION_MAP = {
-  // Starters
-  'Charmander':  { into: 'Charmeleon', level: 15 },
-  'Charmeleon':  { into: 'Charizard',  level: 30 },
-  'Froakie':     { into: 'Frogadier',  level: 15 },
-  'Frogadier':   { into: 'Greninja',   level: 30 },
-  'Treecko':     { into: 'Grovyle',    level: 15 },
-  'Grovyle':     { into: 'Sceptile',   level: 30 },
-  // Wild
+  'Charmander':  { into: 'Charmeleon', level: 16 },
+  'Charmeleon':  { into: 'Charizard',  level: 36 },
+  'Froakie':     { into: 'Frogadier',  level: 16 },
+  'Frogadier':   { into: 'Greninja',   level: 36 },
+  'Treecko':     { into: 'Grovyle',    level: 16 },
+  'Grovyle':     { into: 'Sceptile',   level: 36 },
   'Fletchling':  { into: 'Fletchinder', level: 15 },
-  'Fletchinder': { into: 'Talonflame',  level: 30 },
-  'Shinx':       { into: 'Luxio',       level: 15 },
-  'Luxio':       { into: 'Luxray',      level: 30 },
-  'Beldum':      { into: 'Metang',      level: 15 },
-  'Metang':      { into: 'Metagross',   level: 30 },
-  'Ralts':       { into: 'Kirlia',      level: 15 },
-  'Kirlia':      { into: 'Gardevoir',   level: 30 },
-  'Gossifleur':  { into: 'Eldegoss',    level: 15 },
-  'Wooper':      { into: 'Quagsire',    level: 15 },
-  'Greavard':    { into: 'Houndstone',  level: 15 }
+  'Fletchinder': { into: 'Talonflame', level: 30 },
+  'Shinx':       { into: 'Luxio',      level: 15 },
+  'Luxio':       { into: 'Luxray',     level: 30 },
+  'Beldum':      { into: 'Metang',     level: 15 },
+  'Metang':      { into: 'Metagross',  level: 30 },
+  'Ralts':       { into: 'Kirlia',     level: 15 },
+  'Kirlia':      { into: 'Gardevoir',  level: 30 },
+  'Gossifleur':  { into: 'Eldegoss',   level: 15 },
+  'Wooper':      { into: 'Quagsire',   level: 15 },
+  'Greavard':    { into: 'Houndstone', level: 15 }
 };
 
 // Evolution colors
@@ -978,24 +944,21 @@ function checkEvolution(pokeName, callback) {
   var prog = getPokemonProgress(pokeName);
   if (prog.level < evo.level) { if (callback) callback(pokeName, false); return; }
 
-  // Evolve! Transfer progress to new form
   var newName = evo.into;
   if (!pokemonProgress[newName]) pokemonProgress[newName] = { level: prog.level, xp: prog.xp };
   else { pokemonProgress[newName].level = prog.level; pokemonProgress[newName].xp = prog.xp; }
 
-  // If this was active pokemon, switch to evolved form
   if (activePokemon === pokeName) activePokemon = newName;
   if (starterChosen === pokeName) starterChosen = newName;
   if (companion && companion.name === pokeName) companion.name = newName;
 
-  // Add evolved form to caught list
   if (caughtPokemon.indexOf(newName) === -1) caughtPokemon.push(newName);
-  // Remove base from caught (replaced by evo)
   var idx = caughtPokemon.indexOf(pokeName);
   if (idx !== -1) caughtPokemon.splice(idx, 1);
 
   if (callback) callback(newName, true, pokeName);
 }
+
 var joystick = { dx:0, dy:0, active:false };
 var travelMenuOpen = false;
 var oakCutsceneActive = false;
@@ -1012,7 +975,6 @@ function startGame() {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   setupJoystick();
-  // Mom cutscene uses its own click handler on mom-screen
   requestAnimationFrame(gameLoop);
 }
 
@@ -1022,12 +984,11 @@ function resizeCanvas() {
   gameCanvas.height = ROWS * TILE;
   var scaleX = wrap.clientWidth  / gameCanvas.width;
   var scaleY = wrap.clientHeight / gameCanvas.height;
-  var scale = Math.min(scaleX, scaleY); // fit entire map on screen
+  var scale = Math.min(scaleX, scaleY);
   var w = Math.round(gameCanvas.width  * scale);
   var h = Math.round(gameCanvas.height * scale);
   gameCanvas.style.width  = w + 'px';
   gameCanvas.style.height = h + 'px';
-  // Center canvas
   gameCanvas.style.left = Math.round((wrap.clientWidth  - w) / 2) + 'px';
   gameCanvas.style.top  = Math.round((wrap.clientHeight - h) / 2) + 'px';
 }
@@ -1069,7 +1030,6 @@ function setupJoystick() {
   window.addEventListener('mousemove', function(e){ if(joystick.active) move(e); });
   window.addEventListener('mouseup',   end);
 
-  // Keyboard
   var kbKeys = {};
   document.addEventListener('keydown', function(e) {
     kbKeys[e.key] = true;
@@ -1124,28 +1084,23 @@ function gameLoop(ts) {
       player.frame = 0; player.frameTimer = 0;
     }
 
-    // Door/return triggers
     var mapCfg = maps[currentMap];
     if (mapCfg.hasDoorTrigger && !travelMenuOpen && player.y > 8.5 && player.x > 4.5 && player.x < 7.5) {
       showTravelMenu();
     }
 
-    // Nurse Joy trigger — she stands behind counter at row 1-2, center
     if (currentMap === 'center' && !nurseDialogueActive
         && player.x > 3.5 && player.x < 8.5 && player.y > 2.2 && player.y < 3.5) {
       startNurseCutscene();
     }
-    // Pokeball machine trigger — bottom left of center
     if (currentMap === 'center' && !pokeballMachineActive && pokeballs_claimed
         && player.x > 0.5 && player.x < 2.5 && player.y > 6.2 && player.y < 8.2) {
       startPokeballMachine();
     }
-    // Duke NPC trigger
     if (currentMap === 'castle' && !dukeDialogueActive
         && player.x > 6.8 && player.x < 9.2 && player.y > 6.0 && player.y < 8.0) {
       startDukeCutscene();
     }
-    // Wild sign trigger
     if (currentMap === 'wild' && !oakCutsceneActive
         && player.x > 4.6 && player.x < 6.4 && player.y > 1.0 && player.y < 2.2) {
       if (!starterChosen) {
@@ -1154,17 +1109,14 @@ function gameLoop(ts) {
         startOakSecondCutscene();
       }
     }
-    // Mom NPC trigger — mom stands at col 8, row 7
     if (currentMap === 'home' && !momCutsceneActive && !momCutsceneSeen
         && player.x > 6.8 && player.x < 9.2 && player.y > 6.2 && player.y < 8.0) {
       startMomCutscene();
     }
   }
 
-  // Wild encounter check (outside the main block so dt is always checked)
   checkWildEncounter(dt);
 
-  // Companion follow logic
   if (companion) {
     var cdx = player.x - companion.x;
     var cdy = player.y - companion.y;
@@ -1190,7 +1142,6 @@ function showTravelMenu() {
   travelMenuOpen = true;
   joystick.dx = 0; joystick.dy = 0;
 
-  // Dynamically update options based on current map
   var box = document.getElementById('travel-options-box');
   var destinations = [
     { dest: 'castle', label: 'Go to the Castle' },
@@ -1200,12 +1151,9 @@ function showTravelMenu() {
     { dest: 'stay',   label: 'Stay here' }
   ];
   box.innerHTML = '';
-  destinations.forEach(function(d, i) {
-    // Skip current location, replace with nothing (it's already there)
+  destinations.forEach(function(d) {
     if (d.dest === currentMap) return;
-    // Home map already has its own options; don't show "Go back Home" from home
     if (d.dest === 'home' && currentMap === 'home') return;
-    // Hide "stay" from non-home (or keep it everywhere)
     var btn = document.createElement('button');
     btn.className = 'travel-option' + (box.children.length === 0 ? ' selected' : '');
     btn.textContent = d.label;
@@ -1245,46 +1193,38 @@ function changeMap(name, spawnX, spawnY) {
 }
 
 // ============================================================
-// WILD ENCOUNTER & BATTLE SYSTEM
+// WILD POKEMON POOL — base forms only, matching Pokedex #4-#25
 // ============================================================
-
-// Wild Pokemon that can appear (base forms only)
 var WILD_POKEMON = [
-  { name:'Fletchling', color:'#f05030' },
-  { name:'Caterpie',   color:'#a8b820' },
-  { name:'Pikachu',    color:'#f8d030' },
-  { name:'Geodude',    color:'#b8a038' },
-  { name:'Gastly',     color:'#705898' },
-  { name:'Magikarp',   color:'#f08030' },
-  { name:'Abra',       color:'#f8d030' },
-  { name:'Ralts',      color:'#f0f0f0' },
-  { name:'Bunnelby',   color:'#c8a040' },
-  { name:'Gossifleur', color:'#f0a0c0' },
-  { name:'Wooper',     color:'#7090e0' },
-  { name:'Shinx',      color:'#6060e0' },
-  { name:'Beldum',     color:'#788090' },
-  { name:'Greavard',   color:'#707080' },
-  { name:'Wobbuffet',  color:'#70c8f0' }
+  { name:'Fletchling', color:'#f05030' },  // #004
+  { name:'Hawlucha',   color:'#78c850' },  // #007
+  { name:'Shinx',      color:'#6060e0' },  // #008
+  { name:'Beldum',     color:'#788090' },  // #011
+  { name:'Pikachu',    color:'#f8d030' },  // #014
+  { name:'Wobbuffet',  color:'#70c8f0' },  // #015
+  { name:'Delibird',   color:'#e04060' },  // #016
+  { name:'Ralts',      color:'#f0f0f0' },  // #017
+  { name:'Gossifleur', color:'#f0a0c0' },  // #020
+  { name:'Wooper',     color:'#7090e0' },  // #022
+  { name:'Greavard',   color:'#707080' }   // #024
 ];
 
 var battleActive = false;
 var encounterActive = false;
 var wildStepTimer = 0;
-var WILD_STEP_INTERVAL = 3.5; // seconds between possible encounters
+var WILD_STEP_INTERVAL = 3.5;
 var currentWildPokemon = null;
 
-// Battle state
 var battle = {
   playerHP: 0, playerMaxHP: 0,
   enemyHP: 0,  enemyMaxHP: 0,
   enemyPokemon: null,
   playerTurn: true,
-  phase: 'action', // 'action','log','catch','end'
+  phase: 'action',
   logQueue: [],
   enemyFainted: false
 };
 
-// ---- ENCOUNTER TRIGGER ----
 function checkWildEncounter(dt) {
   if (!starterChosen || !pokeballs_claimed) return;
   if (currentMap !== 'wild') return;
@@ -1309,15 +1249,7 @@ function checkWildEncounter(dt) {
 }
 
 function triggerWildEncounter() {
-  var baseOnly = WILD_POKEMON.filter(function(p) {
-    return !EVOLUTION_MAP[p.name] || Object.keys(EVOLUTION_MAP).every(function(k){ return EVOLUTION_MAP[k].into !== p.name; });
-  });
-  // Extra safety: exclude anything that is an evolution target
-  var evoTargets = {};
-  Object.keys(EVOLUTION_MAP).forEach(function(k){ evoTargets[EVOLUTION_MAP[k].into] = true; });
-  var safePool = WILD_POKEMON.filter(function(p){ return !evoTargets[p.name]; });
-  var pool = safePool.length > 0 ? safePool : WILD_POKEMON;
-  var p = pool[Math.floor(Math.random() * pool.length)];
+  var p = WILD_POKEMON[Math.floor(Math.random() * WILD_POKEMON.length)];
   currentWildPokemon = p;
   encounterActive = true;
   joystick.dx = 0; joystick.dy = 0; joystick.active = false;
@@ -1326,7 +1258,6 @@ function triggerWildEncounter() {
   document.getElementById('enc-title').innerHTML =
     'A Wild <span style="color:#f8d030">' + p.name + '</span><br>has Appeared!<br><br>What will you do?';
 
-  // Draw sprite in popup
   var wrap = document.getElementById('enc-sprite-wrap');
   var cv = document.createElement('canvas');
   cv.width = 48; cv.height = 48;
@@ -1381,7 +1312,6 @@ function startBattle(wildPoke) {
   document.getElementById('battle-enemy-name').textContent  = wildPoke.name + ' Lv.' + enemyLevel;
   updateBattleHUD();
 
-  // Show intro message then immediately show moves
   setBattleLog('A wild ' + wildPoke.name + '\nappeared!');
   setTimeout(function(){ showBattleActions(); }, 900);
 }
@@ -1514,7 +1444,8 @@ function _showPostBattleOptions(msg) {
   setBattleLog(msg);
   setTimeout(function(){
     setBattleLog('What will you do?');
-    if (inventory.pokeballs > 0) {
+    var isWildBaseForm = WILD_POKEMON.some(function(p){ return p.name === battle.enemyPokemon.name; });
+    if (inventory.pokeballs > 0 && isWildBaseForm) {
       document.getElementById('battle-catch-btn').style.display = 'block';
     }
     document.getElementById('battle-leave-btn').style.display = 'block';
@@ -1530,9 +1461,9 @@ function battleCatch() {
   setTimeout(function() {
     var caught = Math.random() < 0.65;
     if (caught) {
-      var evoTargets2 = {};
-      Object.keys(EVOLUTION_MAP).forEach(function(k){ evoTargets2[EVOLUTION_MAP[k].into] = true; });
-      if (!evoTargets2[battle.enemyPokemon.name] && caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
+      // Only add to caught list if it's a base wild pokemon (not an evolution)
+      var isWildBase = WILD_POKEMON.some(function(p){ return p.name === battle.enemyPokemon.name; });
+      if (isWildBase && caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
         caughtPokemon.push(battle.enemyPokemon.name);
       }
       var myProg = getPokemonProgress(battle.playerName);
@@ -1665,7 +1596,7 @@ function advanceNurseCutscene() {
     nurseDialogueActive = false;
     joystick.dx = 0; joystick.dy = 0; joystick.active = false;
     document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
-    player.y = 4.0; // push back from counter
+    player.y = 4.0;
   }
 }
 
@@ -1716,11 +1647,13 @@ function makeBtn(label, bg, color, border, fn) {
 function closePokeballMachine() {
   document.getElementById('pokeball-machine-popup').style.display = 'none';
   pokeballMachineActive = false;
-  player.y = 6.0; // push back from machine
+  player.y = 6.0;
   joystick.dx = 0; joystick.dy = 0; joystick.active = false;
 }
 
-
+// ============================================================
+// DUKE NPC
+// ============================================================
 var dukeLines = [];
 var dukeIndex = 0;
 var dukeTyping = false;
@@ -1756,37 +1689,22 @@ function drawDukeCanvas() {
   ctx.imageSmoothingEnabled = false;
   function dp(x,y,w,h,col){ ctx.fillStyle=col; ctx.fillRect(x,y,w,h); }
   ctx.clearRect(0,0,64,96);
-  // Boots
   dp(16,86,10,8,'#3a2010'); dp(38,86,10,8,'#3a2010');
-  // Legs
   dp(14,60,14,28,'#5030a0'); dp(36,60,14,28,'#5030a0');
-  // Gold belt
   dp(12,58,40,5,'#c8a820'); dp(28,56,8,7,'#f0d040');
-  // Body robe
   dp(10,30,44,30,'#5030a0');
-  // White fur trim top
   dp(10,30,44,5,'#f0f0f0');
-  // Fur sides
   dp(10,35,6,24,'#f0f0f0'); dp(48,35,6,24,'#f0f0f0');
-  // Gold epaulettes
   dp(6,30,8,10,'#c8a820'); dp(50,30,8,10,'#c8a820');
-  // Arms
   dp(4,32,8,24,'#5030a0'); dp(52,32,8,24,'#5030a0');
-  // Hands
   dp(4,54,8,8,'#f0c8a0'); dp(52,54,8,8,'#f0c8a0');
-  // Neck
   dp(28,22,8,10,'#f0c8a0');
-  // Head
   dp(20,4,24,22,'#f0c8a0');
-  // Crown
   dp(20,2,24,6,'#c8a820');
   dp(20,-4,6,8,'#c8a820'); dp(29,-6,6,10,'#c8a820'); dp(38,-4,6,8,'#c8a820');
   dp(30,-5,4,5,'#e03030');
-  // Moustache
   dp(20,18,8,3,'#8b5010'); dp(36,18,8,3,'#8b5010');
-  // Eyes
   dp(24,12,4,4,'#333'); dp(36,12,4,4,'#333');
-  // Smile
   dp(26,24,12,2,'#c07050');
 }
 
@@ -1830,64 +1748,74 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// POKÉDEX
+// POKÉDEX — exact 25 entries from the image
 // ============================================================
-var ALL_STARTERS = {
+
+// The full ordered Pokedex list
+var POKEDEX_LIST = [
+  // Starters — slot depends on chosen starter, handled dynamically
+  { num:'#001', name:'STARTER_1',   how:'starter' },
+  { num:'#002', name:'STARTER_2',   how:'evo'     },
+  { num:'#003', name:'STARTER_3',   how:'evo'     },
+  // Wild + evolutions
+  { num:'#004', name:'Fletchling',  color:'#f05030', how:'wild' },
+  { num:'#005', name:'Fletchinder', color:'#d03010', how:'evo'  },
+  { num:'#006', name:'Talonflame',  color:'#b02008', how:'evo'  },
+  { num:'#007', name:'Hawlucha',    color:'#78c850', how:'wild' },
+  { num:'#008', name:'Shinx',       color:'#6060e0', how:'wild' },
+  { num:'#009', name:'Luxio',       color:'#4040c0', how:'evo'  },
+  { num:'#010', name:'Luxray',      color:'#2020a0', how:'evo'  },
+  { num:'#011', name:'Beldum',      color:'#788090', how:'wild' },
+  { num:'#012', name:'Metang',      color:'#6070a0', how:'evo'  },
+  { num:'#013', name:'Metagross',   color:'#4050a0', how:'evo'  },
+  { num:'#014', name:'Pikachu',     color:'#f8d030', how:'wild' },
+  { num:'#015', name:'Wobbuffet',   color:'#70c8f0', how:'wild' },
+  { num:'#016', name:'Delibird',    color:'#e04060', how:'wild' },
+  { num:'#017', name:'Ralts',       color:'#f0f0f0', how:'wild' },
+  { num:'#018', name:'Kirlia',      color:'#e0d0f0', how:'evo'  },
+  { num:'#019', name:'Gardevoir',   color:'#c0b0f0', how:'evo'  },
+  { num:'#020', name:'Gossifleur',  color:'#f0a0c0', how:'wild' },
+  { num:'#021', name:'Eldegoss',    color:'#e090b0', how:'evo'  },
+  { num:'#022', name:'Wooper',      color:'#7090e0', how:'wild' },
+  { num:'#023', name:'Quagsire',    color:'#5070c0', how:'evo'  },
+  { num:'#024', name:'Greavard',    color:'#707080', how:'wild' },
+  { num:'#025', name:'Houndstone',  color:'#505060', how:'evo'  }
+];
+
+// Starter line data
+var STARTER_LINES = {
   Charmander: [
-    { num:'#001', name:'Charmander',  color:'#f08030', how:'starter', evo:'Charmeleon',  evoLevel:16 },
-    { num:'#002', name:'Charmeleon',  color:'#e06020', how:'evo',     evo:'Charizard',   evoLevel:36 },
-    { num:'#003', name:'Charizard',   color:'#c04010', how:'evo',     evo:null,          evoLevel:null }
+    { name:'Charmander',  color:'#f08030' },
+    { name:'Charmeleon',  color:'#e06020' },
+    { name:'Charizard',   color:'#c04010' }
   ],
   Froakie: [
-    { num:'#001', name:'Froakie',     color:'#6890f0', how:'starter', evo:'Frogadier',   evoLevel:16 },
-    { num:'#002', name:'Frogadier',   color:'#5070d0', how:'evo',     evo:'Greninja',    evoLevel:36 },
-    { num:'#003', name:'Greninja',    color:'#4060c0', how:'evo',     evo:null,          evoLevel:null }
+    { name:'Froakie',   color:'#6890f0' },
+    { name:'Frogadier', color:'#5070d0' },
+    { name:'Greninja',  color:'#4060c0' }
   ],
   Treecko: [
-    { num:'#001', name:'Treecko',     color:'#78c850', how:'starter', evo:'Grovyle',     evoLevel:16 },
-    { num:'#002', name:'Grovyle',     color:'#58a030', how:'evo',     evo:'Sceptile',    evoLevel:36 },
-    { num:'#003', name:'Sceptile',    color:'#38801a', how:'evo',     evo:null,          evoLevel:null }
+    { name:'Treecko',  color:'#78c850' },
+    { name:'Grovyle',  color:'#58a030' },
+    { name:'Sceptile', color:'#38801a' }
   ]
 };
 
-// POKEDEX_POKEMON = full list including evolutions (for Pokedex display only)
-var POKEDEX_POKEMON = [
-  { num:'#004', name:'Fletchling',  color:'#f05030', how:'wild', evo:'Fletchinder', evoLevel:15 },
-  { num:'#005', name:'Fletchinder', color:'#d03010', how:'evo',  evo:'Talonflame',  evoLevel:30 },
-  { num:'#006', name:'Talonflame',  color:'#b02008', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#007', name:'Hawlucha',    color:'#78c850', how:'wild', evo:null,          evoLevel:null },
-  { num:'#008', name:'Shinx',       color:'#6060e0', how:'wild', evo:'Luxio',       evoLevel:15 },
-  { num:'#009', name:'Luxio',       color:'#4040c0', how:'evo',  evo:'Luxray',      evoLevel:30 },
-  { num:'#010', name:'Luxray',      color:'#2020a0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#011', name:'Beldum',      color:'#788090', how:'wild', evo:'Metang',      evoLevel:15 },
-  { num:'#012', name:'Metang',      color:'#6070a0', how:'evo',  evo:'Metagross',   evoLevel:30 },
-  { num:'#013', name:'Metagross',   color:'#4050a0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#014', name:'Pikachu',     color:'#f8d030', how:'wild', evo:null,          evoLevel:null },
-  { num:'#015', name:'Wobbuffet',   color:'#70c8f0', how:'wild', evo:null,          evoLevel:null },
-  { num:'#016', name:'Caterpie',    color:'#a8b820', how:'wild', evo:null,          evoLevel:null },
-  { num:'#017', name:'Ralts',       color:'#f0f0f0', how:'wild', evo:'Kirlia',      evoLevel:15 },
-  { num:'#018', name:'Kirlia',      color:'#e0d0f0', how:'evo',  evo:'Gardevoir',   evoLevel:30 },
-  { num:'#019', name:'Gardevoir',   color:'#c0b0f0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#020', name:'Gossifleur',  color:'#f0a0c0', how:'wild', evo:'Eldegoss',    evoLevel:15 },
-  { num:'#021', name:'Eldegoss',    color:'#e090b0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#022', name:'Wooper',      color:'#7090e0', how:'wild', evo:'Quagsire',    evoLevel:15 },
-  { num:'#023', name:'Quagsire',    color:'#5070c0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#024', name:'Greavard',    color:'#707080', how:'wild', evo:'Houndstone',  evoLevel:15 },
-  { num:'#025', name:'Houndstone',  color:'#505060', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#026', name:'Geodude',     color:'#b8a038', how:'wild', evo:null,          evoLevel:null },
-  { num:'#027', name:'Gastly',      color:'#705898', how:'wild', evo:null,          evoLevel:null },
-  { num:'#028', name:'Magikarp',    color:'#f08030', how:'wild', evo:null,          evoLevel:null },
-  { num:'#029', name:'Abra',        color:'#f8d030', how:'wild', evo:null,          evoLevel:null },
-  { num:'#030', name:'Bunnelby',    color:'#c8a040', how:'wild', evo:null,          evoLevel:null }
-];
-
-function getAllPokemon() {
-  var starterLine = starterChosen && ALL_STARTERS[starterChosen] ? ALL_STARTERS[starterChosen] : [
-    { num:'#001', name:'???', color:'#888', how:'starter', evo:null, evoLevel:null },
-    { num:'#002', name:'???', color:'#777', how:'evo',     evo:null, evoLevel:null },
-    { num:'#003', name:'???', color:'#666', how:'evo',     evo:null, evoLevel:null }
-  ];
-  return starterLine.concat(POKEDEX_POKEMON);
+function resolvePokedexEntry(entry) {
+  // Resolve starter slots
+  if (entry.how === 'starter' || entry.how === 'evo') {
+    var slot = parseInt(entry.num.replace('#','')) - 1; // 0,1,2
+    if (slot <= 2) {
+      if (!starterChosen) return { name:'???', color:'#888', locked:true, entry:entry };
+      var line = STARTER_LINES[starterChosen];
+      if (!line) return { name:'???', color:'#888', locked:true, entry:entry };
+      var s = line[slot];
+      var caught = (slot === 0) || caughtPokemon.indexOf(s.name) !== -1;
+      return { name: s.name, color: s.color, locked: !caught, entry: entry };
+    }
+  }
+  var caught = caughtPokemon.indexOf(entry.name) !== -1;
+  return { name: entry.name, color: entry.color || '#888', locked: !caught, entry: entry };
 }
 
 function togglePokedex() {
@@ -1909,64 +1837,44 @@ function pokedexBack() {
   document.getElementById('pokedex-title').textContent = '📖 POKÉDEX';
 }
 
-function resolveEntry(p) {
-  // For starter slots (#001-003), show the correct pokemon based on chosen starter
-  if (p.how === 'starter' || (p.alt && p.num <= '#003')) {
-    if (!starterChosen) return { name: p.name, color: p.color, p: p }; // default
-    // #001 = starter itself
-    if (p.num === '#001') {
-      var name = starterChosen;
-      var color = p.colorAlt && p.colorAlt[name] ? p.colorAlt[name] : p.color;
-      if (name === p.name) color = p.color;
-      return { name: name, color: color, p: p };
-    }
-    // #002 = evo of starter
-    if (p.num === '#002') {
-      var evoMap = { Charmander:'Charmeleon', Froakie:'Frogadier', Treecko:'Grovyle' };
-      var colorMap = { Charmeleon:'#e06020', Frogadier:'#5070d0', Grovyle:'#58a030' };
-      var name = evoMap[starterChosen] || p.name;
-      return { name: name, color: colorMap[name] || p.color, p: p };
-    }
-    // #003 = final evo
-    if (p.num === '#003') {
-      var evoMap = { Charmander:'Charizard', Froakie:'Greninja', Treecko:'Sceptile' };
-      var colorMap = { Charizard:'#c04010', Greninja:'#4060c0', Sceptile:'#38801a' };
-      var name = evoMap[starterChosen] || p.name;
-      return { name: name, color: colorMap[name] || p.color, p: p };
-    }
-  }
-  return { name: p.name, color: p.color, p: p };
-}
-
 function renderPokedex() {
   pokedexBack();
   var list = document.getElementById('pokedex-list');
   list.innerHTML = '';
-  getAllPokemon().forEach(function(p) {
-    var resolved = resolveEntry(p);
-    var rname = resolved.name;
-    var rcolor = resolved.color;
-    var caught = caughtPokemon.indexOf(rname) !== -1;
-    if (starterChosen && rname === starterChosen) caught = true;
 
-    // Hide evolutions entirely unless caught — only show base forms as locked
-    if (p.how === 'evo' && !caught) return;
+  POKEDEX_LIST.forEach(function(entry) {
+    var resolved = resolvePokedexEntry(entry);
+    var caught = !resolved.locked;
 
-    var entry = document.createElement('div');
-    entry.className = 'pokedex-entry ' + (caught ? 'caught' : 'locked');
+    // Always show ALL 25 entries — locked ones display as ???
+    var div = document.createElement('div');
+    div.className = 'pokedex-entry ' + (caught ? 'caught' : 'locked');
+
     var cv = document.createElement('canvas');
     cv.width = 32; cv.height = 32; cv.className = 'pokedex-sprite';
-    if (caught) drawPokedexSprite(cv.getContext('2d'), rname, rcolor);
-    else { var ctx2=cv.getContext('2d'); ctx2.fillStyle='#555'; ctx2.font='18px sans-serif'; ctx2.textAlign='center'; ctx2.fillText('?',16,24); }
-    var isActive = (activePokemon === rname);
-    entry.innerHTML = '<span class="pokedex-num">' + p.num + '</span>'
-      + cv.outerHTML
-      + '<span class="pokedex-name">' + (caught ? rname : '???') + '</span>'
-      + (isActive ? '<span style="font-family:\'Press Start 2P\',cursive;font-size:9px;color:#f8d030;margin-left:auto;">★</span>' : '');
-    if (caught) {
-      (function(rn, rc, pp){ entry.addEventListener('click', function(){ showPokedexDetail({name:rn,color:rc,num:pp.num}); }); })(rname, rcolor, p);
+    if (caught && resolved.name !== '???') {
+      drawPokedexSprite(cv.getContext('2d'), resolved.name, resolved.color);
+    } else {
+      var ctx2 = cv.getContext('2d');
+      ctx2.fillStyle='#555'; ctx2.font='18px sans-serif';
+      ctx2.textAlign='center'; ctx2.fillText('?',16,24);
     }
-    list.appendChild(entry);
+
+    var isActive = (activePokemon === resolved.name);
+    div.innerHTML = '<span class="pokedex-num">' + entry.num + '</span>'
+      + cv.outerHTML
+      + '<span class="pokedex-name">' + (caught ? resolved.name : '???') + '</span>'
+      + (isActive ? '<span style="font-family:\'Press Start 2P\',cursive;font-size:9px;color:#f8d030;margin-left:auto;">★</span>' : '');
+
+    if (caught && resolved.name !== '???') {
+      (function(rn, rc, en){
+        div.addEventListener('click', function(){
+          showPokedexDetail({ name: rn, color: rc, num: en.num });
+        });
+      })(resolved.name, resolved.color, entry);
+    }
+
+    list.appendChild(div);
   });
 }
 
@@ -1975,9 +1883,7 @@ function showPokedexDetail(p) {
   var data = POKEMON_DATA[p.name] || { type:'Normal', moves:[{name:'Tackle',dmg:40}] };
   var xpNeeded = prog.level * 100;
   var xpPct = Math.min(100, Math.round(prog.xp / xpNeeded * 100));
-
   var maxHP = 120 + (prog.level - 1) * 15;
-  var currentHP = maxHP;
   var hpColor = '#40d060';
 
   var cv = document.createElement('canvas');
@@ -2008,7 +1914,7 @@ function showPokedexDetail(p) {
     + '</div></div>'
     + activeBtnHTML
     + '<div class="poke-detail-section">❤ STATS</div>'
-    + '<div class="poke-level-row"><span class="poke-level-label">HP</span><span class="poke-level-val">' + currentHP + ' / ' + maxHP + '</span></div>'
+    + '<div class="poke-level-row"><span class="poke-level-label">HP</span><span class="poke-level-val">' + maxHP + ' / ' + maxHP + '</span></div>'
     + '<div class="poke-xp-bar-wrap"><div class="poke-xp-bar" style="width:100%;background:linear-gradient(90deg,' + hpColor + ',#80ff80)"></div></div>'
     + '<div class="poke-level-row" style="margin-top:8px"><span class="poke-level-label">Level</span><span class="poke-level-val">' + prog.level + '</span></div>'
     + '<div class="poke-level-row"><span class="poke-level-label">XP</span><span class="poke-level-val">' + prog.xp + ' / ' + xpNeeded + '</span></div>'
@@ -2024,13 +1930,9 @@ function showPokedexDetail(p) {
 
 function setActivePokemon(name, color) {
   activePokemon = name;
-  // Update companion follower
   companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
-  // Refresh detail view to show "Currently Active"
-  var pData = null;
-  allPokemon.forEach(function(p){ if(p.name===name) pData=p; });
-  if (!pData) pData = { name:name, color:color, num:'???' };
-  showPokedexDetail(pData);
+  renderPokedex();
+  showPokedexDetail({ name: name, color: color, num: '???' });
 }
 
 function getPokemonProgress(name) {
@@ -2060,10 +1962,6 @@ function updateHUD() {
   document.getElementById('hud-ball-count').textContent = 'x' + inventory.pokeballs;
 }
 
-// Also block joystick when pokedex open + nurse active
-// ============================================================
-// MOM NPC DIALOGUE
-// ============================================================
 // ============================================================
 // MOM CUTSCENE
 // ============================================================
@@ -2099,31 +1997,19 @@ function drawMomCanvas() {
   ctx.imageSmoothingEnabled = false;
   function dp(x,y,w,h,col){ ctx.fillStyle=col; ctx.fillRect(x,y,w,h); }
   ctx.clearRect(0,0,64,96);
-  // Shoes
   dp(18,88,10,6,'#3a2a1a'); dp(36,88,10,6,'#3a2a1a');
-  // Legs/skirt
   dp(16,65,14,24,'#9050c0'); dp(34,65,14,24,'#9050c0');
-  // Dress body
   dp(12,38,40,30,'#9050c0');
-  // Apron
   dp(22,40,20,26,'#f0f0f0'); dp(24,42,16,22,'#e8e8e8');
-  // Arms
   dp(6,40,8,20,'#9050c0'); dp(50,40,8,20,'#9050c0');
-  // Hands
   dp(6,58,8,8,'#e8b090'); dp(50,58,8,8,'#e8b090');
-  // Neck
   dp(26,30,12,10,'#e8b090');
-  // Head
   dp(18,10,28,24,'#e8b090');
-  // Hair
   dp(16,8,32,12,'#5a2a10');
   dp(14,12,6,14,'#5a2a10'); dp(44,12,6,14,'#5a2a10');
-  // Bun top-right
   dp(40,4,12,12,'#5a2a10'); dp(42,2,8,8,'#7a3a18');
-  // Eyes
   dp(22,20,5,4,'#111'); dp(37,20,5,4,'#111');
   dp(23,20,3,2,'#fff'); dp(38,20,3,2,'#fff');
-  // Smile
   dp(24,28,4,2,'#c07060'); dp(36,28,4,2,'#c07060'); dp(28,30,8,2,'#c07060');
 }
 
@@ -2164,7 +2050,6 @@ function advanceMomCutscene() {
   if (momDialogIndex < momDialogLines.length) {
     momRunLine();
   } else {
-    // End cutscene
     document.getElementById('mom-screen').classList.remove('active');
     momCutsceneActive = false;
     joystick.dx = 0; joystick.dy = 0; joystick.active = false;
@@ -2179,7 +2064,7 @@ var oakDialogIndex = 0;
 var oakIsTyping = false;
 var oakTypeTimeout = null;
 var oakWaitingTap = false;
-var oakPhase = 'intro'; // 'intro' | 'choose'
+var oakPhase = 'intro';
 
 function startOakCutscene() {
   oakCutsceneActive = true;
@@ -2268,7 +2153,7 @@ function drawStarterPreview(canvasId, name) {
     c.fillStyle='#3878d8'; c.fillRect(-6,-15,4,4); c.fillRect(2,-15,4,4);
     c.fillStyle='#111'; c.fillRect(-5,-14,2,2); c.fillRect(3,-14,2,2);
     c.fillStyle='#3878d8'; c.fillRect(-8,8,6,7); c.fillRect(2,8,6,7);
-    c.fillStyle='#2060b8'; c.fillRect(-8,13,6,2); c.fillRect(2,13,6,2);
+    c.fillStyle='#2060b8'; c.fillRect(-8,13,6,2); c.fillRect(2,13,5,2);
   } else if (name === 'Treecko') {
     c.fillStyle='#40b840'; c.fillRect(-7,-7,14,14);
     c.fillStyle='#98e060'; c.fillRect(-4,-2,8,8);
@@ -2276,8 +2161,7 @@ function drawStarterPreview(canvasId, name) {
     c.fillStyle='#e04040'; c.fillRect(-6,-9,12,5);
     c.fillStyle='#fff'; c.fillRect(-6,-17,5,5); c.fillRect(1,-17,5,5);
     c.fillStyle='#111'; c.fillRect(-5,-16,3,3); c.fillRect(2,-16,3,3);
-    c.fillStyle='#309030'; c.fillRect(6,-3,8,12);
-    c.fillStyle='#40b840'; c.fillRect(7,-5,6,10);
+    c.fillStyle='#40b840'; c.fillRect(6,-3,8,12);
     c.fillStyle='#40b840'; c.fillRect(-7,7,5,7); c.fillRect(2,7,5,7);
     c.fillStyle='#309030'; c.fillRect(-7,12,5,2); c.fillRect(2,12,5,2);
   }
@@ -2289,6 +2173,8 @@ function selectStarter(name) {
   document.getElementById('oak-dialogue-box').style.display = 'block';
   starterChosen = name;
   activePokemon = name;
+  // Add starter to caught list
+  if (caughtPokemon.indexOf(name) === -1) caughtPokemon.push(name);
   companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
   oakPhase = 'congrats';
   oakCongratsLines = [
@@ -2307,7 +2193,7 @@ var oakCongratsIndex = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('oak-screen').addEventListener('click', function(e) {
-    if (oakPhase === 'second') return; // handled by second cutscene handler
+    if (oakPhase === 'second') return;
     if (e.target.closest('.starter-ball')) return;
     if (oakIsTyping) {
       clearTimeout(oakTypeTimeout);
@@ -2335,7 +2221,6 @@ document.addEventListener('DOMContentLoaded', function() {
             oakWaitingTap = true;
           });
         } else {
-          // End cutscene
           document.getElementById('oak-screen').classList.remove('active');
           oakCutsceneActive = false;
           joystick.dx = 0; joystick.dy = 0; joystick.active = false;
@@ -2348,7 +2233,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// OAK SECOND CUTSCENE (after getting pokeballs)
+// OAK SECOND CUTSCENE
 // ============================================================
 var oakSecondLines = [];
 var oakSecondIndex = 0;
@@ -2395,12 +2280,10 @@ function oakSecondRunLine() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Hook second cutscene into oak-screen click (oak-screen is reused)
   var oakScreen = document.getElementById('oak-screen');
   oakScreen.addEventListener('click', function(e) {
     if (!oakCutsceneActive || !oakSecondCutsceneDone || oakSecondLines.length === 0) return;
     if (e.target.closest('.starter-ball')) return;
-    // Only handle if we're in second cutscene mode (oakPhase won't be set)
     if (oakPhase !== 'second') return;
     if (oakSecondTyping) {
       clearTimeout(oakSecondTimer);
@@ -2419,7 +2302,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         document.getElementById('oak-screen').classList.remove('active');
         oakCutsceneActive = false;
-        oakSecondLines = []; // clear so first oak handler doesn't interfere
+        oakSecondLines = [];
         joystick.dx = 0; joystick.dy = 0; joystick.active = false;
         document.getElementById('joystick-knob').style.transform = 'translate(-50%,-50%)';
         player.y = 3.5; player.x = 5.5;
@@ -2436,7 +2319,6 @@ function drawGame() {
   var W = COLS*TILE, H = ROWS*TILE;
   c.clearRect(0,0,W,H);
 
-  // Tiles
   for (var r = 0; r < ROWS; r++) {
     for (var col = 0; col < COLS; col++) {
       var t = roomMap[r][col];
@@ -2445,7 +2327,6 @@ function drawGame() {
     }
   }
 
-  // Map-specific decorations
   if (currentMap === 'home') drawHomeDecorations(c);
   if (currentMap === 'center') drawCenterDecorations(c);
   if (currentMap === 'wild') drawWildDecorations(c);
@@ -2480,54 +2361,43 @@ function drawTile(c, t, px, py, r, col) {
     c.strokeStyle='#409020'; c.lineWidth=0.5;
     c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
   } else if (t === T_TREE) {
-    // ground under tree
     c.fillStyle='#409020'; c.fillRect(px,py,TILE,TILE);
-    // trunk
     c.fillStyle='#6b3a1f'; c.fillRect(px+10,py+18,12,14);
-    // canopy
     c.fillStyle='#2a8020'; c.fillRect(px+4,py+4,24,20);
     c.fillStyle='#38a030'; c.fillRect(px+6,py+2,20,8);
     c.fillStyle='#2a8020'; c.fillRect(px+2,py+8,28,14);
   } else if (t === T_WATER) {
     c.fillStyle = (r+col)%2===0 ? '#4080d8' : '#3878d0';
     c.fillRect(px,py,TILE,TILE);
-    // wave lines
     c.strokeStyle='rgba(255,255,255,0.3)'; c.lineWidth=1.5;
     c.beginPath(); c.moveTo(px+4,py+10); c.quadraticCurveTo(px+12,py+6,px+20,py+10); c.stroke();
     c.beginPath(); c.moveTo(px+8,py+20); c.quadraticCurveTo(px+16,py+16,px+24,py+20); c.stroke();
   } else if (t === T_CASTLE_FLOOR) {
-    // grey stone floor
     c.fillStyle = (r+col)%2===0 ? '#909090' : '#888888';
     c.fillRect(px,py,TILE,TILE);
     c.strokeStyle='#707070'; c.lineWidth=0.5;
     c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
   } else if (t === T_CARPET) {
-    // Red royal carpet
     c.fillStyle='#8b1020'; c.fillRect(px,py,TILE,TILE);
     c.fillStyle='#aa1828'; c.fillRect(px+3,py+3,TILE-6,TILE-6);
-    // gold border detail
     c.strokeStyle='#c8a820'; c.lineWidth=1.5;
     c.strokeRect(px+2,py+2,TILE-4,TILE-4);
   } else if (t === T_PC_FLOOR) {
-    // Pokemon center cream floor
     c.fillStyle = (r+col)%2===0 ? '#f0ecd8' : '#ece8d4';
     c.fillRect(px,py,TILE,TILE);
     c.strokeStyle='#d8d4c0'; c.lineWidth=0.5;
     c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
-    // pokeball circle in center area
     if (r===5 && col===5) {
       c.strokeStyle='rgba(200,180,160,0.5)'; c.lineWidth=2;
       c.beginPath(); c.arc(px+TILE/2,py+TILE/2,TILE/2-4,0,Math.PI*2); c.stroke();
     }
   } else if (t === T_PC_COUNTER) {
-    // Pink/red counter top
     c.fillStyle='#e05870'; c.fillRect(px,py,TILE,TILE);
     c.fillStyle='#f07080'; c.fillRect(px+2,py+2,TILE-4,TILE/2);
     c.strokeStyle='#c04060'; c.lineWidth=1;
     c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
   } else if (t === T_TALL_GRASS) {
     c.fillStyle='#409020'; c.fillRect(px,py,TILE,TILE);
-    // tall grass blades
     c.fillStyle='#50b828';
     for (var gx=0; gx<4; gx++) {
       c.fillRect(px+4+gx*7, py+8, 3, TILE-10);
@@ -2542,7 +2412,6 @@ function drawTile(c, t, px, py, r, col) {
 
 // ---- HOME DECORATIONS ----
 function drawHomeDecorations(c) {
-  // Red door mat at bottom gap
   c.fillStyle='#c05030'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
   c.fillStyle='#a03010'; c.fillRect(5*TILE+5,9*TILE+4,TILE*2-10,7);
   drawBookshelf(c, 1*TILE, 1*TILE);
@@ -2553,7 +2422,6 @@ function drawHomeDecorations(c) {
   drawPlant(c, 10*TILE, 4*TILE);
   drawPlant(c, 10*TILE, 6*TILE);
   drawBed(c, 4*TILE, 4*TILE);
-  // Mom NPC — stands at col 8, row 7
   drawMom(c, 8*TILE + TILE/2, 7*TILE + TILE/2);
 }
 
@@ -2563,39 +2431,26 @@ function drawMom(c, px, py) {
   var S = TILE;
   var cx = x + S/2;
   var cy = y;
-  // Shadow
   c.fillStyle='rgba(0,0,0,0.15)';
   c.beginPath(); c.ellipse(cx, y+S+2, S/3, 4, 0, 0, Math.PI*2); c.fill();
-  // Shoes
   c.fillStyle='#3a2a1a'; c.fillRect(cx-6,cy+S-6,5,4); c.fillRect(cx+1,cy+S-6,5,4);
-  // Legs / skirt bottom
   c.fillStyle='#7040a0'; c.fillRect(cx-7,cy+S*0.55,14,S*0.3);
-  // Dress body
   c.fillStyle='#9050c0'; c.fillRect(cx-8,cy+S*0.28,16,S*0.32);
-  // White apron
   c.fillStyle='#f0f0f0'; c.fillRect(cx-4,cy+S*0.3,8,S*0.26);
   c.fillStyle='#e0e0e0'; c.fillRect(cx-3,cy+S*0.32,6,S*0.22);
-  // Arms
   c.fillStyle='#9050c0'; c.fillRect(cx-11,cy+S*0.3,3,S*0.2); c.fillRect(cx+8,cy+S*0.3,3,S*0.2);
   c.fillStyle='#e8b090'; c.fillRect(cx-11,cy+S*0.48,3,4); c.fillRect(cx+8,cy+S*0.48,3,4);
-  // Neck
   c.fillStyle='#e8b090'; c.fillRect(cx-3,cy+S*0.2,6,S*0.1);
-  // Head
   c.fillStyle='#e8b090'; c.fillRect(cx-7,cy+S*0.03,14,13);
-  // Hair - brown bun
   c.fillStyle='#5a2a10'; c.fillRect(cx-7,cy,14,7);
   c.fillStyle='#7a3a18'; c.fillRect(cx-6,cy-3,12,5);
-  // Bun
   c.fillStyle='#5a2a10';
   c.beginPath(); c.arc(cx+5,cy-2,5,0,Math.PI*2); c.fill();
   c.fillStyle='#7a3a18';
   c.beginPath(); c.arc(cx+5,cy-2,3,0,Math.PI*2); c.fill();
-  // Eyes (looking left toward player area)
   c.fillStyle='#111'; c.fillRect(cx-4,cy+S*0.1,3,3); c.fillRect(cx+1,cy+S*0.1,3,3);
   c.fillStyle='#fff'; c.fillRect(cx-3,cy+S*0.1,2,2); c.fillRect(cx+2,cy+S*0.1,2,2);
-  // Smile
   c.fillStyle='#c07060'; c.fillRect(cx-2,cy+S*0.17,5,1);
-  // Name tag above head
   c.fillStyle='rgba(0,0,0,0.65)'; c.fillRect(cx-14,cy-18,28,11);
   c.strokeStyle='#9050c0'; c.lineWidth=1; c.strokeRect(cx-14,cy-18,28,11);
   c.fillStyle='#f0d0ff'; c.font='5px "Press Start 2P",cursive';
@@ -2604,20 +2459,13 @@ function drawMom(c, px, py) {
 
 // ---- POKEMON CENTER DECORATIONS ----
 function drawCenterDecorations(c) {
-  // Nurse Joy counter with equipment
-  // Counter front face (3D effect)
   c.fillStyle='#c04060';
   c.fillRect(1*TILE, 3*TILE, 10*TILE, 6);
-  // Nurse Joy sprite (simple)
   drawNurseJoy(c, 5*TILE+8, 1*TILE+4);
-  // PC machine left
   drawPCMachine(c, 1*TILE+4, 1*TILE+2);
-  // PC machine right
   drawPCMachine(c, 9*TILE-4, 1*TILE+2);
-  // Plants on counter ends
   drawSmallPlant(c, 1*TILE+6, 2*TILE-4);
   drawSmallPlant(c, 10*TILE-10, 2*TILE-4);
-  // Pokeball logo on floor (centered)
   var cx = 6*TILE, cy = 6*TILE;
   c.strokeStyle='rgba(180,160,140,0.6)'; c.lineWidth=3;
   c.beginPath(); c.arc(cx,cy,28,0,Math.PI*2); c.stroke();
@@ -2628,49 +2476,32 @@ function drawCenterDecorations(c) {
   c.beginPath(); c.arc(cx,cy,28,0,Math.PI); c.fill();
   c.fillStyle='rgba(180,160,140,0.5)';
   c.beginPath(); c.arc(cx,cy,8,0,Math.PI*2); c.fill();
-  // Healing machine bottom right
   drawHealingMachine(c, 9*TILE, 7*TILE);
-  // Pokeball vending machine bottom left (only visible after nurse first visit)
   if (pokeballs_claimed) drawPokeballMachine(c, 1*TILE, 7*TILE);
-  // Return mat label
-  c.fillStyle='rgba(0,0,0,0.4)';
-  c.fillRect(5*TILE, 9*TILE+14, TILE*2, 10);
 }
 
 function drawNurseJoy(c, x, y) {
   var S = TILE;
-  // Body - white uniform
   c.fillStyle='#f8f8f8'; c.fillRect(x-7,y+S*0.3,14,S*0.35);
-  // Pink trim
   c.fillStyle='#f080a0'; c.fillRect(x-7,y+S*0.3,14,4);
-  // Head
   c.fillStyle='#f0c8a0'; c.fillRect(x-5,y+4,10,11);
-  // Pink hair
   c.fillStyle='#f08898'; c.fillRect(x-6,y,12,8);
   c.fillRect(x-7,y+4,3,8); c.fillRect(x+4,y+4,3,8);
-  // Nurse hat
   c.fillStyle='#fff'; c.fillRect(x-5,y-2,10,5);
   c.fillStyle='#f080a0'; c.fillRect(x-3,y-2,6,3);
-  // Eyes
   c.fillStyle='#333'; c.fillRect(x-3,y+8,2,2); c.fillRect(x+1,y+8,2,2);
-  // Smile
   c.fillStyle='#c06070'; c.fillRect(x-2,y+12,4,1);
-  // Arms
   c.fillStyle='#f8f8f8'; c.fillRect(x-10,y+S*0.32,3,8); c.fillRect(x+7,y+S*0.32,3,8);
-  // Name tag above head
   c.fillStyle='rgba(0,0,0,0.65)'; c.fillRect(x-18,y-16,36,11);
   c.strokeStyle='#f080a0'; c.lineWidth=1; c.strokeRect(x-18,y-16,36,11);
   c.fillStyle='#ffe0e8'; c.font='5px "Press Start 2P",cursive';
-  c.textAlign='center'; c.fillText('Nurse Joy', x, y-8); c.textAlign='left';
+  c.textAlign='center'; c.fillText('Nurse', x, y-8); c.textAlign='left';
 }
 
 function drawPCMachine(c, x, y) {
-  // Base
   c.fillStyle='#556677'; c.fillRect(x,y,20,22);
-  // Screen
   c.fillStyle='#80d8f0'; c.fillRect(x+2,y+2,16,12);
   c.fillStyle='rgba(255,255,255,0.3)'; c.fillRect(x+2,y+2,6,5);
-  // Buttons
   c.fillStyle='#88aacc'; c.fillRect(x+3,y+16,4,3);
   c.fillStyle='#aaccee'; c.fillRect(x+9,y+16,4,3);
   c.fillStyle='#cc4444'; c.fillRect(x+15,y+16,3,3);
@@ -2686,132 +2517,85 @@ function drawSmallPlant(c, x, y) {
 }
 
 function drawHealingMachine(c, x, y) {
-  // Base
   c.fillStyle='#e8e0d8'; c.fillRect(x,y,TILE,TILE);
   c.strokeStyle='#c0b8b0'; c.lineWidth=1; c.strokeRect(x,y,TILE,TILE);
-  // Pokeball slots
   c.fillStyle='#d0c8c0'; c.fillRect(x+4,y+4,TILE-8,10);
   for (var i=0;i<6;i++) {
     c.fillStyle='#b0a8a0';
     c.beginPath(); c.arc(x+7+i*4,y+9,3,0,Math.PI*2); c.fill();
   }
-  // Screen
   c.fillStyle='#80d880'; c.fillRect(x+6,y+18,20,10);
   c.fillStyle='rgba(255,255,255,0.4)'; c.fillRect(x+6,y+18,8,4);
 }
 
 function drawPokeballMachine(c, x, y) {
   var W = TILE, H = TILE;
-  // Main body - white
   c.fillStyle = '#f0f0f0'; c.fillRect(x, y, W, H);
-  // Red top panel
   c.fillStyle = '#e01020'; c.fillRect(x, y, W, H*0.45);
-  // White divider stripe
   c.fillStyle = '#fff'; c.fillRect(x, y + H*0.45, W, 3);
-  // Dark outline
   c.strokeStyle = '#333'; c.lineWidth = 1.5; c.strokeRect(x, y, W, H);
-  // Pokeball display window (glass)
   c.fillStyle = '#c8e8f8'; c.fillRect(x+4, y+3, W-8, H*0.32);
   c.strokeStyle = '#aaa'; c.lineWidth = 1; c.strokeRect(x+4, y+3, W-8, H*0.32);
-  // Shine on window
   c.fillStyle = 'rgba(255,255,255,0.5)'; c.fillRect(x+5, y+4, 6, 4);
-  // Pokeball icons inside window
   var bx = x + 7, by = y + 5;
   for (var i = 0; i < 3; i++) {
     var bxc = bx + i * 7;
-    // Top red half
     c.fillStyle = '#e01020'; c.beginPath(); c.arc(bxc, by+4, 3, Math.PI, 0); c.fill();
-    // Bottom white half
     c.fillStyle = '#fff'; c.beginPath(); c.arc(bxc, by+4, 3, 0, Math.PI); c.fill();
-    // Middle line
     c.strokeStyle = '#333'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(bxc-3, by+4); c.lineTo(bxc+3, by+4); c.stroke();
-    // Center button
     c.fillStyle = '#fff'; c.beginPath(); c.arc(bxc, by+4, 1, 0, Math.PI*2); c.fill();
-    c.strokeStyle = '#555'; c.lineWidth = 0.5; c.beginPath(); c.arc(bxc, by+4, 1, 0, Math.PI*2); c.stroke();
   }
-  // White panel - label area
   c.fillStyle = '#fff'; c.fillRect(x+2, y+H*0.5, W-4, H*0.22);
   c.fillStyle = '#e01020'; c.font = 'bold 4px sans-serif'; c.textAlign = 'center';
   c.fillText('POKÉ BALL', x + W/2, y + H*0.5 + 8);
   c.fillText('MACHINE', x + W/2, y + H*0.5 + 14);
   c.textAlign = 'left';
-  // Coin slot
   c.fillStyle = '#888'; c.fillRect(x + W/2 - 5, y + H*0.76, 10, 3);
-  c.fillStyle = '#555'; c.fillRect(x + W/2 - 3, y + H*0.76, 6, 1);
-  // Button (red)
   c.fillStyle = '#e01020'; c.beginPath(); c.arc(x + W/2, y + H*0.88, 4, 0, Math.PI*2); c.fill();
   c.strokeStyle = '#900'; c.lineWidth = 1; c.beginPath(); c.arc(x + W/2, y + H*0.88, 4, 0, Math.PI*2); c.stroke();
-  c.fillStyle = 'rgba(255,255,255,0.4)'; c.beginPath(); c.arc(x + W/2 - 1, y + H*0.88 - 1, 2, 0, Math.PI*2); c.fill();
-  // Side vents
-  for (var v = 0; v < 4; v++) {
-    c.fillStyle = '#ccc'; c.fillRect(x + W - 4, y + H*0.5 + v*5, 2, 3);
-  }
 }
 
-
+// ---- WILD DECORATIONS ----
 function drawWildDecorations(c) {
-  // Animated water shimmer hint
   var t = Date.now()/1000;
   c.fillStyle='rgba(255,255,255,'+(0.05+0.05*Math.sin(t*2))+')';
   c.fillRect(4*TILE,5*TILE,2*TILE,2*TILE);
-  // Professor Oak standing in the wild
   drawOakWild(c, 5*TILE+4, 1*TILE+2);
-  // Flowers scattered on grass
   var flowers = [{x:2,y:2},{x:7,y:3},{x:3,y:6},{x:8,y:7},{x:6,y:2},{x:9,y:5}];
   flowers.forEach(function(f){
     if (roomMap[f.y] && roomMap[f.y][f.x]===T_GRASS) drawFlower(c,f.x*TILE+8,f.y*TILE+16);
   });
-  // Return mat label
   c.fillStyle='#8b5020'; c.fillRect(5*TILE,9*TILE+2,TILE*2,12);
   c.fillStyle='#6b3010'; c.fillRect(5*TILE+3,9*TILE+4,TILE*2-6,7);
 }
 
 function drawOakWild(c, x, y) {
-  // Draw Oak to match the cutscene canvas (64x96 scaled to ~1 tile)
-  var S = TILE; // 32px
-  var sc = S / 64; // scale factor from 64px canvas to tile size
+  var S = TILE;
+  var sc = S / 64;
   function dp(px,py,pw,ph,col){
     c.fillStyle=col;
     c.fillRect(x + px*sc, y + (py-10)*sc, pw*sc, ph*sc);
   }
-  // Shadow
   c.fillStyle='rgba(0,0,0,0.18)';
   c.beginPath(); c.ellipse(x+S*0.35, y+S*1.08, S*0.28, S*0.07, 0, 0, Math.PI*2); c.fill();
-  // Boots
   dp(18,86,10,8,'#2a1a0a'); dp(36,86,10,8,'#2a1a0a');
-  // Trousers
   dp(18,65,10,22,'#a07840'); dp(36,65,10,22,'#a07840');
-  // Lab coat body
-  dp(14,36,36,34,'#d0d0e0');
-  // Shirt/dark centre
-  dp(24,36,16,20,'#333');
-  // Coat lapels
+  dp(14,36,36,34,'#d0d0e0'); dp(24,36,16,20,'#333');
   dp(14,36,10,18,'#c0c0d0'); dp(40,36,10,18,'#c0c0d0');
-  // Arms (lab coat)
   dp(6,38,10,26,'#d0d0e0'); dp(48,38,10,26,'#d0d0e0');
-  // Hands
   dp(6,62,10,8,'#c8a070'); dp(48,56,10,10,'#c8a070');
-  // Neck
-  dp(26,28,12,10,'#c8a070');
-  // Head
-  dp(18,8,28,26,'#c8a070');
-  // Hair (brown/dark)
-  dp(18,6,28,10,'#6b3a1f');
-  dp(16,10,6,12,'#6b3a1f'); dp(18,8,4,6,'#6b3a1f');
-  // Eyes
+  dp(26,28,12,10,'#c8a070'); dp(18,8,28,26,'#c8a070');
+  dp(18,6,28,10,'#6b3a1f'); dp(16,10,6,12,'#6b3a1f'); dp(18,8,4,6,'#6b3a1f');
   dp(24,18,4,4,'#111'); dp(36,18,4,4,'#111');
-  // Mouth
   dp(26,26,3,2,'#8a5040'); dp(35,26,3,2,'#8a5040'); dp(29,28,6,2,'#8a5040');
-  // Coat pocket detail
   dp(18,46,8,6,'#b0b0c0'); dp(19,47,6,4,'#c8c8d8');
-  // Name tag above
   c.fillStyle='rgba(0,0,0,0.65)';
   c.fillRect(x-4, y-14, 30, 11);
   c.strokeStyle='#f8d020'; c.lineWidth=1;
   c.strokeRect(x-4, y-14, 30, 11);
   c.fillStyle='#f8d020';
   c.font='5px "Press Start 2P",cursive';
-  c.textAlign='center'; c.fillText('Prof. Oak', x+11, y-6); c.textAlign='left';
+  c.textAlign='center'; c.fillText('Prof', x+11, y-6); c.textAlign='left';
 }
 
 function drawFlower(c, x, y) {
@@ -2828,32 +2612,24 @@ function drawFlower(c, x, y) {
 
 // ---- CASTLE DECORATIONS ----
 function drawCastleDecorations(c) {
-  // Stone pillars on sides
   drawPillar(c, 1*TILE, 1*TILE);
   drawPillar(c, 1*TILE, 4*TILE);
   drawPillar(c, 1*TILE, 7*TILE);
   drawPillar(c, 10*TILE, 1*TILE);
   drawPillar(c, 10*TILE, 4*TILE);
   drawPillar(c, 10*TILE, 7*TILE);
-  // Royal throne at top center
   drawThrone(c, 4*TILE+8, 1*TILE+4);
-  // Banners on walls
   drawBanner(c, 3*TILE, 0);
   drawBanner(c, 7*TILE, 0);
-  // Torches
   drawTorch(c, 2*TILE+8, 2*TILE);
   drawTorch(c, 9*TILE+8, 2*TILE);
   drawTorch(c, 2*TILE+8, 6*TILE);
   drawTorch(c, 9*TILE+8, 6*TILE);
-  // Wooden tables
   drawWoodTable(c, 3*TILE, 5*TILE);
   drawWoodTable(c, 7*TILE, 5*TILE);
-  // Suits of armor
   drawArmor(c, 2*TILE+6, 7*TILE+2);
   drawArmor(c, 9*TILE+6, 7*TILE+2);
-  // Duke NPC — stands bottom-right area
   drawDukeNPC(c, 8*TILE+8, 7*TILE+4);
-  // Return mat
   c.fillStyle='#8b1020'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
   c.strokeStyle='#c8a820'; c.lineWidth=1.5;
   c.strokeRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
@@ -2868,44 +2644,33 @@ function drawPillar(c, x, y) {
 
 function drawThrone(c, x, y) {
   var W=TILE*4, H=TILE*2;
-  // Back
   c.fillStyle='#6b3010'; c.fillRect(x,y,W,H*0.7);
   c.fillStyle='#8b4010'; c.fillRect(x+4,y+4,W-8,H*0.6);
-  // Seat
   c.fillStyle='#8b1020'; c.fillRect(x+4,y+H*0.5,W-8,H*0.35);
-  // Gold trim
   c.strokeStyle='#c8a820'; c.lineWidth=2;
   c.strokeRect(x+2,y+2,W-4,H*0.65);
-  // Crown top
   c.fillStyle='#c8a820';
   for (var i=0;i<5;i++) c.fillRect(x+8+i*16,y-6,8,8);
   c.fillRect(x,y,W,4);
-  // Cushion
   c.fillStyle='#aa1828'; c.fillRect(x+8,y+H*0.5+2,W-16,H*0.28);
 }
 
 function drawBanner(c, x, y) {
   c.fillStyle='#8b1020'; c.fillRect(x+8,y,16,24);
   c.fillStyle='#c8a820';
-  // Diamond pattern
   c.fillRect(x+14,y+4,4,4);
   c.fillRect(x+12,y+8,8,2);
   c.fillRect(x+14,y+14,4,4);
   c.strokeStyle='#c8a820'; c.lineWidth=1;
   c.strokeRect(x+8,y,16,24);
-  // Tassel
   c.fillStyle='#c8a820';
   c.fillRect(x+8,y+24,4,4); c.fillRect(x+14,y+24,4,4); c.fillRect(x+20,y+24,4,4);
 }
 
 function drawTorch(c, x, y) {
-  // Mount
   c.fillStyle='#888898'; c.fillRect(x-2,y,6,8);
-  // Handle
   c.fillStyle='#6b4010'; c.fillRect(x,y+6,2,10);
-  // Cup
   c.fillStyle='#c8a820'; c.fillRect(x-2,y+4,6,4);
-  // Flame
   c.fillStyle='#f86010';
   c.beginPath(); c.moveTo(x+1,y+4); c.lineTo(x-3,y-2); c.lineTo(x+1,y); c.lineTo(x+5,y-4); c.lineTo(x+1,y+4); c.fill();
   c.fillStyle='#f8e020';
@@ -2916,10 +2681,8 @@ function drawWoodTable(c, x, y) {
   var W=TILE*2, H=TILE;
   c.fillStyle='#8b5a1a'; c.fillRect(x,y,W,H);
   c.fillStyle='#a06820'; c.fillRect(x+2,y+2,W-4,H-4);
-  // Wood grain
   c.strokeStyle='#8b5a1a'; c.lineWidth=1;
   for (var i=0;i<3;i++) { c.beginPath(); c.moveTo(x+4+i*16,y+4); c.lineTo(x+4+i*16,y+H-4); c.stroke(); }
-  // Legs
   c.fillStyle='#6b3a0a';
   c.fillRect(x+2,y+H-4,4,6); c.fillRect(x+W-6,y+H-4,4,6);
 }
@@ -2939,50 +2702,29 @@ function drawArmor(c, x, y) {
 
 function drawDukeNPC(c, x, y) {
   var S = TILE;
-  // Boots
   c.fillStyle='#3a2010'; c.fillRect(x-5,y+S*0.82,5,6); c.fillRect(x+1,y+S*0.82,5,6);
-  // Royal purple legs
   c.fillStyle='#5030a0'; c.fillRect(x-5,y+S*0.5,11,S*0.35);
-  // Gold belt
   c.fillStyle='#c8a820'; c.fillRect(x-6,y+S*0.48,13,4);
   c.fillStyle='#f0d040'; c.fillRect(x-1,y+S*0.47,3,5);
-  // Royal purple robe body
   c.fillStyle='#5030a0'; c.fillRect(x-7,y+S*0.18,15,S*0.34);
-  // White fur trim
   c.fillStyle='#f0f0f0'; c.fillRect(x-7,y+S*0.18,15,4);
   c.fillRect(x-7,y+S*0.5,3,S*0.33); c.fillRect(x+5,y+S*0.5,3,S*0.33);
-  // Gold epaulettes
   c.fillStyle='#c8a820'; c.fillRect(x-9,y+S*0.2,4,8); c.fillRect(x+6,y+S*0.2,4,8);
-  // Arms
   c.fillStyle='#5030a0'; c.fillRect(x-10,y+S*0.22,4,S*0.28); c.fillRect(x+7,y+S*0.22,4,S*0.28);
-  // Hands
   c.fillStyle='#f0c8a0'; c.fillRect(x-10,y+S*0.48,4,5); c.fillRect(x+7,y+S*0.48,4,5);
-  // Neck
   c.fillStyle='#f0c8a0'; c.fillRect(x-2,y+S*0.14,5,6);
-  // Head
   c.fillStyle='#f0c8a0'; c.fillRect(x-5,y+2,11,S*0.18);
-  // Crown
   c.fillStyle='#c8a820'; c.fillRect(x-5,y-2,11,5);
   c.fillStyle='#f0d040';
   c.fillRect(x-4,y-6,3,6); c.fillRect(x,y-8,2,8); c.fillRect(x+3,y-6,3,6);
-  // Jewel on crown
   c.fillStyle='#e03030'; c.fillRect(x,y-7,2,3);
-  // Eyes
   c.fillStyle='#333'; c.fillRect(x-3,y+6,2,2); c.fillRect(x+2,y+6,2,2);
-  // Moustache
   c.fillStyle='#8b5010'; c.fillRect(x-4,y+10,4,2); c.fillRect(x+1,y+10,4,2);
-  // Smile
   c.fillStyle='#c07050'; c.fillRect(x-2,y+13,5,1);
-  // Name tag
   c.fillStyle='rgba(0,0,0,0.65)'; c.fillRect(x-14,y-18,28,11);
   c.strokeStyle='#c8a820'; c.lineWidth=1; c.strokeRect(x-14,y-18,28,11);
   c.fillStyle='#fff8d0'; c.font='5px "Press Start 2P",cursive';
   c.textAlign='center'; c.fillText('DUKE',x+1,y-10); c.textAlign='left';
-}
-
-function drawHomeDecorations_mat(c) {
-  c.fillStyle='#c05030'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
-  c.fillStyle='#a03010'; c.fillRect(5*TILE+5,9*TILE+4,TILE*2-10,7);
 }
 
 function drawBookshelf(c, x, y) {
@@ -3033,15 +2775,12 @@ function drawPlayer(c, px, py, dir, frame) {
   var cx = x + S/2;
   var cy = y + bob;
 
-  // Shadow
   c.fillStyle='rgba(0,0,0,0.2)';
   c.beginPath(); c.ellipse(x+S/2,y+S+2,S/3,4,0,0,Math.PI*2); c.fill();
 
-  // Shoes
   c.fillStyle='#1a1a1a';
   c.fillRect(cx-7,cy+S-6,6,5); c.fillRect(cx+1,cy+S-6,6,5);
 
-  // Legs
   c.fillStyle='#2a2060';
   if (dir===2||dir===3) {
     c.fillRect(cx-5,cy+S*0.55,9,S*0.3);
@@ -3050,11 +2789,9 @@ function drawPlayer(c, px, py, dir, frame) {
     c.fillRect(cx+1,cy+S*0.55,6,S*0.32+(frame===3?-3:frame===1?3:0));
   }
 
-  // Body
   c.fillStyle='#cc2020'; c.fillRect(cx-8,cy+S*0.3,16,S*0.3);
   c.fillStyle='#ffffff'; c.fillRect(cx-1,cy+S*0.3,2,S*0.3);
 
-  // Arms
   c.fillStyle='#cc2020';
   if (dir===0||dir===1) {
     c.fillRect(cx-11,cy+S*0.3+2,4,S*0.22); c.fillRect(cx+7,cy+S*0.3+2,4,S*0.22);
@@ -3064,16 +2801,13 @@ function drawPlayer(c, px, py, dir, frame) {
     c.fillStyle='#c8a070'; c.fillRect(cx-9,cy+S*0.52,4,4);
   }
 
-  // Neck + Head
   c.fillStyle='#c8a070'; c.fillRect(cx-3,cy+S*0.2,6,S*0.12); c.fillRect(cx-7,cy+S*0.03,14,13);
 
-  // Cap
   c.fillStyle='#cc2020'; c.fillRect(cx-8,cy+S*0.01,16,6);
   if (dir!==1) { c.fillRect(cx+5,cy+S*0.03,4,4); }
   else         { c.fillRect(cx-9,cy+S*0.03,4,4); }
   c.fillStyle='#2a1a0a'; c.fillRect(cx-7,cy+S*0.05,14,3);
 
-  // Eyes
   if (dir===0) {
     c.fillStyle='#111'; c.fillRect(cx-4,cy+S*0.12,3,3); c.fillRect(cx+1,cy+S*0.12,3,3);
   } else if (dir!==1) {
@@ -3094,396 +2828,24 @@ function drawCompanion(c, px, py, frame) {
   c.restore();
 }
 
+// ============================================================
+// POKEMON SPRITES — only the 25 Pokedex Pokemon + evo forms
+// ============================================================
 function drawPokemonSprite(c, name) {
-  // Each sprite drawn in ~28x28 pixel space centered at 0,0
-  // p(x,y,w,h,col) helper
   function p(x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h);}
 
   if (name==='Charmander') {
-    // Tail flame
     p(9,-6,3,4,'#f84020'); p(8,-9,4,4,'#f8a020'); p(9,-11,3,3,'#f8e040');
-    // Body
-    p(-6,-4,13,12,'#f86820');
-    // Belly
-    p(-3,0,7,7,'#f8c070');
-    // Head
+    p(-6,-4,13,12,'#f86820'); p(-3,0,7,7,'#f8c070');
     p(-6,-14,13,11,'#f86820');
-    // Eyes
     p(-4,-11,3,3,'#fff'); p(2,-11,3,3,'#fff');
     p(-3,-10,2,2,'#111'); p(3,-10,2,2,'#111');
     p(-3,-11,1,1,'#fff'); p(3,-11,1,1,'#fff');
-    // Nostril
     p(-2,-7,1,1,'#c85010'); p(1,-7,1,1,'#c85010');
-    // Arm
     p(-9,-1,3,5,'#f86820'); p(7,-1,3,5,'#f86820');
-    // Claws
     p(-10,3,2,2,'#f8c070'); p(7,3,4,2,'#f8c070');
-    // Legs
     p(-5,8,4,5,'#f86820'); p(2,8,4,5,'#f86820');
     p(-6,11,3,2,'#f8c070'); p(2,11,5,2,'#f8c070');
-
-  } else if (name==='Froakie') {
-    // Body
-    p(-7,-4,14,12,'#3878d8');
-    // White frubbles on chest
-    p(-6,2,5,5,'#f0f0f0'); p(1,2,5,5,'#f0f0f0'); p(-3,0,6,4,'#f0f0f0');
-    // Head
-    p(-7,-16,14,13,'#3070c8');
-    // Big white eyes
-    p(-7,-15,6,6,'#fff'); p(1,-15,6,6,'#fff');
-    p(-6,-14,4,4,'#90c8f0'); p(2,-14,4,4,'#90c8f0');
-    p(-5,-13,2,2,'#111'); p(3,-13,2,2,'#111');
-    p(-5,-14,1,1,'#fff'); p(3,-14,1,1,'#fff');
-    // Nose bumps
-    p(-2,-8,2,1,'#2860b8'); p(1,-8,2,1,'#2860b8');
-    // Arms
-    p(-10,-2,3,6,'#3878d8'); p(7,-2,3,6,'#3878d8');
-    p(-11,3,3,2,'#3070c8'); p(7,3,4,2,'#3070c8');
-    // Legs
-    p(-5,8,4,5,'#3878d8'); p(2,8,4,5,'#3878d8');
-    p(-6,11,5,2,'#2060b8'); p(2,11,5,2,'#2060b8');
-
-  } else if (name==='Treecko') {
-    // Tail
-    p(6,0,8,8,'#309030'); p(7,-4,6,5,'#40b840');
-    // Body
-    p(-6,-4,12,12,'#40b840');
-    // Belly stripe
-    p(-3,0,6,7,'#98e060');
-    // Head
-    p(-6,-16,12,13,'#40b840');
-    // Big red mouth stripe
-    p(-5,-8,10,3,'#e04040');
-    // White eyes
-    p(-5,-15,4,5,'#fff'); p(1,-15,4,5,'#fff');
-    p(-4,-14,2,2,'#111'); p(2,-14,2,2,'#111');
-    p(-4,-15,1,1,'#fff'); p(2,-15,1,1,'#fff');
-    // Arms with sticky pads
-    p(-9,-2,3,5,'#40b840'); p(7,-2,3,5,'#40b840');
-    p(-10,2,4,3,'#98e060'); p(7,2,4,3,'#98e060');
-    // Legs
-    p(-5,8,4,5,'#40b840'); p(2,8,4,5,'#40b840');
-    p(-6,11,4,2,'#309030'); p(2,11,4,2,'#309030');
-
-  } else if (name==='Pikachu') {
-    // Ears (black tips)
-    p(-7,-20,4,10,'#f8d030'); p(-7,-21,4,4,'#111');
-    p(3,-20,4,10,'#f8d030');  p(3,-21,4,4,'#111');
-    // Body
-    p(-7,-4,14,11,'#f8d030');
-    // Red cheeks
-    p(-8,-2,4,3,'#e03020'); p(4,-2,4,3,'#e03020');
-    // Brown back stripes
-    p(-5,-4,3,4,'#c8a020'); p(2,-4,3,4,'#c8a020');
-    // Head
-    p(-7,-14,14,11,'#f8d030');
-    // Eyes
-    p(-4,-11,3,4,'#111'); p(2,-11,3,4,'#111');
-    p(-3,-11,1,1,'#fff'); p(3,-11,1,1,'#fff');
-    // Nose
-    p(-1,-7,2,1,'#111');
-    // Mouth
-    p(-3,-6,2,2,'#c06030'); p(1,-6,2,2,'#c06030');
-    // Tail (lightning bolt)
-    p(7,2,4,4,'#f8d030'); p(9,-2,4,4,'#f8d030'); p(7,-6,4,4,'#f8d030');
-    // Arms
-    p(-10,-1,3,5,'#f8d030'); p(7,-1,3,5,'#f8d030');
-    // Legs
-    p(-5,7,4,5,'#f8d030'); p(2,7,4,5,'#f8d030');
-    p(-4,11,3,2,'#111'); p(2,11,4,2,'#111');
-
-  } else if (name==='Caterpie') {
-    // Segmented body (caterpillar)
-    p(-12,0,8,8,'#60a820'); p(-5,0,8,8,'#60a820'); p(3,0,8,8,'#60a820');
-    // Segment lines
-    p(-5,0,2,8,'#408020'); p(3,0,2,8,'#408020');
-    // Head
-    p(-9,-10,12,11,'#60a820');
-    // Eyes
-    p(-7,-8,4,4,'#f8d030'); p(-2,-8,4,4,'#f8d030');
-    p(-6,-7,2,2,'#111'); p(-1,-7,2,2,'#111');
-    // Antennae
-    p(-5,-14,2,5,'#e03020'); p(-4,-16,4,4,'#e03020');
-    p(1,-13,2,5,'#e03020'); p(0,-15,4,4,'#e03020');
-    // Feet nubs
-    p(-11,7,3,3,'#408020'); p(-4,7,3,3,'#408020'); p(4,7,3,3,'#408020');
-
-  } else if (name==='Geodude') {
-    // Rocky round body
-    p(-9,-8,18,16,'#b8a038');
-    // Rock texture
-    p(-9,-8,5,4,'#a09030'); p(4,-8,5,4,'#a09030');
-    p(-9,4,5,4,'#a09030'); p(5,4,4,4,'#a09030');
-    p(-3,-9,6,2,'#c8b048');
-    // Eyes
-    p(-6,-4,5,5,'#fff'); p(1,-4,5,5,'#fff');
-    p(-5,-3,3,3,'#111'); p(2,-3,3,3,'#111');
-    p(-5,-4,1,1,'#fff'); p(2,-4,1,1,'#fff');
-    // Unibrow
-    p(-7,-5,5,2,'#707020'); p(2,-5,5,2,'#707020');
-    // Fist arms
-    p(-13,-2,5,8,'#b8a038'); p(8,-2,5,8,'#b8a038');
-    p(-14,2,4,4,'#a09030'); p(9,2,4,4,'#a09030');
-
-  } else if (name==='Gastly') {
-    // Gas cloud (semi-transparent)
-    c.globalAlpha=0.7;
-    p(-11,-8,22,18,'#705898');
-    c.globalAlpha=0.5;
-    p(-13,-4,5,8,'#503878'); p(9,-4,5,8,'#503878');
-    p(-9,8,4,6,'#503878'); p(6,8,4,6,'#503878');
-    c.globalAlpha=1.0;
-    // Inner darker
-    p(-8,-6,16,14,'#604888');
-    // Eyes
-    p(-5,-4,5,5,'#fff'); p(1,-4,5,5,'#fff');
-    p(-4,-3,3,3,'#111'); p(2,-3,3,3,'#111');
-    p(-4,-4,1,1,'#fff'); p(2,-4,1,1,'#fff');
-    // Mouth
-    p(-4,2,8,3,'#111');
-    p(-3,3,2,2,'#fff'); p(1,3,2,2,'#fff');
-
-  } else if (name==='Magikarp') {
-    // Body (fish shape)
-    p(-8,-4,16,10,'#f05018');
-    // Scales
-    p(-6,-3,4,3,'#d04010'); p(2,-3,4,3,'#d04010');
-    p(-4,1,4,3,'#d04010'); p(0,1,4,3,'#d04010');
-    // Belly
-    p(-5,2,10,5,'#f0e0a0');
-    // Tail fin
-    p(-8,5,16,5,'#f05018'); p(-7,8,14,4,'#d04010');
-    // Top fin
-    p(-2,-9,4,6,'#f05018');
-    // Head
-    p(-7,-8,14,5,'#f05018');
-    // Eyes
-    p(-6,-6,4,4,'#fff'); p(2,-6,4,4,'#fff');
-    p(-5,-5,2,2,'#111'); p(3,-5,2,2,'#111');
-    // Moustache
-    p(-8,-3,4,2,'#f0e0a0'); p(4,-3,4,2,'#f0e0a0');
-
-  } else if (name==='Abra') {
-    // Eyes (always closed - sleeping)
-    // Body
-    p(-6,-2,12,10,'#c8a820');
-    // Star pattern on belly
-    p(-3,1,6,5,'#d8b830');
-    // Head (drooping)
-    p(-6,-12,12,11,'#c8a820');
-    // Nose
-    p(-1,-7,2,2,'#a08010');
-    // Closed eyes (sleeping lines)
-    p(-5,-9,4,2,'#111'); p(1,-9,4,2,'#111');
-    // Fox ears
-    p(-8,-16,5,8,'#c8a820'); p(3,-16,5,8,'#c8a820');
-    p(-7,-15,3,5,'#f080a0'); p(4,-15,3,5,'#f080a0');
-    // Arms holding (bent inward)
-    p(-9,-1,4,7,'#c8a820'); p(5,-1,4,7,'#c8a820');
-    // Spoon
-    p(6,-3,2,10,'#d8d8d8'); p(4,-4,6,3,'#e8e8e8');
-    // Legs
-    p(-5,8,4,5,'#c8a820'); p(2,8,4,5,'#c8a820');
-    p(-4,12,3,2,'#a08010'); p(2,12,3,2,'#a08010');
-
-  } else if (name==='Ralts') {
-    // White bowl hat
-    p(-7,-17,14,10,'#e8e8e8');
-    p(-8,-14,16,6,'#d0d0d0');
-    // Hair (green)
-    p(-5,-14,10,5,'#40c040');
-    // Little body
-    p(-5,-4,10,12,'#f0f0f0');
-    // Dress ruffles
-    p(-7,4,14,6,'#e0e0e0');
-    p(-8,6,16,5,'#d0d0d0');
-    // Head
-    p(-5,-12,10,9,'#f8d0c8');
-    // Tiny red eyes
-    p(-3,-8,3,2,'#e03030'); p(0,-8,3,2,'#e03030');
-    // Arms (hidden in dress)
-    p(-7,0,2,5,'#f0f0f0'); p(5,0,2,5,'#f0f0f0');
-    // Legs
-    p(-3,10,3,4,'#f0f0f0'); p(1,10,3,4,'#f0f0f0');
-
-  } else if (name==='Bunnelby') {
-    // Big ears
-    p(-8,-20,5,18,'#c8a888'); p(3,-20,5,18,'#c8a888');
-    p(-7,-19,3,14,'#f0d0c0'); p(4,-19,3,14,'#f0d0c0');
-    // Body
-    p(-7,-2,14,12,'#c8a888');
-    // Belly
-    p(-4,0,8,9,'#f0d0c0');
-    // Head
-    p(-7,-12,14,11,'#c8a888');
-    // Eyes
-    p(-5,-9,4,4,'#c03030'); p(1,-9,4,4,'#c03030');
-    p(-4,-8,2,2,'#111'); p(2,-8,2,2,'#111');
-    p(-4,-9,1,1,'#fff'); p(2,-9,1,1,'#fff');
-    // Nose
-    p(-1,-5,2,2,'#f08080');
-    // Whiskers
-    p(-8,-5,4,1,'#c8a888'); p(4,-5,4,1,'#c8a888');
-    // Shovel paws
-    p(-9,1,4,6,'#a08060'); p(5,1,4,6,'#a08060');
-    // Legs
-    p(-5,10,4,4,'#c8a888'); p(2,10,4,4,'#c8a888');
-
-  } else if (name==='Fletchling') {
-    // Tail feathers
-    p(6,2,8,4,'#e83010'); p(7,-1,6,4,'#c82000'); p(8,5,5,3,'#f04020');
-    // Body (red-orange)
-    p(-7,-2,13,10,'#e83010');
-    // Wing
-    p(-7,0,12,6,'#c82000');
-    // White belly
-    p(-4,1,8,7,'#f0e8d0');
-    // Head (dark grey)
-    p(-6,-12,12,11,'#303030');
-    // Red forehead patch
-    p(-4,-12,8,5,'#e83010');
-    // Eyes
-    p(-4,-9,3,3,'#fff'); p(1,-9,3,3,'#fff');
-    p(-3,-8,2,2,'#111'); p(2,-8,2,2,'#111');
-    // Beak
-    p(-1,-6,4,3,'#f0c830'); p(1,-5,2,3,'#d0a820');
-    // Feet
-    p(-4,8,3,4,'#f0c830'); p(2,8,3,4,'#f0c830');
-    p(-5,11,3,2,'#f0c830'); p(2,11,4,2,'#f0c830');
-
-  } else if (name==='Shinx') {
-    // Electric mane (yellow)
-    p(-8,-14,16,8,'#f8e030');
-    // Body (blue with black rear)
-    p(-7,-3,10,11,'#4040d0');
-    p(3,-3,5,11,'#111');
-    // Star-tipped tail
-    p(7,3,6,4,'#4040d0'); p(11,1,4,4,'#f8e030');
-    // Head
-    p(-7,-13,14,11,'#4040d0');
-    // Yellow ear tips
-    p(-8,-14,5,5,'#4040d0'); p(-8,-14,3,3,'#f8e030');
-    p(3,-14,5,5,'#4040d0'); p(4,-14,3,3,'#f8e030');
-    // Eyes
-    p(-5,-10,4,4,'#40d0f0'); p(1,-10,4,4,'#40d0f0');
-    p(-4,-9,2,2,'#111'); p(2,-9,2,2,'#111');
-    p(-4,-10,1,1,'#fff'); p(2,-10,1,1,'#fff');
-    // Nose
-    p(-1,-6,2,2,'#111');
-    // Paws
-    p(-7,8,4,5,'#4040d0'); p(0,8,4,5,'#111');
-    p(-8,11,4,2,'#f8e030'); p(0,11,4,2,'#f8e030');
-
-  } else if (name==='Beldum') {
-    // Main body (steel blue orb)
-    p(-8,-6,16,14,'#708090');
-    // Metal sheen
-    p(-7,-5,7,6,'#8898a8');
-    p(-7,-5,3,3,'#a0b0c0');
-    // Clamp/claw
-    p(-12,-2,5,8,'#607080');
-    p(-13,-3,4,5,'#708090'); p(-13,2,4,5,'#708090');
-    // Back spike
-    p(7,-2,6,6,'#607080');
-    p(11,-4,4,10,'#607080');
-    // Single red eye
-    p(-3,-3,6,6,'#e03020');
-    p(-1,-1,3,3,'#f05040');
-    p(-1,-2,1,1,'#fff');
-
-  } else if (name==='Greavard') {
-    // Ghost dog
-    // White fluffy body
-    p(-8,-4,16,13,'#f0f0f0');
-    // Grey shading
-    p(-8,-4,4,8,'#d0d0d0'); p(5,-4,3,8,'#d0d0d0');
-    // Head
-    p(-8,-15,16,12,'#f0f0f0');
-    // Floppy ears
-    p(-10,-12,4,10,'#d0d0d0'); p(6,-12,4,10,'#d0d0d0');
-    // Glowing eye (single - candle on head)
-    p(-3,-13,6,5,'#fff');
-    p(-2,-12,4,3,'#111');
-    p(-1,-12,2,2,'#f8d030');
-    // Mouth
-    p(-4,-4,8,3,'#111');
-    p(-3,-3,2,2,'#fff'); p(1,-3,2,2,'#fff');
-    // Candle flame on head
-    p(-1,-18,3,5,'#f8a020'); p(0,-20,2,4,'#f8e040');
-    // Paws
-    p(-7,9,5,4,'#f0f0f0'); p(3,9,5,4,'#f0f0f0');
-    p(-7,12,3,2,'#d0d0d0'); p(5,12,3,2,'#d0d0d0');
-
-  } else if (name==='Wobbuffet') {
-    // Big round teal body
-    p(-10,-8,20,18,'#70c8f0');
-    // Sheen
-    p(-9,-7,8,8,'#88d8f8');
-    // Darker bottom
-    p(-10,6,20,4,'#50a8d0');
-    // Small tail (black)
-    p(9,0,5,8,'#111');
-    p(8,2,3,5,'#333');
-    // Head/face (same body color, flat face)
-    p(-8,-12,16,5,'#70c8f0');
-    // Tiny eyes
-    p(-5,-10,3,3,'#fff'); p(2,-10,3,3,'#fff');
-    p(-4,-9,2,2,'#111'); p(3,-9,2,2,'#111');
-    // Big happy mouth (always smiling)
-    p(-6,-5,12,2,'#111');
-    p(-7,-4,2,3,'#111'); p(5,-4,2,3,'#111');
-    p(-6,-3,12,3,'#e05050');
-    // Stubby arms
-    p(-12,-3,3,7,'#70c8f0'); p(9,-3,3,7,'#70c8f0');
-    // Feet
-    p(-7,10,5,4,'#70c8f0'); p(2,10,5,4,'#70c8f0');
-
-  } else if (name==='Gossifleur') {
-    // Flower petals around head
-    p(-12,-18,6,6,'#f0a0c0'); p(6,-18,6,6,'#f0a0c0');
-    p(-14,-12,5,6,'#f0a0c0'); p(9,-12,5,6,'#f0a0c0');
-    p(-9,-20,6,5,'#f0a0c0'); p(3,-20,6,5,'#f0a0c0');
-    p(-3,-21,6,4,'#f8c0d8');
-    // Leaf body
-    p(-7,-2,14,12,'#60c040');
-    p(-9,-1,3,8,'#50a830'); p(6,-1,3,8,'#50a830');
-    // Round cute head (flower center)
-    p(-7,-16,14,15,'#f8e860');
-    // Leaf hat on top
-    p(-5,-18,10,5,'#60c040');
-    // Eyes
-    p(-5,-12,4,4,'#111'); p(1,-12,4,4,'#111');
-    p(-4,-12,2,2,'#fff'); p(2,-12,2,2,'#fff');
-    // Blush
-    p(-7,-9,4,3,'#f0a0b0'); p(3,-9,4,3,'#f0a0b0');
-    // Mouth
-    p(-2,-8,4,2,'#c06080');
-    // Tiny feet
-    p(-4,10,3,4,'#60c040'); p(2,10,3,4,'#60c040');
-
-  } else if (name==='Wooper') {
-    // Body (blue salamander)
-    p(-8,-4,16,13,'#7090e0');
-    // Belly
-    p(-5,0,10,9,'#b0c8f8');
-    // Head
-    p(-8,-14,16,11,'#7090e0');
-    // Branching gills (pink, both sides)
-    p(-12,-14,5,4,'#f080a0'); p(-12,-10,5,4,'#f080a0');
-    p(-13,-16,4,3,'#f080a0');
-    p(7,-14,5,4,'#f080a0'); p(7,-10,5,4,'#f080a0');
-    p(9,-16,4,3,'#f080a0');
-    // Eyes
-    p(-5,-11,4,4,'#111'); p(1,-11,4,4,'#111');
-    p(-4,-11,2,2,'#fff'); p(2,-11,2,2,'#fff');
-    // Mouth (happy)
-    p(-3,-5,6,2,'#111'); p(-4,-4,2,3,'#111'); p(2,-4,2,3,'#111');
-    // Stubby arms
-    p(-10,2,3,5,'#7090e0'); p(7,2,3,5,'#7090e0');
-    // Stubby tail
-    p(7,4,5,6,'#7090e0');
-    // Feet
-    p(-6,9,4,5,'#7090e0'); p(3,9,4,5,'#7090e0');
 
   } else if (name==='Charmeleon') {
     p(8,-4,4,5,'#f84020'); p(7,-8,5,5,'#f8a020'); p(8,-11,4,4,'#f8e040');
@@ -3512,6 +2874,18 @@ function drawPokemonSprite(c, name) {
     p(-6,10,5,7,'#f06000'); p(2,10,5,7,'#f06000');
     p(-7,15,4,2,'#f0d0a0'); p(2,15,6,2,'#f0d0a0');
 
+  } else if (name==='Froakie') {
+    p(-7,-4,14,12,'#3878d8');
+    p(-6,2,5,5,'#f0f0f0'); p(1,2,5,5,'#f0f0f0'); p(-3,0,6,4,'#f0f0f0');
+    p(-7,-17,14,14,'#3070c8');
+    p(-8,-16,7,7,'#fff'); p(1,-16,7,7,'#fff');
+    p(-7,-15,5,5,'#80c0f0'); p(2,-15,5,5,'#80c0f0');
+    p(-6,-14,3,3,'#111'); p(3,-14,3,3,'#111');
+    p(-2,-8,2,1,'#2860b8'); p(1,-8,2,1,'#2860b8');
+    p(-11,-2,4,7,'#3878d8'); p(7,-2,4,7,'#3878d8');
+    p(-6,9,5,6,'#3878d8'); p(2,9,5,6,'#3878d8');
+    p(-6,13,5,2,'#2060b8'); p(2,13,5,2,'#2060b8');
+
   } else if (name==='Frogadier') {
     p(-7,-4,14,13,'#2858c0');
     p(-8,0,5,6,'#f0f0f0'); p(3,0,5,6,'#f0f0f0'); p(-4,-2,8,5,'#f0f0f0');
@@ -3532,6 +2906,16 @@ function drawPokemonSprite(c, name) {
     p(7,-6,6,6,'#40a0e0'); p(9,-8,3,3,'#80c8f8');
     p(-11,-2,4,8,'#1838a0'); p(7,-2,4,8,'#1838a0');
     p(-6,8,5,7,'#1838a0'); p(2,8,5,7,'#1838a0');
+
+  } else if (name==='Treecko') {
+    p(6,0,10,6,'#208020'); p(9,-3,7,6,'#309030');
+    p(-7,-4,13,12,'#40b840'); p(-3,2,7,7,'#78b848');
+    p(-7,-18,13,15,'#40b840');
+    p(-4,-22,10,6,'#50c050'); p(-5,-20,12,4,'#48b840');
+    p(-5,-14,4,3,'#fff'); p(1,-14,4,3,'#fff');
+    p(-4,-13,2,2,'#111'); p(2,-13,2,2,'#111');
+    p(-4,-8,8,3,'#e03030');
+    p(-5,9,4,6,'#40b840'); p(2,9,4,6,'#40b840');
 
   } else if (name==='Grovyle') {
     p(6,2,10,6,'#208020'); p(9,-3,7,6,'#309030');
@@ -3558,12 +2942,22 @@ function drawPokemonSprite(c, name) {
     p(-13,-4,5,4,'#50c050'); p(9,-4,5,4,'#50c050');
     p(-6,9,5,7,'#1e8c1e'); p(2,9,5,7,'#1e8c1e');
 
+  } else if (name==='Fletchling') {
+    p(6,0,8,4,'#e83010'); p(7,-2,6,3,'#c82000'); p(8,4,5,3,'#f04020');
+    p(-7,-2,13,10,'#e83010'); p(-5,0,12,6,'#c82000');
+    p(-4,1,8,7,'#f0e8d0');
+    p(-6,-12,12,11,'#303030'); p(-4,-12,8,5,'#e83010');
+    p(-4,-9,3,3,'#fff'); p(1,-9,3,3,'#fff');
+    p(-3,-8,2,2,'#111'); p(2,-8,2,2,'#111');
+    p(-1,-6,4,3,'#f0c830'); p(1,-5,2,3,'#d0a820');
+    p(-4,8,3,4,'#f0c830'); p(2,8,3,4,'#f0c830');
+    p(-5,11,3,2,'#f0c830'); p(2,11,4,2,'#f0c830');
+
   } else if (name==='Fletchinder') {
     p(6,0,10,5,'#d02000'); p(8,-3,7,4,'#b81800');
     p(-8,-3,15,11,'#d02000'); p(-5,1,9,7,'#f0e0d0');
     p(-9,0,14,7,'#b01800');
-    p(-7,-14,13,12,'#202020');
-    p(-5,-14,10,7,'#f06000'); p(-3,-16,6,4,'#f8a000');
+    p(-7,-14,13,12,'#202020'); p(-5,-14,10,7,'#f06000'); p(-3,-16,6,4,'#f8a000');
     p(-5,-11,4,4,'#fff'); p(1,-11,4,4,'#fff');
     p(-4,-10,2,2,'#111'); p(2,-10,2,2,'#111');
     p(-2,-7,5,3,'#f0c030'); p(1,-6,3,4,'#d0a020');
@@ -3580,6 +2974,34 @@ function drawPokemonSprite(c, name) {
     p(-2,-8,6,4,'#f0c030'); p(2,-7,4,5,'#d0a020');
     p(-6,8,5,6,'#202020'); p(2,8,5,6,'#202020');
     p(-8,13,5,3,'#f0c030'); p(2,13,6,3,'#f0c030');
+
+  } else if (name==='Hawlucha') {
+    // Wrestling bird - green/yellow/red
+    p(-10,-8,8,14,'#40b840'); p(3,-8,8,14,'#40b840'); // wings
+    p(-8,-5,5,8,'#60d060'); p(4,-5,5,8,'#60d060');
+    p(-6,-4,12,12,'#f8d030'); // yellow body
+    p(-4,0,8,8,'#f0c020'); // belly
+    p(-6,-16,12,13,'#40b840'); // head
+    p(-4,-16,8,7,'#e03030'); // red mask
+    p(-5,-13,4,4,'#fff'); p(1,-13,4,4,'#fff'); // eyes
+    p(-4,-12,2,2,'#111'); p(2,-12,2,2,'#111');
+    p(-1,-8,2,2,'#333'); // beak
+    p(-5,8,4,5,'#f8d030'); p(2,8,4,5,'#f8d030'); // legs
+    p(-6,12,4,2,'#e03030'); p(2,12,5,2,'#e03030'); // feet
+
+  } else if (name==='Shinx') {
+    p(-8,-14,16,8,'#f8e030');
+    p(-7,-3,10,12,'#4040d0'); p(3,-3,5,12,'#111');
+    p(7,3,6,4,'#4040d0'); p(11,1,4,4,'#f8e030');
+    p(-7,-13,14,11,'#4040d0');
+    p(-8,-14,5,5,'#4040d0'); p(-8,-14,3,3,'#f8e030');
+    p(3,-14,5,5,'#4040d0'); p(4,-14,3,3,'#f8e030');
+    p(-5,-10,4,4,'#40d0f0'); p(1,-10,4,4,'#40d0f0');
+    p(-4,-9,2,2,'#111'); p(2,-9,2,2,'#111');
+    p(-4,-10,1,1,'#fff'); p(2,-10,1,1,'#fff');
+    p(-1,-6,2,2,'#111');
+    p(-7,8,5,6,'#4040d0'); p(0,8,5,6,'#111');
+    p(-8,12,5,3,'#f8e030'); p(0,12,5,3,'#f8e030');
 
   } else if (name==='Luxio') {
     p(-9,-16,18,10,'#f8e030');
@@ -3606,6 +3028,15 @@ function drawPokemonSprite(c, name) {
     p(-9,9,6,7,'#111'); p(3,9,6,7,'#111');
     p(-10,14,6,3,'#f8e030'); p(3,14,7,3,'#f8e030');
 
+  } else if (name==='Beldum') {
+    p(-14,-3,6,9,'#5060a0'); p(8,-3,6,9,'#5060a0');
+    p(-15,-4,5,6,'#6070b0'); p(-15,3,5,6,'#6070b0');
+    p(10,-4,5,6,'#6070b0'); p(10,3,5,6,'#6070b0');
+    p(-8,-7,16,16,'#5868a0'); p(-7,-6,10,9,'#7080b8');
+    p(-2,-4,4,12,'#404878'); p(-6,0,12,4,'#404878');
+    p(-5,-4,4,4,'#e03020'); p(1,-4,4,4,'#e03020');
+    p(-4,-3,2,2,'#f05040'); p(2,-3,2,2,'#f05040');
+
   } else if (name==='Metang') {
     p(-14,-3,6,9,'#5060a0'); p(8,-3,6,9,'#5060a0');
     p(-15,-4,5,6,'#6070b0'); p(-15,3,5,6,'#6070b0');
@@ -3625,6 +3056,62 @@ function drawPokemonSprite(c, name) {
     p(-18,-4,8,10,'#4050a0'); p(10,-4,8,10,'#4050a0');
     p(-20,-5,6,6,'#5060b0'); p(-20,3,6,6,'#5060b0');
     p(14,-5,6,6,'#5060b0'); p(14,3,6,6,'#5060b0');
+
+  } else if (name==='Pikachu') {
+    p(-7,-20,4,10,'#f8d030'); p(-7,-21,4,4,'#111');
+    p(3,-20,4,10,'#f8d030');  p(3,-21,4,4,'#111');
+    p(-7,-4,14,11,'#f8d030');
+    p(-8,-2,4,3,'#e03020'); p(4,-2,4,3,'#e03020');
+    p(-5,-4,3,4,'#c8a020'); p(2,-4,3,4,'#c8a020');
+    p(-7,-14,14,11,'#f8d030');
+    p(-4,-11,3,4,'#111'); p(2,-11,3,4,'#111');
+    p(-3,-11,1,1,'#fff'); p(3,-11,1,1,'#fff');
+    p(-1,-7,2,1,'#111');
+    p(-3,-6,2,2,'#c06030'); p(1,-6,2,2,'#c06030');
+    p(7,2,4,4,'#f8d030'); p(9,-2,4,4,'#f8d030'); p(7,-6,4,4,'#f8d030');
+    p(-10,-1,3,5,'#f8d030'); p(7,-1,3,5,'#f8d030');
+    p(-5,7,4,5,'#f8d030'); p(2,7,4,5,'#f8d030');
+    p(-4,11,3,2,'#111'); p(2,11,4,2,'#111');
+
+  } else if (name==='Wobbuffet') {
+    p(-10,-8,20,18,'#70c8f0');
+    p(-9,-7,8,8,'#88d8f8');
+    p(-10,6,20,4,'#50a8d0');
+    p(9,0,5,8,'#111'); p(8,2,3,5,'#333');
+    p(-8,-12,16,5,'#70c8f0');
+    p(-5,-10,3,3,'#fff'); p(2,-10,3,3,'#fff');
+    p(-4,-9,2,2,'#111'); p(3,-9,2,2,'#111');
+    p(-6,-5,12,2,'#111');
+    p(-7,-4,2,3,'#111'); p(5,-4,2,3,'#111');
+    p(-6,-3,12,3,'#e05050');
+    p(-12,-3,3,7,'#70c8f0'); p(9,-3,3,7,'#70c8f0');
+    p(-7,10,5,4,'#70c8f0'); p(2,10,5,4,'#70c8f0');
+
+  } else if (name==='Delibird') {
+    // Red and white penguin/bird with sack
+    p(-7,-4,14,12,'#e03020'); // red body
+    p(-5,1,10,8,'#f0f0f0');   // white belly
+    p(-7,-16,14,13,'#e03020'); // head
+    p(-5,-14,4,5,'#fff'); p(1,-14,4,5,'#fff'); // eye area white
+    p(-4,-13,2,2,'#111'); p(2,-13,2,2,'#111'); // pupils
+    p(-4,-14,1,1,'#fff'); p(2,-14,1,1,'#fff'); // eye shine
+    p(-1,-9,3,3,'#f0c030'); // beak
+    p(-9,-2,3,8,'#e03020'); p(7,-2,3,8,'#e03020'); // wings/arms
+    p(-10,4,4,3,'#fff'); p(7,4,4,3,'#fff'); // wing tips
+    p(-5,10,4,5,'#f0c030'); p(2,10,4,5,'#f0c030'); // feet
+    // Sack
+    p(6,-6,8,8,'#f0f0f0'); p(7,-8,7,3,'#e0e0e0');
+    p(10,-10,4,5,'#888'); // tied string
+
+  } else if (name==='Ralts') {
+    p(-7,-17,14,10,'#e8e8e8'); p(-8,-14,16,6,'#d0d0d0');
+    p(-5,-14,10,5,'#40c040');
+    p(-5,-4,10,12,'#f0f0f0');
+    p(-7,4,14,6,'#e0e0e0'); p(-8,6,16,5,'#d0d0d0');
+    p(-5,-12,10,9,'#f8d0c8');
+    p(-3,-8,3,2,'#e03030'); p(0,-8,3,2,'#e03030');
+    p(-7,0,2,5,'#f0f0f0'); p(5,0,2,5,'#f0f0f0');
+    p(-3,10,3,4,'#f0f0f0'); p(1,10,3,4,'#f0f0f0');
 
   } else if (name==='Kirlia') {
     p(-9,-21,5,8,'#e8e8e8'); p(4,-21,5,8,'#e8e8e8');
@@ -3646,6 +3133,18 @@ function drawPokemonSprite(c, name) {
     p(-6,-14,5,3,'#e03030'); p(1,-14,5,3,'#e03030');
     p(-11,-2,4,7,'#f0f0f0'); p(7,-2,4,7,'#f0f0f0');
 
+  } else if (name==='Gossifleur') {
+    p(-12,-20,26,18,'#f8f8f8'); p(-14,-16,28,14,'#f0f0f0');
+    p(-10,-20,4,4,'#f8e030'); p(6,-20,4,4,'#f8e030');
+    p(-12,-13,4,4,'#f8e030'); p(8,-13,4,4,'#f8e030');
+    p(-2,-22,4,4,'#f8e030');
+    p(-5,-4,10,12,'#50b838');
+    p(-4,-14,4,4,'#111'); p(0,-14,4,4,'#111');
+    p(-3,-14,2,2,'#fff'); p(1,-14,2,2,'#fff');
+    p(-7,-11,4,3,'#f0a0b0'); p(3,-11,4,3,'#f0a0b0');
+    p(-2,-10,4,2,'#c06080');
+    p(-3,8,3,4,'#50b838'); p(1,8,3,4,'#50b838');
+
   } else if (name==='Eldegoss') {
     p(-13,-20,26,18,'#f8f8f8'); p(-14,-16,28,14,'#f0f0f0');
     p(-10,-20,4,4,'#f8e030'); p(6,-20,4,4,'#f8e030');
@@ -3658,6 +3157,20 @@ function drawPokemonSprite(c, name) {
     p(-2,-10,4,2,'#c06080');
     p(-3,8,3,4,'#50b838'); p(1,8,3,4,'#50b838');
 
+  } else if (name==='Wooper') {
+    p(-9,-4,18,15,'#6080d0'); p(-6,2,12,10,'#b0c8f0');
+    p(-10,-16,20,13,'#6080d0');
+    p(-8,-13,6,6,'#fff'); p(2,-13,6,6,'#fff');
+    p(-7,-12,4,4,'#111'); p(3,-12,4,4,'#111');
+    p(-6,-12,2,2,'#fff'); p(4,-12,2,2,'#fff');
+    p(-6,-5,12,3,'#111'); p(-7,-4,3,4,'#111'); p(4,-4,3,4,'#111');
+    p(-5,-3,10,4,'#e05050');
+    p(-12,0,4,7,'#6080d0'); p(8,0,4,7,'#6080d0');
+    // Gills
+    p(-12,-14,5,4,'#f080a0'); p(-12,-10,5,4,'#f080a0');
+    p(7,-14,5,4,'#f080a0'); p(7,-10,5,4,'#f080a0');
+    p(-7,11,6,6,'#6080d0'); p(2,11,6,6,'#6080d0');
+
   } else if (name==='Quagsire') {
     p(-9,-4,18,15,'#6080d0'); p(-6,2,12,10,'#b0c8f0');
     p(-10,-16,20,13,'#6080d0');
@@ -3669,6 +3182,19 @@ function drawPokemonSprite(c, name) {
     p(-12,0,4,7,'#6080d0'); p(8,0,4,7,'#6080d0');
     p(-7,11,6,6,'#6080d0'); p(2,11,6,6,'#6080d0');
     p(-8,15,7,3,'#4060b0'); p(2,15,8,3,'#4060b0');
+
+  } else if (name==='Greavard') {
+    p(-8,-4,16,13,'#f0f0f0');
+    p(-8,-4,4,8,'#d0d0d0'); p(5,-4,3,8,'#d0d0d0');
+    p(-8,-15,16,12,'#f0f0f0');
+    p(-10,-12,4,10,'#d0d0d0'); p(6,-12,4,10,'#d0d0d0');
+    p(-6,-13,5,5,'#f8e030'); p(1,-13,5,5,'#f8e030');
+    p(-5,-12,3,3,'#fff8a0'); p(2,-12,3,3,'#fff8a0');
+    p(-5,-6,10,3,'#111');
+    p(-4,-5,3,3,'#fff'); p(2,-5,3,3,'#fff');
+    p(-1,-18,3,5,'#f8a020'); p(0,-20,2,4,'#f8e040');
+    p(-7,9,5,4,'#f0f0f0'); p(3,9,5,4,'#f0f0f0');
+    p(-7,12,3,2,'#d0d0d0'); p(5,12,3,2,'#d0d0d0');
 
   } else if (name==='Houndstone') {
     p(-5,-22,10,10,'#808088'); p(-6,-20,12,8,'#909098');
@@ -3683,9 +3209,8 @@ function drawPokemonSprite(c, name) {
     p(-4,-5,3,3,'#fff'); p(2,-5,3,3,'#fff');
 
   } else {
-    // Fallback generic sprite
-    var col = '#f08030';
-    p(-7,-14,14,22,col);
+    // Fallback generic
+    p(-7,-14,14,22,'#f08030');
     p(-5,-8,10,8,'rgba(255,255,255,0.3)');
     p(-3,-12,3,3,'#111'); p(1,-12,3,3,'#111');
     p(-2,-8,4,2,'#111');
