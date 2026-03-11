@@ -12,151 +12,7 @@
   fixHeight();
   window.addEventListener('resize', fixHeight);
 
-// ============================================================
-// SAVE / LOGIN SYSTEM
-// ============================================================
-var SAVE_KEY_PREFIX = 'pkcastle_save_';
 
-function getSaveKey(user) { return SAVE_KEY_PREFIX + user.toLowerCase(); }
-
-function hashPass(pass) {
-  // Simple deterministic hash (not crypto, but good enough for a game)
-  var h = 0;
-  for (var i = 0; i < pass.length; i++) {
-    h = ((h << 5) - h) + pass.charCodeAt(i);
-    h |= 0;
-  }
-  return h.toString(36);
-}
-
-function saveGame() {
-  if (!username) return;
-  var key = getSaveKey(username);
-  var existing = JSON.parse(localStorage.getItem(key) || '{}');
-  var save = {
-    passHash: existing.passHash,
-    username: username,
-    starterChosen: starterChosen,
-    activePokemon: activePokemon,
-    caughtPokemon: caughtPokemon,
-    pokemonProgress: pokemonProgress,
-    inventory: inventory,
-    pokeballs_claimed: pokeballs_claimed,
-    nurseSeen: nurseSeen,
-    momCutsceneSeen: momCutsceneSeen,
-    dukeSeenFirst: dukeSeenFirst,
-    currentMap: currentMap,
-    playerX: player.x,
-    playerY: player.y,
-    playerRank: playerRank,
-    savedAt: Date.now()
-  };
-  localStorage.setItem(key, JSON.stringify(save));
-}
-
-function loadSave(save) {
-  username       = save.username || username;
-  starterChosen  = save.starterChosen || false;
-  activePokemon  = save.activePokemon || null;
-  caughtPokemon  = save.caughtPokemon || [];
-  pokemonProgress= save.pokemonProgress || {};
-  inventory      = save.inventory || { pokeballs: 0 };
-  pokeballs_claimed = save.pokeballs_claimed || false;
-  nurseSeen      = save.nurseSeen || false;
-  momCutsceneSeen= save.momCutsceneSeen || false;
-  dukeSeenFirst  = save.dukeSeenFirst || false;
-  playerRank     = save.playerRank || 'Bronze';
-  if (save.currentMap) {
-    currentMap = save.currentMap;
-    var mapCfg = MAPS[currentMap];
-    if (mapCfg) {
-      player.x = save.playerX || mapCfg.spawn[0];
-      player.y = save.playerY || mapCfg.spawn[1];
-    }
-  }
-}
-
-function showLogin() {
-  document.getElementById('title-screen').classList.remove('active');
-  document.getElementById('login-screen').classList.add('active');
-}
-
-function doLogin() {
-  var user = document.getElementById('login-user').value.trim();
-  var pass = document.getElementById('login-pass').value;
-  var msg  = document.getElementById('login-msg');
-  if (!user || !pass) { msg.textContent = 'Fill in both fields!'; return; }
-
-  var key  = getSaveKey(user);
-  var data = localStorage.getItem(key);
-  if (!data) { msg.textContent = 'No save found. Use NEW GAME!'; return; }
-
-  var save = JSON.parse(data);
-  if (save.passHash !== hashPass(pass)) { msg.textContent = 'Wrong password!'; return; }
-
-  // Load save and jump straight into game
-  loadSave(save);
-  msg.style.color = '#38c070';
-  msg.textContent = 'Welcome back ' + username + '!';
-  setTimeout(function() {
-    document.getElementById('login-screen').classList.remove('active');
-    if (starterChosen) {
-      document.getElementById('game-screen').classList.add('active');
-      startGameLoop();
-    } else {
-      // New account with no progress - start the intro
-      document.getElementById('intro-screen').classList.add('active');
-      drawProfessor();
-      runDialogue();
-    }
-  }, 800);
-}
-
-function doRegister() {
-  var user = document.getElementById('login-user').value.trim();
-  var pass = document.getElementById('login-pass').value;
-  var msg  = document.getElementById('login-msg');
-  if (!user || !pass) { msg.textContent = 'Fill in both fields!'; return; }
-  if (pass.length < 3) { msg.textContent = 'Password too short!'; return; }
-
-  var key  = getSaveKey(user);
-  var existing = localStorage.getItem(key);
-  if (existing) { msg.textContent = 'Name taken! Try login.'; return; }
-
-  // Create new save
-  var newSave = { passHash: hashPass(pass), username: user };
-  localStorage.setItem(key, JSON.stringify(newSave));
-  username = user;
-
-  msg.style.color = '#38c070';
-  msg.textContent = 'Account created!';
-  setTimeout(function() {
-    document.getElementById('login-screen').classList.remove('active');
-    document.getElementById('intro-screen').classList.add('active');
-    drawProfessor();
-    runDialogue();
-  }, 700);
-}
-
-// Auto-save every 30 seconds and on map change
-setInterval(function() { if (username && starterChosen) saveGame(); }, 30000);
-
-// Patch travelTo to auto-save on map transitions
-var _origTravelTo = null;
-window.addEventListener('DOMContentLoaded', function() {});
-
-// ── Keyboard Enter support on login ──
-document.addEventListener('DOMContentLoaded', function() {
-  ['login-user','login-pass'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') doLogin();
-    });
-  });
-});
-// ============================================================
-// END SAVE SYSTEM
-// ============================================================
 
 </script>
 <style>
@@ -923,6 +779,7 @@ document.getElementById('intro-screen').addEventListener('click', function(e) {
       document.getElementById('intro-screen').classList.remove('active');
       document.getElementById('game-screen').classList.add('active');
       startGame();
+      setTimeout(saveGame, 500);
     }
   }
 });
@@ -1163,6 +1020,152 @@ function startGame() {
   setupJoystick();
   requestAnimationFrame(gameLoop);
 }
+
+// ============================================================
+// SAVE / LOGIN SYSTEM
+// ============================================================
+var SAVE_KEY_PREFIX = 'pkcastle_save_';
+
+function getSaveKey(user) { return SAVE_KEY_PREFIX + user.toLowerCase(); }
+
+function hashPass(pass) {
+  // Simple deterministic hash (not crypto, but good enough for a game)
+  var h = 0;
+  for (var i = 0; i < pass.length; i++) {
+    h = ((h << 5) - h) + pass.charCodeAt(i);
+    h |= 0;
+  }
+  return h.toString(36);
+}
+
+function saveGame() {
+  if (!username) return;
+  var key = getSaveKey(username);
+  var existing = JSON.parse(localStorage.getItem(key) || '{}');
+  var save = {
+    passHash: existing.passHash,
+    username: username,
+    starterChosen: starterChosen,
+    activePokemon: activePokemon,
+    caughtPokemon: caughtPokemon,
+    pokemonProgress: pokemonProgress,
+    inventory: inventory,
+    pokeballs_claimed: pokeballs_claimed,
+    nurseSeen: nurseSeen,
+    momCutsceneSeen: momCutsceneSeen,
+    dukeSeenFirst: dukeSeenFirst,
+    currentMap: currentMap,
+    playerX: player.x,
+    playerY: player.y,
+    playerRank: playerRank,
+    savedAt: Date.now()
+  };
+  localStorage.setItem(key, JSON.stringify(save));
+}
+
+function loadSave(save) {
+  username       = save.username || username;
+  starterChosen  = save.starterChosen || false;
+  activePokemon  = save.activePokemon || null;
+  caughtPokemon  = save.caughtPokemon || [];
+  pokemonProgress= save.pokemonProgress || {};
+  inventory      = save.inventory || { pokeballs: 0 };
+  pokeballs_claimed = save.pokeballs_claimed || false;
+  nurseSeen      = save.nurseSeen || false;
+  momCutsceneSeen= save.momCutsceneSeen || false;
+  dukeSeenFirst  = save.dukeSeenFirst || false;
+  playerRank     = save.playerRank || 'Bronze';
+  if (save.currentMap) {
+    currentMap = save.currentMap;
+    var mapCfg = MAPS[currentMap];
+    if (mapCfg) {
+      player.x = save.playerX || mapCfg.spawn[0];
+      player.y = save.playerY || mapCfg.spawn[1];
+    }
+  }
+}
+
+function showLogin() {
+  document.getElementById('title-screen').classList.remove('active');
+  document.getElementById('login-screen').classList.add('active');
+}
+
+function doLogin() {
+  var user = document.getElementById('login-user').value.trim();
+  var pass = document.getElementById('login-pass').value;
+  var msg  = document.getElementById('login-msg');
+  if (!user || !pass) { msg.textContent = 'Fill in both fields!'; return; }
+
+  var key  = getSaveKey(user);
+  var data = localStorage.getItem(key);
+  if (!data) { msg.textContent = 'No save found. Use NEW GAME!'; return; }
+
+  var save = JSON.parse(data);
+  if (save.passHash !== hashPass(pass)) { msg.textContent = 'Wrong password!'; return; }
+
+  // Load save and jump straight into game
+  loadSave(save);
+  msg.style.color = '#38c070';
+  msg.textContent = 'Welcome back ' + username + '!';
+  setTimeout(function() {
+    document.getElementById('login-screen').classList.remove('active');
+    if (starterChosen) {
+      document.getElementById('game-screen').classList.add('active');
+      startGame();
+    } else {
+      // New account with no progress - start the intro
+      document.getElementById('intro-screen').classList.add('active');
+      drawProfessor();
+      runDialogue();
+    }
+  }, 800);
+}
+
+function doRegister() {
+  var user = document.getElementById('login-user').value.trim();
+  var pass = document.getElementById('login-pass').value;
+  var msg  = document.getElementById('login-msg');
+  if (!user || !pass) { msg.textContent = 'Fill in both fields!'; return; }
+  if (pass.length < 3) { msg.textContent = 'Password too short!'; return; }
+
+  var key  = getSaveKey(user);
+  var existing = localStorage.getItem(key);
+  if (existing) { msg.textContent = 'Name taken! Try login.'; return; }
+
+  // Create new save
+  var newSave = { passHash: hashPass(pass), username: user };
+  localStorage.setItem(key, JSON.stringify(newSave));
+  username = user;
+
+  msg.style.color = '#38c070';
+  msg.textContent = 'Account created!';
+  setTimeout(function() {
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('intro-screen').classList.add('active');
+    drawProfessor();
+    runDialogue();
+  }, 700);
+}
+
+// Auto-save every 30 seconds and on map change
+setInterval(function() { if (username && starterChosen) saveGame(); }, 30000);
+
+// Patch travelTo to auto-save on map transitions
+var _origTravelTo = null;
+window.addEventListener('DOMContentLoaded', function() {});
+
+// ── Keyboard Enter support on login ──
+document.addEventListener('DOMContentLoaded', function() {
+  ['login-user','login-pass'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doLogin();
+    });
+  });
+});
+// ============================================================
+// END SAVE SYSTEM
+// ============================================================
 
 function resizeCanvas() {
   var wrap = document.getElementById('game-screen');
@@ -2428,6 +2431,7 @@ function selectStarter(name) {
   // Add starter to caught list
   if (caughtPokemon.indexOf(name) === -1) caughtPokemon.push(name);
   companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
+  saveGame();
   oakPhase = 'congrats';
   oakCongratsLines = [
     'Congratulations! You have chosen ' + name + '!\nTake good care of your partner!',
