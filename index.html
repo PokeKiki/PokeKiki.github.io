@@ -610,7 +610,19 @@
     <div id="battle-catch-btn" style="display:none;">
       <button onclick="battleCatch()" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);background:#e63020;color:#fff;border:2px solid #fff;border-radius:8px;padding:8px 16px;cursor:pointer;width:100%;">🔴 Throw Pokéball!</button>
     </div>
-    <button id="battle-continue-btn" onclick="battleContinue()" style="display:none;font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);background:#333;color:#fff;border:2px solid #aaa;border-radius:8px;padding:8px;cursor:pointer;">▼ Continue</button>
+    <div id="battle-leave-btn" style="display:none;">
+      <button onclick="closeBattle()" style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);background:#333;color:#fff;border:2px solid #aaa;border-radius:8px;padding:8px;cursor:pointer;width:100%;">🏃 Leave</button>
+    </div>
+  </div>
+</div>
+
+<!-- POKEBALL MACHINE POPUP -->
+<div id="pokeball-machine-popup" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="background:#1a1a2e;border:3px solid #e01020;border-radius:14px;padding:22px 20px;max-width:300px;width:88%;text-align:center;">
+    <div style="font-family:'Press Start 2P',cursive;font-size:10px;color:#e01020;margin-bottom:4px;">⚙ POKÉBALL</div>
+    <div style="font-family:'Press Start 2P',cursive;font-size:10px;color:#e01020;margin-bottom:14px;">MACHINE</div>
+    <div id="pb-machine-msg" style="font-family:'Press Start 2P',cursive;font-size:8px;color:#e0e0e0;line-height:1.9;margin-bottom:16px;min-height:48px;"></div>
+    <div id="pb-machine-btns" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"></div>
   </div>
 </div>
 
@@ -871,6 +883,7 @@ var activePokemon = null; // currently selected pokemon name (for battle + follo
 var inventory = { pokeballs: 0 };
 var pokeballs_claimed = false;
 var nurseDialogueActive = false;
+var pokeballMachineActive = false;
 var nurseSeen = false;
 var caughtPokemon = []; // list of caught pokemon names
 var pokedexOpen = false;
@@ -921,6 +934,68 @@ var POKEMON_DATA = {
 };
 // Pokemon level+xp storage (keyed by name)
 var pokemonProgress = {};
+
+// Evolution map: name -> { into, level }
+var EVOLUTION_MAP = {
+  // Starters
+  'Charmander':  { into: 'Charmeleon', level: 15 },
+  'Charmeleon':  { into: 'Charizard',  level: 30 },
+  'Froakie':     { into: 'Frogadier',  level: 15 },
+  'Frogadier':   { into: 'Greninja',   level: 30 },
+  'Treecko':     { into: 'Grovyle',    level: 15 },
+  'Grovyle':     { into: 'Sceptile',   level: 30 },
+  // Wild
+  'Fletchling':  { into: 'Fletchinder', level: 15 },
+  'Fletchinder': { into: 'Talonflame',  level: 30 },
+  'Shinx':       { into: 'Luxio',       level: 15 },
+  'Luxio':       { into: 'Luxray',      level: 30 },
+  'Beldum':      { into: 'Metang',      level: 15 },
+  'Metang':      { into: 'Metagross',   level: 30 },
+  'Ralts':       { into: 'Kirlia',      level: 15 },
+  'Kirlia':      { into: 'Gardevoir',   level: 30 },
+  'Gossifleur':  { into: 'Eldegoss',    level: 15 },
+  'Wooper':      { into: 'Quagsire',    level: 15 },
+  'Greavard':    { into: 'Houndstone',  level: 15 }
+};
+
+// Evolution colors
+var EVO_COLORS = {
+  'Charmeleon':'#e06020','Charizard':'#c04010',
+  'Frogadier':'#5070d0','Greninja':'#4060c0',
+  'Grovyle':'#58a030','Sceptile':'#38801a',
+  'Fletchinder':'#d03010','Talonflame':'#b02008',
+  'Luxio':'#4040c0','Luxray':'#2020a0',
+  'Metang':'#6070a0','Metagross':'#4050a0',
+  'Kirlia':'#e0d0f0','Gardevoir':'#c0b0f0',
+  'Eldegoss':'#e090b0',
+  'Quagsire':'#5070c0',
+  'Houndstone':'#505060'
+};
+
+function checkEvolution(pokeName, callback) {
+  var evo = EVOLUTION_MAP[pokeName];
+  if (!evo) { if (callback) callback(pokeName, false); return; }
+  var prog = getPokemonProgress(pokeName);
+  if (prog.level < evo.level) { if (callback) callback(pokeName, false); return; }
+
+  // Evolve! Transfer progress to new form
+  var newName = evo.into;
+  if (!pokemonProgress[newName]) pokemonProgress[newName] = { level: prog.level, xp: prog.xp };
+  else { pokemonProgress[newName].level = prog.level; pokemonProgress[newName].xp = prog.xp; }
+
+  // If this was active pokemon, switch to evolved form
+  if (activePokemon === pokeName) activePokemon = newName;
+  if (starterChosen === pokeName) starterChosen = newName;
+  if (companion && companion.name === pokeName) companion.name = newName;
+
+  // Add evolved form to caught list
+  if (caughtPokemon.indexOf(newName) === -1) caughtPokemon.push(newName);
+  // Remove base from caught (replaced by evo)
+  var idx = caughtPokemon.indexOf(pokeName);
+  if (idx !== -1) caughtPokemon.splice(idx, 1);
+
+  if (callback) callback(newName, true, pokeName);
+}
 var joystick = { dx:0, dy:0, active:false };
 var travelMenuOpen = false;
 var oakCutsceneActive = false;
@@ -1030,7 +1105,7 @@ function gameLoop(ts) {
   var dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen && !dukeDialogueActive && !battleActive && !encounterActive) {
+  if (!travelMenuOpen && !oakCutsceneActive && !momCutsceneActive && !nurseDialogueActive && !pokedexOpen && !dukeDialogueActive && !battleActive && !encounterActive && !pokeballMachineActive) {
     var speed = 4;
     var dx = joystick.dx;
     var dy = joystick.dy;
@@ -1059,6 +1134,11 @@ function gameLoop(ts) {
     if (currentMap === 'center' && !nurseDialogueActive
         && player.x > 3.5 && player.x < 8.5 && player.y > 2.2 && player.y < 3.5) {
       startNurseCutscene();
+    }
+    // Pokeball machine trigger — bottom left of center
+    if (currentMap === 'center' && !pokeballMachineActive && pokeballs_claimed
+        && player.x > 0.5 && player.x < 2.5 && player.y > 6.2 && player.y < 8.2) {
+      startPokeballMachine();
     }
     // Duke NPC trigger
     if (currentMap === 'castle' && !dukeDialogueActive
@@ -1229,7 +1309,15 @@ function checkWildEncounter(dt) {
 }
 
 function triggerWildEncounter() {
-  var p = WILD_POKEMON[Math.floor(Math.random() * WILD_POKEMON.length)];
+  var baseOnly = WILD_POKEMON.filter(function(p) {
+    return !EVOLUTION_MAP[p.name] || Object.keys(EVOLUTION_MAP).every(function(k){ return EVOLUTION_MAP[k].into !== p.name; });
+  });
+  // Extra safety: exclude anything that is an evolution target
+  var evoTargets = {};
+  Object.keys(EVOLUTION_MAP).forEach(function(k){ evoTargets[EVOLUTION_MAP[k].into] = true; });
+  var safePool = WILD_POKEMON.filter(function(p){ return !evoTargets[p.name]; });
+  var pool = safePool.length > 0 ? safePool : WILD_POKEMON;
+  var p = pool[Math.floor(Math.random() * pool.length)];
   currentWildPokemon = p;
   encounterActive = true;
   joystick.dx = 0; joystick.dy = 0; joystick.active = false;
@@ -1268,14 +1356,12 @@ function startBattle(wildPoke) {
   battle.enemyPokemon = wildPoke;
   battle.enemyFainted = false;
 
-  // Player pokemon = starter or first caught
   var myName = activePokemon || starterChosen;
   var myProg = getPokemonProgress(myName);
   battle.playerMaxHP = 120 + (myProg.level - 1) * 15;
   battle.playerHP = battle.playerMaxHP;
   battle.playerName = myName;
 
-  // Enemy level = 1-5
   var enemyLevel = Math.floor(Math.random() * 5) + 1;
   battle.enemyMaxHP = 90 + (enemyLevel - 1) * 12;
   battle.enemyHP = battle.enemyMaxHP;
@@ -1287,19 +1373,17 @@ function startBattle(wildPoke) {
   var bs = document.getElementById('battle-screen');
   bs.style.display = 'flex';
 
-  // Draw sprites
   drawBattleSprite('battle-player-sprite', myName,
     (POKEMON_DATA[myName] || {color:'#f08030'}).color || '#f08030', false);
   drawBattleSprite('battle-enemy-sprite', wildPoke.name, wildPoke.color, true);
 
-  // Set HUD
   document.getElementById('battle-player-name').textContent = myName + ' Lv.' + myProg.level;
   document.getElementById('battle-enemy-name').textContent  = wildPoke.name + ' Lv.' + enemyLevel;
   updateBattleHUD();
 
-  showBattleLog('A wild ' + wildPoke.name + ' appeared!', function(){
-    showBattleActions();
-  });
+  // Show intro message then immediately show moves
+  setBattleLog('A wild ' + wildPoke.name + '\nappeared!');
+  setTimeout(function(){ showBattleActions(); }, 900);
 }
 
 function drawBattleSprite(canvasId, name, color, flip) {
@@ -1307,22 +1391,11 @@ function drawBattleSprite(canvasId, name, color, flip) {
   if (!cv) return;
   var ctx = cv.getContext('2d');
   ctx.clearRect(0,0,64,64);
-  if (flip) { ctx.save(); ctx.scale(-1,1); ctx.translate(-64,0); }
-  // Body
-  ctx.fillStyle = color; ctx.fillRect(14,14,36,32);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(14,36,36,10);
-  // Eyes
-  ctx.fillStyle = '#fff'; ctx.fillRect(18,18,10,10); ctx.fillRect(36,18,10,10);
-  ctx.fillStyle = '#111'; ctx.fillRect(21,21,5,5); ctx.fillRect(39,21,5,5);
-  ctx.fillStyle = '#fff'; ctx.fillRect(22,22,2,2); ctx.fillRect(40,22,2,2);
-  // Mouth
-  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(22,36,20,3);
-  // Shine
-  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(14,14,8,32);
-  // Shadow below
-  ctx.fillStyle = 'rgba(0,0,0,0.15)';
-  ctx.beginPath(); ctx.ellipse(32,54,18,5,0,0,Math.PI*2); ctx.fill();
-  if (flip) ctx.restore();
+  ctx.save();
+  ctx.translate(32, 42);
+  if (flip) { ctx.scale(-1.4, 1.4); } else { ctx.scale(1.4, 1.4); }
+  drawPokemonSprite(ctx, name);
+  ctx.restore();
 }
 
 function updateBattleHUD() {
@@ -1336,30 +1409,20 @@ function updateBattleHUD() {
   document.getElementById('battle-enemy-hp-bar').style.background  = ep > 50 ? '#40d060' : ep > 25 ? '#f8c030' : '#e03020';
 }
 
-function showBattleLog(msg, callback) {
-  var log = document.getElementById('battle-log');
-  log.textContent = msg;
-  hideBattleActions();
-  document.getElementById('battle-continue-btn').style.display = 'block';
-  battle._pendingCallback = callback || null;
+function setBattleLog(msg) {
+  document.getElementById('battle-log').textContent = msg;
 }
 
 function hideBattleActions() {
   document.getElementById('battle-actions').style.display = 'none';
   document.getElementById('battle-catch-btn').style.display = 'none';
-  document.getElementById('battle-continue-btn').style.display = 'none';
-}
-
-function battleContinue() {
-  document.getElementById('battle-continue-btn').style.display = 'none';
-  if (battle._pendingCallback) { var cb = battle._pendingCallback; battle._pendingCallback = null; cb(); }
+  document.getElementById('battle-leave-btn').style.display = 'none';
 }
 
 function showBattleActions() {
   if (battle.phase === 'end') return;
   hideBattleActions();
-  document.getElementById('battle-log').textContent = 'What will ' + battle.playerName + ' do?';
-  // Build move buttons
+  setBattleLog('Choose a move!');
   var data = POKEMON_DATA[battle.playerName] || { moves:[{name:'Tackle',dmg:40}] };
   var actDiv = document.getElementById('battle-actions');
   actDiv.innerHTML = '';
@@ -1371,11 +1434,6 @@ function showBattleActions() {
     btn.onclick = function(){ playerAttack(m); };
     actDiv.appendChild(btn);
   });
-
-  // Catch button if enemy fainted
-  if (battle.enemyFainted && inventory.pokeballs > 0) {
-    document.getElementById('battle-catch-btn').style.display = 'block';
-  }
 }
 
 function playerAttack(move) {
@@ -1391,18 +1449,17 @@ function playerAttack(move) {
   if (dmg > 0) msg += '\nDealt ' + dmg + ' damage!';
   else msg += '\n' + battle.enemyPokemon.name + '\'s stats changed!';
 
+  setBattleLog(msg);
+
   if (battle.enemyHP <= 0) {
     battle.enemyFainted = true;
-    showBattleLog(msg + '\n' + battle.enemyPokemon.name + ' fainted!', function(){
-      endBattleWin();
-    });
+    setTimeout(function(){ endBattleWin(); }, 900);
   } else {
-    showBattleLog(msg, function(){ enemyAttack(); });
+    setTimeout(function(){ enemyAttack(); }, 900);
   }
 }
 
 function enemyAttack() {
-  // Enemy picks random move from its data
   var data = POKEMON_DATA[battle.enemyPokemon.name] || { moves:[{name:'Tackle',dmg:35}] };
   var move = data.moves[Math.floor(Math.random() * data.moves.length)];
   var dmg = move.dmg === 0 ? 0 : Math.max(1, Math.floor(move.dmg * 0.6) + Math.floor(Math.random()*6) - 3);
@@ -1412,13 +1469,15 @@ function enemyAttack() {
   var msg = battle.enemyPokemon.name + ' used ' + move.name + '!';
   if (dmg > 0) msg += '\nDealt ' + dmg + ' damage!';
 
+  setBattleLog(msg);
+
   if (battle.playerHP <= 0) {
-    showBattleLog(msg + '\n' + battle.playerName + ' fainted!', function(){
-      endBattleLose();
-    });
+    setTimeout(function(){
+      setBattleLog(battle.playerName + ' fainted!\nYou blacked out...');
+      setTimeout(closeBattle, 1800);
+    }, 900);
   } else {
-    battle.playerTurn = true;
-    showBattleLog(msg, function(){ showBattleActions(); });
+    setTimeout(function(){ battle.playerTurn = true; showBattleActions(); }, 900);
   }
 }
 
@@ -1433,71 +1492,70 @@ function endBattleWin() {
     myProg.level++;
     levelled = true;
   }
-  var msg = battle.enemyPokemon.name + ' was defeated!\n+' + xpGain + ' XP for ' + battle.playerName + '!';
+  var msg = battle.enemyPokemon.name + ' fainted!\n+' + xpGain + ' XP!';
   if (levelled) msg += '\n' + battle.playerName + ' grew to Lv.' + myProg.level + '!';
 
-  if (inventory.pokeballs > 0) {
-    msg += '\nThrow a Pokéball to catch it!';
-    showBattleLog(msg, function(){
-      document.getElementById('battle-log').textContent = 'Throw a Pokéball?';
-      document.getElementById('battle-catch-btn').style.display = 'block';
-      // Also add "leave" option
-      var skipBtn = document.createElement('button');
-      skipBtn.style.cssText = 'font-family:"Press Start 2P",cursive;font-size:clamp(7px,1.8vw,9px);background:#333;color:#fff;border:2px solid #aaa;border-radius:8px;padding:8px;cursor:pointer;margin-top:6px;width:100%';
-      skipBtn.textContent = 'Leave it';
-      skipBtn.onclick = closeBattle;
-      document.getElementById('battle-catch-btn').after(skipBtn);
+  if (levelled) {
+    checkEvolution(battle.playerName, function(newName, evolved, oldName) {
+      if (evolved) {
+        msg += '\n' + oldName + ' evolved\ninto ' + newName + '!';
+        battle.playerName = newName;
+        drawBattleSprite('battle-player-sprite', newName, EVO_COLORS[newName]||'#f08030', false);
+        document.getElementById('battle-player-name').textContent = newName + ' Lv.' + getPokemonProgress(newName).level;
+      }
+      _showPostBattleOptions(msg);
     });
   } else {
-    showBattleLog(msg + '\n(No Pokéballs left!)', closeBattle);
+    _showPostBattleOptions(msg);
   }
 }
 
-function endBattleLose() {
-  battle.phase = 'end';
-  showBattleLog(battle.playerName + ' fainted!\nYou blacked out...', function(){
-    // Heal player pokemon back
-    var myProg = getPokemonProgress(battle.playerName);
-    closeBattle();
-  });
+function _showPostBattleOptions(msg) {
+  setBattleLog(msg);
+  setTimeout(function(){
+    setBattleLog('What will you do?');
+    if (inventory.pokeballs > 0) {
+      document.getElementById('battle-catch-btn').style.display = 'block';
+    }
+    document.getElementById('battle-leave-btn').style.display = 'block';
+  }, 1200);
 }
 
 function battleCatch() {
-  if (inventory.pokeballs <= 0) return;
+  hideBattleActions();
+  if (inventory.pokeballs <= 0) { closeBattle(); return; }
   inventory.pokeballs--;
   updateHUD();
-  document.getElementById('battle-catch-btn').style.display = 'none';
-
-  var catchChance = 0.65;
-  var caught = Math.random() < catchChance;
-
-  if (caught) {
-    if (caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
-      caughtPokemon.push(battle.enemyPokemon.name);
-    }
-    // XP for catching
-    var myProg = getPokemonProgress(battle.playerName);
-    var xpGain = 50 + battle.enemyLevel * 15;
-    myProg.xp += xpGain;
-    var levelled = false;
-    while (myProg.xp >= myProg.level * 100) {
-      myProg.xp -= myProg.level * 100;
-      myProg.level++;
-      levelled = true;
-    }
-    var msg = 'Gotcha! ' + battle.enemyPokemon.name + '\nwas caught!\n+' + xpGain + ' XP!';
-    if (levelled) msg += '\n' + battle.playerName + ' grew to Lv.' + myProg.level + '!';
-    showBattleLog(msg, closeBattle);
-  } else {
-    showBattleLog(battle.enemyPokemon.name + ' broke free!\nTry again?', function(){
-      document.getElementById('battle-catch-btn').style.display = inventory.pokeballs > 0 ? 'block' : 'none';
-      if (inventory.pokeballs === 0) {
-        document.getElementById('battle-log').textContent = 'No more Pokéballs!';
-        document.getElementById('battle-continue-btn').style.display = 'block';
-        battle._pendingCallback = closeBattle;
+  setBattleLog('You threw a Pokéball...');
+  setTimeout(function() {
+    var caught = Math.random() < 0.65;
+    if (caught) {
+      var evoTargets2 = {};
+      Object.keys(EVOLUTION_MAP).forEach(function(k){ evoTargets2[EVOLUTION_MAP[k].into] = true; });
+      if (!evoTargets2[battle.enemyPokemon.name] && caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
+        caughtPokemon.push(battle.enemyPokemon.name);
       }
-    });
-  }
+      var myProg = getPokemonProgress(battle.playerName);
+      var xpGain = 50 + battle.enemyLevel * 15;
+      myProg.xp += xpGain;
+      var levelled = false;
+      while (myProg.xp >= myProg.level * 100) { myProg.xp -= myProg.level * 100; myProg.level++; levelled = true; }
+      var msg = 'Gotcha!\n' + battle.enemyPokemon.name + ' was caught!';
+      if (levelled) msg += '\n' + battle.playerName + ' grew to Lv.' + myProg.level + '!';
+      setBattleLog(msg);
+      if (levelled) {
+        checkEvolution(battle.playerName, function(newName, evolved, oldName) {
+          if (evolved) { battle.playerName = newName; drawBattleSprite('battle-player-sprite', newName, EVO_COLORS[newName]||'#f08030', false); }
+          setTimeout(closeBattle, 1400);
+        });
+      } else {
+        setTimeout(closeBattle, 1400);
+      }
+    } else {
+      setBattleLog(battle.enemyPokemon.name + ' broke free!');
+      setTimeout(function() { _showPostBattleOptions(''); }, 1000);
+    }
+  }, 1000);
 }
 
 function closeBattle() {
@@ -1618,8 +1676,51 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// DUKE NPC CUTSCENE
+// POKEBALL MACHINE
 // ============================================================
+function startPokeballMachine() {
+  pokeballMachineActive = true;
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+  var popup = document.getElementById('pokeball-machine-popup');
+  var msg = document.getElementById('pb-machine-msg');
+  var btns = document.getElementById('pb-machine-btns');
+  popup.style.display = 'flex';
+  btns.innerHTML = '';
+
+  if (inventory.pokeballs > 0) {
+    msg.textContent = 'You still have\n' + inventory.pokeballs + ' Pokéball' + (inventory.pokeballs > 1 ? 's' : '') + '!\nCome back when\nyou run out!';
+    var closeBtn = makeBtn('OK', '#444', '#fff', '#888', closePokeballMachine);
+    btns.appendChild(closeBtn);
+  } else {
+    msg.textContent = 'Out of Pokéballs?\nNo problem!\nTake 5 on the\nhouse!';
+    var getBtn = makeBtn('🔴 Get 5 Balls!', '#e01020', '#fff', '#ff4060', function() {
+      inventory.pokeballs += 5;
+      updateHUD();
+      msg.textContent = 'Here you go!\n5 Pokéballs\nadded!';
+      btns.innerHTML = '';
+      btns.appendChild(makeBtn('Thanks!', '#1a4a2a', '#80ff80', '#40d060', closePokeballMachine));
+    });
+    btns.appendChild(getBtn);
+    btns.appendChild(makeBtn('Never mind', '#333', '#fff', '#888', closePokeballMachine));
+  }
+}
+
+function makeBtn(label, bg, color, border, fn) {
+  var b = document.createElement('button');
+  b.textContent = label;
+  b.style.cssText = 'font-family:"Press Start 2P",cursive;font-size:clamp(7px,1.8vw,9px);background:' + bg + ';color:' + color + ';border:2px solid ' + border + ';border-radius:8px;padding:10px 14px;cursor:pointer;';
+  b.onclick = fn;
+  return b;
+}
+
+function closePokeballMachine() {
+  document.getElementById('pokeball-machine-popup').style.display = 'none';
+  pokeballMachineActive = false;
+  player.y = 6.0; // push back from machine
+  joystick.dx = 0; joystick.dy = 0; joystick.active = false;
+}
+
+
 var dukeLines = [];
 var dukeIndex = 0;
 var dukeTyping = false;
@@ -1749,29 +1850,35 @@ var ALL_STARTERS = {
   ]
 };
 
-var WILD_POKEMON = [
-  { num:'#004', name:'Fletchling',  color:'#f05030', how:'wild', evo:'Fletchinder', evoLevel:17 },
-  { num:'#005', name:'Fletchinder', color:'#d03010', how:'evo',  evo:'Talonflame',  evoLevel:35 },
+// POKEDEX_POKEMON = full list including evolutions (for Pokedex display only)
+var POKEDEX_POKEMON = [
+  { num:'#004', name:'Fletchling',  color:'#f05030', how:'wild', evo:'Fletchinder', evoLevel:15 },
+  { num:'#005', name:'Fletchinder', color:'#d03010', how:'evo',  evo:'Talonflame',  evoLevel:30 },
   { num:'#006', name:'Talonflame',  color:'#b02008', how:'evo',  evo:null,          evoLevel:null },
   { num:'#007', name:'Hawlucha',    color:'#78c850', how:'wild', evo:null,          evoLevel:null },
   { num:'#008', name:'Shinx',       color:'#6060e0', how:'wild', evo:'Luxio',       evoLevel:15 },
   { num:'#009', name:'Luxio',       color:'#4040c0', how:'evo',  evo:'Luxray',      evoLevel:30 },
   { num:'#010', name:'Luxray',      color:'#2020a0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#011', name:'Beldum',      color:'#788090', how:'wild', evo:'Metang',      evoLevel:20 },
-  { num:'#012', name:'Metang',      color:'#6070a0', how:'evo',  evo:'Metagross',   evoLevel:45 },
+  { num:'#011', name:'Beldum',      color:'#788090', how:'wild', evo:'Metang',      evoLevel:15 },
+  { num:'#012', name:'Metang',      color:'#6070a0', how:'evo',  evo:'Metagross',   evoLevel:30 },
   { num:'#013', name:'Metagross',   color:'#4050a0', how:'evo',  evo:null,          evoLevel:null },
   { num:'#014', name:'Pikachu',     color:'#f8d030', how:'wild', evo:null,          evoLevel:null },
   { num:'#015', name:'Wobbuffet',   color:'#70c8f0', how:'wild', evo:null,          evoLevel:null },
-  { num:'#016', name:'Delibird',    color:'#f05050', how:'wild', evo:null,          evoLevel:null },
-  { num:'#017', name:'Ralts',       color:'#f0f0f0', how:'wild', evo:'Kirlia',      evoLevel:20 },
+  { num:'#016', name:'Caterpie',    color:'#a8b820', how:'wild', evo:null,          evoLevel:null },
+  { num:'#017', name:'Ralts',       color:'#f0f0f0', how:'wild', evo:'Kirlia',      evoLevel:15 },
   { num:'#018', name:'Kirlia',      color:'#e0d0f0', how:'evo',  evo:'Gardevoir',   evoLevel:30 },
   { num:'#019', name:'Gardevoir',   color:'#c0b0f0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#020', name:'Gossifleur',  color:'#f0a0c0', how:'wild', evo:'Eldegoss',    evoLevel:20 },
+  { num:'#020', name:'Gossifleur',  color:'#f0a0c0', how:'wild', evo:'Eldegoss',    evoLevel:15 },
   { num:'#021', name:'Eldegoss',    color:'#e090b0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#022', name:'Wooper',      color:'#7090e0', how:'wild', evo:'Quagsire',    evoLevel:20 },
+  { num:'#022', name:'Wooper',      color:'#7090e0', how:'wild', evo:'Quagsire',    evoLevel:15 },
   { num:'#023', name:'Quagsire',    color:'#5070c0', how:'evo',  evo:null,          evoLevel:null },
-  { num:'#024', name:'Greavard',    color:'#707080', how:'wild', evo:'Houndstone',  evoLevel:30 },
-  { num:'#025', name:'Houndstone',  color:'#505060', how:'evo',  evo:null,          evoLevel:null }
+  { num:'#024', name:'Greavard',    color:'#707080', how:'wild', evo:'Houndstone',  evoLevel:15 },
+  { num:'#025', name:'Houndstone',  color:'#505060', how:'evo',  evo:null,          evoLevel:null },
+  { num:'#026', name:'Geodude',     color:'#b8a038', how:'wild', evo:null,          evoLevel:null },
+  { num:'#027', name:'Gastly',      color:'#705898', how:'wild', evo:null,          evoLevel:null },
+  { num:'#028', name:'Magikarp',    color:'#f08030', how:'wild', evo:null,          evoLevel:null },
+  { num:'#029', name:'Abra',        color:'#f8d030', how:'wild', evo:null,          evoLevel:null },
+  { num:'#030', name:'Bunnelby',    color:'#c8a040', how:'wild', evo:null,          evoLevel:null }
 ];
 
 function getAllPokemon() {
@@ -1780,7 +1887,7 @@ function getAllPokemon() {
     { num:'#002', name:'???', color:'#777', how:'evo',     evo:null, evoLevel:null },
     { num:'#003', name:'???', color:'#666', how:'evo',     evo:null, evoLevel:null }
   ];
-  return starterLine.concat(WILD_POKEMON);
+  return starterLine.concat(POKEDEX_POKEMON);
 }
 
 function togglePokedex() {
@@ -1841,7 +1948,10 @@ function renderPokedex() {
     var rcolor = resolved.color;
     var caught = caughtPokemon.indexOf(rname) !== -1;
     if (starterChosen && rname === starterChosen) caught = true;
-    // Evo lines: caught if previous evo is in caughtPokemon (for display - actual catch needed separately)
+
+    // Hide evolutions entirely unless caught — only show base forms as locked
+    if (p.how === 'evo' && !caught) return;
+
     var entry = document.createElement('div');
     entry.className = 'pokedex-entry ' + (caught ? 'caught' : 'locked');
     var cv = document.createElement('canvas');
@@ -1939,12 +2049,11 @@ function drawPokedexSprite(ctx, name, color) {
 }
 
 function drawPokedexSpriteBig(ctx, name, color) {
-  ctx.fillStyle = color; ctx.fillRect(10,10,28,28);
-  ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(10,30,28,8);
-  ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillRect(13,13,8,8); ctx.fillRect(27,13,8,8);
-  ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(15,15,4,4); ctx.fillRect(29,15,4,4);
-  ctx.fillRect(17,28,14,3);
-  ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fillRect(10,10,6,28);
+  ctx.save();
+  ctx.translate(24, 38);
+  ctx.scale(1.1, 1.1);
+  drawPokemonSprite(ctx, name);
+  ctx.restore();
 }
 
 function updateHUD() {
@@ -2521,6 +2630,8 @@ function drawCenterDecorations(c) {
   c.beginPath(); c.arc(cx,cy,8,0,Math.PI*2); c.fill();
   // Healing machine bottom right
   drawHealingMachine(c, 9*TILE, 7*TILE);
+  // Pokeball vending machine bottom left (only visible after nurse first visit)
+  if (pokeballs_claimed) drawPokeballMachine(c, 1*TILE, 7*TILE);
   // Return mat label
   c.fillStyle='rgba(0,0,0,0.4)';
   c.fillRect(5*TILE, 9*TILE+14, TILE*2, 10);
@@ -2589,7 +2700,55 @@ function drawHealingMachine(c, x, y) {
   c.fillStyle='rgba(255,255,255,0.4)'; c.fillRect(x+6,y+18,8,4);
 }
 
-// ---- WILD AREA DECORATIONS ----
+function drawPokeballMachine(c, x, y) {
+  var W = TILE, H = TILE;
+  // Main body - white
+  c.fillStyle = '#f0f0f0'; c.fillRect(x, y, W, H);
+  // Red top panel
+  c.fillStyle = '#e01020'; c.fillRect(x, y, W, H*0.45);
+  // White divider stripe
+  c.fillStyle = '#fff'; c.fillRect(x, y + H*0.45, W, 3);
+  // Dark outline
+  c.strokeStyle = '#333'; c.lineWidth = 1.5; c.strokeRect(x, y, W, H);
+  // Pokeball display window (glass)
+  c.fillStyle = '#c8e8f8'; c.fillRect(x+4, y+3, W-8, H*0.32);
+  c.strokeStyle = '#aaa'; c.lineWidth = 1; c.strokeRect(x+4, y+3, W-8, H*0.32);
+  // Shine on window
+  c.fillStyle = 'rgba(255,255,255,0.5)'; c.fillRect(x+5, y+4, 6, 4);
+  // Pokeball icons inside window
+  var bx = x + 7, by = y + 5;
+  for (var i = 0; i < 3; i++) {
+    var bxc = bx + i * 7;
+    // Top red half
+    c.fillStyle = '#e01020'; c.beginPath(); c.arc(bxc, by+4, 3, Math.PI, 0); c.fill();
+    // Bottom white half
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(bxc, by+4, 3, 0, Math.PI); c.fill();
+    // Middle line
+    c.strokeStyle = '#333'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(bxc-3, by+4); c.lineTo(bxc+3, by+4); c.stroke();
+    // Center button
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(bxc, by+4, 1, 0, Math.PI*2); c.fill();
+    c.strokeStyle = '#555'; c.lineWidth = 0.5; c.beginPath(); c.arc(bxc, by+4, 1, 0, Math.PI*2); c.stroke();
+  }
+  // White panel - label area
+  c.fillStyle = '#fff'; c.fillRect(x+2, y+H*0.5, W-4, H*0.22);
+  c.fillStyle = '#e01020'; c.font = 'bold 4px sans-serif'; c.textAlign = 'center';
+  c.fillText('POKÉ BALL', x + W/2, y + H*0.5 + 8);
+  c.fillText('MACHINE', x + W/2, y + H*0.5 + 14);
+  c.textAlign = 'left';
+  // Coin slot
+  c.fillStyle = '#888'; c.fillRect(x + W/2 - 5, y + H*0.76, 10, 3);
+  c.fillStyle = '#555'; c.fillRect(x + W/2 - 3, y + H*0.76, 6, 1);
+  // Button (red)
+  c.fillStyle = '#e01020'; c.beginPath(); c.arc(x + W/2, y + H*0.88, 4, 0, Math.PI*2); c.fill();
+  c.strokeStyle = '#900'; c.lineWidth = 1; c.beginPath(); c.arc(x + W/2, y + H*0.88, 4, 0, Math.PI*2); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,0.4)'; c.beginPath(); c.arc(x + W/2 - 1, y + H*0.88 - 1, 2, 0, Math.PI*2); c.fill();
+  // Side vents
+  for (var v = 0; v < 4; v++) {
+    c.fillStyle = '#ccc'; c.fillRect(x + W - 4, y + H*0.5 + v*5, 2, 3);
+  }
+}
+
+
 function drawWildDecorations(c) {
   // Animated water shimmer hint
   var t = Date.now()/1000;
@@ -2930,43 +3089,607 @@ function drawCompanion(c, px, py, frame) {
   var bob = (frame===1||frame===3) ? -1 : 0;
   c.save();
   c.scale(0.6, 0.6);
-  c.translate(x / 0.6, (y + bob) / 0.6);
-  if (name === 'Charmander') {
-    c.fillStyle='#f86820'; c.fillRect(-7,-6,14,12);
-    c.fillStyle='#f8c070'; c.fillRect(-4,-2,8,6);
-    c.fillStyle='#f86820'; c.fillRect(-6,-14,12,10);
-    c.fillStyle='#111'; c.fillRect(-4,-10,3,3); c.fillRect(1,-10,3,3);
-    c.fillStyle='#fff'; c.fillRect(-3,-10,2,2); c.fillRect(2,-10,2,2);
-    c.fillStyle='#f86820'; c.fillRect(6,0,5,6);
-    c.fillStyle='#f8c020'; c.fillRect(8,-4,4,6);
-    c.fillStyle='#f84020'; c.fillRect(9,-6,3,4);
-    c.fillStyle='#f86820'; c.fillRect(-6,6,4,5); c.fillRect(2,6,4,5);
-    c.fillStyle='#c85010'; c.fillRect(-6,10,4,2); c.fillRect(2,10,4,2);
-  } else if (name === 'Froakie') {
-    c.fillStyle='#3878d8'; c.fillRect(-7,-6,14,12);
-    c.fillStyle='#f0f0f0';
-    c.beginPath(); c.arc(-3,2,4,0,Math.PI*2); c.fill();
-    c.beginPath(); c.arc(3,1,3,0,Math.PI*2); c.fill();
-    c.beginPath(); c.arc(0,-1,3,0,Math.PI*2); c.fill();
-    c.fillStyle='#3070c8'; c.fillRect(-7,-16,14,12);
-    c.fillStyle='#fff'; c.fillRect(-6,-13,5,5); c.fillRect(1,-13,5,5);
-    c.fillStyle='#3878d8'; c.fillRect(-5,-12,3,3); c.fillRect(2,-12,3,3);
-    c.fillStyle='#111'; c.fillRect(-4,-11,2,2); c.fillRect(3,-11,2,2);
-    c.fillStyle='#3878d8'; c.fillRect(-7,6,5,6); c.fillRect(2,6,5,6);
-    c.fillStyle='#2060b8'; c.fillRect(-7,10,5,2); c.fillRect(2,10,5,2);
-  } else if (name === 'Treecko') {
-    c.fillStyle='#40b840'; c.fillRect(-6,-6,12,12);
-    c.fillStyle='#98e060'; c.fillRect(-3,-2,6,6);
-    c.fillStyle='#40b840'; c.fillRect(-7,-16,14,12);
-    c.fillStyle='#e04040'; c.fillRect(-5,-8,10,4);
-    c.fillStyle='#fff'; c.fillRect(-5,-14,4,4); c.fillRect(1,-14,4,4);
-    c.fillStyle='#111'; c.fillRect(-4,-13,2,2); c.fillRect(2,-13,2,2);
-    c.fillStyle='#309030'; c.fillRect(5,-2,7,10);
-    c.fillStyle='#40b840'; c.fillRect(6,-4,5,8);
-    c.fillStyle='#40b840'; c.fillRect(-6,6,4,6); c.fillRect(2,6,4,6);
-    c.fillStyle='#309030'; c.fillRect(-6,10,4,2); c.fillRect(2,10,4,2);
-  }
+  c.translate(x/0.6, (y+bob)/0.6);
+  drawPokemonSprite(c, name);
   c.restore();
+}
+
+function drawPokemonSprite(c, name) {
+  // Each sprite drawn in ~28x28 pixel space centered at 0,0
+  // p(x,y,w,h,col) helper
+  function p(x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h);}
+
+  if (name==='Charmander') {
+    // Tail flame
+    p(9,-6,3,4,'#f84020'); p(8,-9,4,4,'#f8a020'); p(9,-11,3,3,'#f8e040');
+    // Body
+    p(-6,-4,13,12,'#f86820');
+    // Belly
+    p(-3,0,7,7,'#f8c070');
+    // Head
+    p(-6,-14,13,11,'#f86820');
+    // Eyes
+    p(-4,-11,3,3,'#fff'); p(2,-11,3,3,'#fff');
+    p(-3,-10,2,2,'#111'); p(3,-10,2,2,'#111');
+    p(-3,-11,1,1,'#fff'); p(3,-11,1,1,'#fff');
+    // Nostril
+    p(-2,-7,1,1,'#c85010'); p(1,-7,1,1,'#c85010');
+    // Arm
+    p(-9,-1,3,5,'#f86820'); p(7,-1,3,5,'#f86820');
+    // Claws
+    p(-10,3,2,2,'#f8c070'); p(7,3,4,2,'#f8c070');
+    // Legs
+    p(-5,8,4,5,'#f86820'); p(2,8,4,5,'#f86820');
+    p(-6,11,3,2,'#f8c070'); p(2,11,5,2,'#f8c070');
+
+  } else if (name==='Froakie') {
+    // Body
+    p(-7,-4,14,12,'#3878d8');
+    // White frubbles on chest
+    p(-6,2,5,5,'#f0f0f0'); p(1,2,5,5,'#f0f0f0'); p(-3,0,6,4,'#f0f0f0');
+    // Head
+    p(-7,-16,14,13,'#3070c8');
+    // Big white eyes
+    p(-7,-15,6,6,'#fff'); p(1,-15,6,6,'#fff');
+    p(-6,-14,4,4,'#90c8f0'); p(2,-14,4,4,'#90c8f0');
+    p(-5,-13,2,2,'#111'); p(3,-13,2,2,'#111');
+    p(-5,-14,1,1,'#fff'); p(3,-14,1,1,'#fff');
+    // Nose bumps
+    p(-2,-8,2,1,'#2860b8'); p(1,-8,2,1,'#2860b8');
+    // Arms
+    p(-10,-2,3,6,'#3878d8'); p(7,-2,3,6,'#3878d8');
+    p(-11,3,3,2,'#3070c8'); p(7,3,4,2,'#3070c8');
+    // Legs
+    p(-5,8,4,5,'#3878d8'); p(2,8,4,5,'#3878d8');
+    p(-6,11,5,2,'#2060b8'); p(2,11,5,2,'#2060b8');
+
+  } else if (name==='Treecko') {
+    // Tail
+    p(6,0,8,8,'#309030'); p(7,-4,6,5,'#40b840');
+    // Body
+    p(-6,-4,12,12,'#40b840');
+    // Belly stripe
+    p(-3,0,6,7,'#98e060');
+    // Head
+    p(-6,-16,12,13,'#40b840');
+    // Big red mouth stripe
+    p(-5,-8,10,3,'#e04040');
+    // White eyes
+    p(-5,-15,4,5,'#fff'); p(1,-15,4,5,'#fff');
+    p(-4,-14,2,2,'#111'); p(2,-14,2,2,'#111');
+    p(-4,-15,1,1,'#fff'); p(2,-15,1,1,'#fff');
+    // Arms with sticky pads
+    p(-9,-2,3,5,'#40b840'); p(7,-2,3,5,'#40b840');
+    p(-10,2,4,3,'#98e060'); p(7,2,4,3,'#98e060');
+    // Legs
+    p(-5,8,4,5,'#40b840'); p(2,8,4,5,'#40b840');
+    p(-6,11,4,2,'#309030'); p(2,11,4,2,'#309030');
+
+  } else if (name==='Pikachu') {
+    // Ears (black tips)
+    p(-7,-20,4,10,'#f8d030'); p(-7,-21,4,4,'#111');
+    p(3,-20,4,10,'#f8d030');  p(3,-21,4,4,'#111');
+    // Body
+    p(-7,-4,14,11,'#f8d030');
+    // Red cheeks
+    p(-8,-2,4,3,'#e03020'); p(4,-2,4,3,'#e03020');
+    // Brown back stripes
+    p(-5,-4,3,4,'#c8a020'); p(2,-4,3,4,'#c8a020');
+    // Head
+    p(-7,-14,14,11,'#f8d030');
+    // Eyes
+    p(-4,-11,3,4,'#111'); p(2,-11,3,4,'#111');
+    p(-3,-11,1,1,'#fff'); p(3,-11,1,1,'#fff');
+    // Nose
+    p(-1,-7,2,1,'#111');
+    // Mouth
+    p(-3,-6,2,2,'#c06030'); p(1,-6,2,2,'#c06030');
+    // Tail (lightning bolt)
+    p(7,2,4,4,'#f8d030'); p(9,-2,4,4,'#f8d030'); p(7,-6,4,4,'#f8d030');
+    // Arms
+    p(-10,-1,3,5,'#f8d030'); p(7,-1,3,5,'#f8d030');
+    // Legs
+    p(-5,7,4,5,'#f8d030'); p(2,7,4,5,'#f8d030');
+    p(-4,11,3,2,'#111'); p(2,11,4,2,'#111');
+
+  } else if (name==='Caterpie') {
+    // Segmented body (caterpillar)
+    p(-12,0,8,8,'#60a820'); p(-5,0,8,8,'#60a820'); p(3,0,8,8,'#60a820');
+    // Segment lines
+    p(-5,0,2,8,'#408020'); p(3,0,2,8,'#408020');
+    // Head
+    p(-9,-10,12,11,'#60a820');
+    // Eyes
+    p(-7,-8,4,4,'#f8d030'); p(-2,-8,4,4,'#f8d030');
+    p(-6,-7,2,2,'#111'); p(-1,-7,2,2,'#111');
+    // Antennae
+    p(-5,-14,2,5,'#e03020'); p(-4,-16,4,4,'#e03020');
+    p(1,-13,2,5,'#e03020'); p(0,-15,4,4,'#e03020');
+    // Feet nubs
+    p(-11,7,3,3,'#408020'); p(-4,7,3,3,'#408020'); p(4,7,3,3,'#408020');
+
+  } else if (name==='Geodude') {
+    // Rocky round body
+    p(-9,-8,18,16,'#b8a038');
+    // Rock texture
+    p(-9,-8,5,4,'#a09030'); p(4,-8,5,4,'#a09030');
+    p(-9,4,5,4,'#a09030'); p(5,4,4,4,'#a09030');
+    p(-3,-9,6,2,'#c8b048');
+    // Eyes
+    p(-6,-4,5,5,'#fff'); p(1,-4,5,5,'#fff');
+    p(-5,-3,3,3,'#111'); p(2,-3,3,3,'#111');
+    p(-5,-4,1,1,'#fff'); p(2,-4,1,1,'#fff');
+    // Unibrow
+    p(-7,-5,5,2,'#707020'); p(2,-5,5,2,'#707020');
+    // Fist arms
+    p(-13,-2,5,8,'#b8a038'); p(8,-2,5,8,'#b8a038');
+    p(-14,2,4,4,'#a09030'); p(9,2,4,4,'#a09030');
+
+  } else if (name==='Gastly') {
+    // Gas cloud (semi-transparent)
+    c.globalAlpha=0.7;
+    p(-11,-8,22,18,'#705898');
+    c.globalAlpha=0.5;
+    p(-13,-4,5,8,'#503878'); p(9,-4,5,8,'#503878');
+    p(-9,8,4,6,'#503878'); p(6,8,4,6,'#503878');
+    c.globalAlpha=1.0;
+    // Inner darker
+    p(-8,-6,16,14,'#604888');
+    // Eyes
+    p(-5,-4,5,5,'#fff'); p(1,-4,5,5,'#fff');
+    p(-4,-3,3,3,'#111'); p(2,-3,3,3,'#111');
+    p(-4,-4,1,1,'#fff'); p(2,-4,1,1,'#fff');
+    // Mouth
+    p(-4,2,8,3,'#111');
+    p(-3,3,2,2,'#fff'); p(1,3,2,2,'#fff');
+
+  } else if (name==='Magikarp') {
+    // Body (fish shape)
+    p(-8,-4,16,10,'#f05018');
+    // Scales
+    p(-6,-3,4,3,'#d04010'); p(2,-3,4,3,'#d04010');
+    p(-4,1,4,3,'#d04010'); p(0,1,4,3,'#d04010');
+    // Belly
+    p(-5,2,10,5,'#f0e0a0');
+    // Tail fin
+    p(-8,5,16,5,'#f05018'); p(-7,8,14,4,'#d04010');
+    // Top fin
+    p(-2,-9,4,6,'#f05018');
+    // Head
+    p(-7,-8,14,5,'#f05018');
+    // Eyes
+    p(-6,-6,4,4,'#fff'); p(2,-6,4,4,'#fff');
+    p(-5,-5,2,2,'#111'); p(3,-5,2,2,'#111');
+    // Moustache
+    p(-8,-3,4,2,'#f0e0a0'); p(4,-3,4,2,'#f0e0a0');
+
+  } else if (name==='Abra') {
+    // Eyes (always closed - sleeping)
+    // Body
+    p(-6,-2,12,10,'#c8a820');
+    // Star pattern on belly
+    p(-3,1,6,5,'#d8b830');
+    // Head (drooping)
+    p(-6,-12,12,11,'#c8a820');
+    // Nose
+    p(-1,-7,2,2,'#a08010');
+    // Closed eyes (sleeping lines)
+    p(-5,-9,4,2,'#111'); p(1,-9,4,2,'#111');
+    // Fox ears
+    p(-8,-16,5,8,'#c8a820'); p(3,-16,5,8,'#c8a820');
+    p(-7,-15,3,5,'#f080a0'); p(4,-15,3,5,'#f080a0');
+    // Arms holding (bent inward)
+    p(-9,-1,4,7,'#c8a820'); p(5,-1,4,7,'#c8a820');
+    // Spoon
+    p(6,-3,2,10,'#d8d8d8'); p(4,-4,6,3,'#e8e8e8');
+    // Legs
+    p(-5,8,4,5,'#c8a820'); p(2,8,4,5,'#c8a820');
+    p(-4,12,3,2,'#a08010'); p(2,12,3,2,'#a08010');
+
+  } else if (name==='Ralts') {
+    // White bowl hat
+    p(-7,-17,14,10,'#e8e8e8');
+    p(-8,-14,16,6,'#d0d0d0');
+    // Hair (green)
+    p(-5,-14,10,5,'#40c040');
+    // Little body
+    p(-5,-4,10,12,'#f0f0f0');
+    // Dress ruffles
+    p(-7,4,14,6,'#e0e0e0');
+    p(-8,6,16,5,'#d0d0d0');
+    // Head
+    p(-5,-12,10,9,'#f8d0c8');
+    // Tiny red eyes
+    p(-3,-8,3,2,'#e03030'); p(0,-8,3,2,'#e03030');
+    // Arms (hidden in dress)
+    p(-7,0,2,5,'#f0f0f0'); p(5,0,2,5,'#f0f0f0');
+    // Legs
+    p(-3,10,3,4,'#f0f0f0'); p(1,10,3,4,'#f0f0f0');
+
+  } else if (name==='Bunnelby') {
+    // Big ears
+    p(-8,-20,5,18,'#c8a888'); p(3,-20,5,18,'#c8a888');
+    p(-7,-19,3,14,'#f0d0c0'); p(4,-19,3,14,'#f0d0c0');
+    // Body
+    p(-7,-2,14,12,'#c8a888');
+    // Belly
+    p(-4,0,8,9,'#f0d0c0');
+    // Head
+    p(-7,-12,14,11,'#c8a888');
+    // Eyes
+    p(-5,-9,4,4,'#c03030'); p(1,-9,4,4,'#c03030');
+    p(-4,-8,2,2,'#111'); p(2,-8,2,2,'#111');
+    p(-4,-9,1,1,'#fff'); p(2,-9,1,1,'#fff');
+    // Nose
+    p(-1,-5,2,2,'#f08080');
+    // Whiskers
+    p(-8,-5,4,1,'#c8a888'); p(4,-5,4,1,'#c8a888');
+    // Shovel paws
+    p(-9,1,4,6,'#a08060'); p(5,1,4,6,'#a08060');
+    // Legs
+    p(-5,10,4,4,'#c8a888'); p(2,10,4,4,'#c8a888');
+
+  } else if (name==='Fletchling') {
+    // Tail feathers
+    p(6,2,8,4,'#e83010'); p(7,-1,6,4,'#c82000'); p(8,5,5,3,'#f04020');
+    // Body (red-orange)
+    p(-7,-2,13,10,'#e83010');
+    // Wing
+    p(-7,0,12,6,'#c82000');
+    // White belly
+    p(-4,1,8,7,'#f0e8d0');
+    // Head (dark grey)
+    p(-6,-12,12,11,'#303030');
+    // Red forehead patch
+    p(-4,-12,8,5,'#e83010');
+    // Eyes
+    p(-4,-9,3,3,'#fff'); p(1,-9,3,3,'#fff');
+    p(-3,-8,2,2,'#111'); p(2,-8,2,2,'#111');
+    // Beak
+    p(-1,-6,4,3,'#f0c830'); p(1,-5,2,3,'#d0a820');
+    // Feet
+    p(-4,8,3,4,'#f0c830'); p(2,8,3,4,'#f0c830');
+    p(-5,11,3,2,'#f0c830'); p(2,11,4,2,'#f0c830');
+
+  } else if (name==='Shinx') {
+    // Electric mane (yellow)
+    p(-8,-14,16,8,'#f8e030');
+    // Body (blue with black rear)
+    p(-7,-3,10,11,'#4040d0');
+    p(3,-3,5,11,'#111');
+    // Star-tipped tail
+    p(7,3,6,4,'#4040d0'); p(11,1,4,4,'#f8e030');
+    // Head
+    p(-7,-13,14,11,'#4040d0');
+    // Yellow ear tips
+    p(-8,-14,5,5,'#4040d0'); p(-8,-14,3,3,'#f8e030');
+    p(3,-14,5,5,'#4040d0'); p(4,-14,3,3,'#f8e030');
+    // Eyes
+    p(-5,-10,4,4,'#40d0f0'); p(1,-10,4,4,'#40d0f0');
+    p(-4,-9,2,2,'#111'); p(2,-9,2,2,'#111');
+    p(-4,-10,1,1,'#fff'); p(2,-10,1,1,'#fff');
+    // Nose
+    p(-1,-6,2,2,'#111');
+    // Paws
+    p(-7,8,4,5,'#4040d0'); p(0,8,4,5,'#111');
+    p(-8,11,4,2,'#f8e030'); p(0,11,4,2,'#f8e030');
+
+  } else if (name==='Beldum') {
+    // Main body (steel blue orb)
+    p(-8,-6,16,14,'#708090');
+    // Metal sheen
+    p(-7,-5,7,6,'#8898a8');
+    p(-7,-5,3,3,'#a0b0c0');
+    // Clamp/claw
+    p(-12,-2,5,8,'#607080');
+    p(-13,-3,4,5,'#708090'); p(-13,2,4,5,'#708090');
+    // Back spike
+    p(7,-2,6,6,'#607080');
+    p(11,-4,4,10,'#607080');
+    // Single red eye
+    p(-3,-3,6,6,'#e03020');
+    p(-1,-1,3,3,'#f05040');
+    p(-1,-2,1,1,'#fff');
+
+  } else if (name==='Greavard') {
+    // Ghost dog
+    // White fluffy body
+    p(-8,-4,16,13,'#f0f0f0');
+    // Grey shading
+    p(-8,-4,4,8,'#d0d0d0'); p(5,-4,3,8,'#d0d0d0');
+    // Head
+    p(-8,-15,16,12,'#f0f0f0');
+    // Floppy ears
+    p(-10,-12,4,10,'#d0d0d0'); p(6,-12,4,10,'#d0d0d0');
+    // Glowing eye (single - candle on head)
+    p(-3,-13,6,5,'#fff');
+    p(-2,-12,4,3,'#111');
+    p(-1,-12,2,2,'#f8d030');
+    // Mouth
+    p(-4,-4,8,3,'#111');
+    p(-3,-3,2,2,'#fff'); p(1,-3,2,2,'#fff');
+    // Candle flame on head
+    p(-1,-18,3,5,'#f8a020'); p(0,-20,2,4,'#f8e040');
+    // Paws
+    p(-7,9,5,4,'#f0f0f0'); p(3,9,5,4,'#f0f0f0');
+    p(-7,12,3,2,'#d0d0d0'); p(5,12,3,2,'#d0d0d0');
+
+  } else if (name==='Wobbuffet') {
+    // Big round teal body
+    p(-10,-8,20,18,'#70c8f0');
+    // Sheen
+    p(-9,-7,8,8,'#88d8f8');
+    // Darker bottom
+    p(-10,6,20,4,'#50a8d0');
+    // Small tail (black)
+    p(9,0,5,8,'#111');
+    p(8,2,3,5,'#333');
+    // Head/face (same body color, flat face)
+    p(-8,-12,16,5,'#70c8f0');
+    // Tiny eyes
+    p(-5,-10,3,3,'#fff'); p(2,-10,3,3,'#fff');
+    p(-4,-9,2,2,'#111'); p(3,-9,2,2,'#111');
+    // Big happy mouth (always smiling)
+    p(-6,-5,12,2,'#111');
+    p(-7,-4,2,3,'#111'); p(5,-4,2,3,'#111');
+    p(-6,-3,12,3,'#e05050');
+    // Stubby arms
+    p(-12,-3,3,7,'#70c8f0'); p(9,-3,3,7,'#70c8f0');
+    // Feet
+    p(-7,10,5,4,'#70c8f0'); p(2,10,5,4,'#70c8f0');
+
+  } else if (name==='Gossifleur') {
+    // Flower petals around head
+    p(-12,-18,6,6,'#f0a0c0'); p(6,-18,6,6,'#f0a0c0');
+    p(-14,-12,5,6,'#f0a0c0'); p(9,-12,5,6,'#f0a0c0');
+    p(-9,-20,6,5,'#f0a0c0'); p(3,-20,6,5,'#f0a0c0');
+    p(-3,-21,6,4,'#f8c0d8');
+    // Leaf body
+    p(-7,-2,14,12,'#60c040');
+    p(-9,-1,3,8,'#50a830'); p(6,-1,3,8,'#50a830');
+    // Round cute head (flower center)
+    p(-7,-16,14,15,'#f8e860');
+    // Leaf hat on top
+    p(-5,-18,10,5,'#60c040');
+    // Eyes
+    p(-5,-12,4,4,'#111'); p(1,-12,4,4,'#111');
+    p(-4,-12,2,2,'#fff'); p(2,-12,2,2,'#fff');
+    // Blush
+    p(-7,-9,4,3,'#f0a0b0'); p(3,-9,4,3,'#f0a0b0');
+    // Mouth
+    p(-2,-8,4,2,'#c06080');
+    // Tiny feet
+    p(-4,10,3,4,'#60c040'); p(2,10,3,4,'#60c040');
+
+  } else if (name==='Wooper') {
+    // Body (blue salamander)
+    p(-8,-4,16,13,'#7090e0');
+    // Belly
+    p(-5,0,10,9,'#b0c8f8');
+    // Head
+    p(-8,-14,16,11,'#7090e0');
+    // Branching gills (pink, both sides)
+    p(-12,-14,5,4,'#f080a0'); p(-12,-10,5,4,'#f080a0');
+    p(-13,-16,4,3,'#f080a0');
+    p(7,-14,5,4,'#f080a0'); p(7,-10,5,4,'#f080a0');
+    p(9,-16,4,3,'#f080a0');
+    // Eyes
+    p(-5,-11,4,4,'#111'); p(1,-11,4,4,'#111');
+    p(-4,-11,2,2,'#fff'); p(2,-11,2,2,'#fff');
+    // Mouth (happy)
+    p(-3,-5,6,2,'#111'); p(-4,-4,2,3,'#111'); p(2,-4,2,3,'#111');
+    // Stubby arms
+    p(-10,2,3,5,'#7090e0'); p(7,2,3,5,'#7090e0');
+    // Stubby tail
+    p(7,4,5,6,'#7090e0');
+    // Feet
+    p(-6,9,4,5,'#7090e0'); p(3,9,4,5,'#7090e0');
+
+  } else if (name==='Charmeleon') {
+    p(8,-4,4,5,'#f84020'); p(7,-8,5,5,'#f8a020'); p(8,-11,4,4,'#f8e040');
+    p(-7,-4,14,13,'#e05010'); p(-4,0,8,8,'#f0a060');
+    p(-7,-16,14,13,'#e05010'); p(-2,-19,4,5,'#c03000');
+    p(-5,-13,4,4,'#fff'); p(1,-13,4,4,'#fff');
+    p(-4,-12,3,3,'#d03020'); p(2,-12,3,3,'#d03020');
+    p(-3,-11,2,2,'#111'); p(3,-11,2,2,'#111');
+    p(-10,-1,3,6,'#e05010'); p(8,-1,3,6,'#e05010');
+    p(-11,4,5,2,'#f0c070'); p(8,4,5,2,'#f0c070');
+    p(-6,9,5,6,'#e05010'); p(2,9,5,6,'#e05010');
+    p(-7,13,4,2,'#f0c070'); p(2,13,5,2,'#f0c070');
+
+  } else if (name==='Charizard') {
+    p(-14,-10,8,16,'#6030a0'); p(6,-10,8,16,'#6030a0');
+    p(-16,-6,4,10,'#7040b0'); p(12,-6,4,10,'#7040b0');
+    p(-8,-4,16,14,'#f06000'); p(-5,2,10,9,'#f0d0a0');
+    p(-8,-17,16,14,'#f06000');
+    p(-5,-21,3,6,'#d04000'); p(2,-21,3,6,'#d04000');
+    p(-6,-15,5,5,'#fff'); p(1,-15,5,5,'#fff');
+    p(-5,-14,3,3,'#d03020'); p(2,-14,3,3,'#d03020');
+    p(-4,-13,2,2,'#111'); p(3,-13,2,2,'#111');
+    p(8,6,5,6,'#f06000'); p(10,2,4,5,'#f8a020'); p(11,-1,4,5,'#f8e040');
+    p(-11,0,4,7,'#f06000'); p(8,0,4,7,'#f06000');
+    p(-12,5,5,3,'#f0d0a0'); p(8,5,6,3,'#f0d0a0');
+    p(-6,10,5,7,'#f06000'); p(2,10,5,7,'#f06000');
+    p(-7,15,4,2,'#f0d0a0'); p(2,15,6,2,'#f0d0a0');
+
+  } else if (name==='Frogadier') {
+    p(-7,-4,14,13,'#2858c0');
+    p(-8,0,5,6,'#f0f0f0'); p(3,0,5,6,'#f0f0f0'); p(-4,-2,8,5,'#f0f0f0');
+    p(-7,-17,14,14,'#2050b0');
+    p(-8,-16,7,7,'#fff'); p(1,-16,7,7,'#fff');
+    p(-7,-15,5,5,'#80c0f0'); p(2,-15,5,5,'#80c0f0');
+    p(-6,-14,3,3,'#111'); p(3,-14,3,3,'#111');
+    p(-11,-2,4,7,'#2858c0'); p(7,-2,4,7,'#2858c0');
+    p(-6,9,5,6,'#2858c0'); p(2,9,5,6,'#2858c0');
+
+  } else if (name==='Greninja') {
+    p(-6,0,12,3,'#e03060'); p(-8,2,16,3,'#e03060'); p(-7,4,14,4,'#c02050');
+    p(-7,-4,14,12,'#1838a0');
+    p(-7,-18,14,15,'#1030c0');
+    p(-7,-16,6,6,'#fff'); p(1,-16,6,6,'#fff');
+    p(-6,-15,4,4,'#e03020'); p(2,-15,4,4,'#e03020');
+    p(-5,-14,2,2,'#111'); p(3,-14,2,2,'#111');
+    p(7,-6,6,6,'#40a0e0'); p(9,-8,3,3,'#80c8f8');
+    p(-11,-2,4,8,'#1838a0'); p(7,-2,4,8,'#1838a0');
+    p(-6,8,5,7,'#1838a0'); p(2,8,5,7,'#1838a0');
+
+  } else if (name==='Grovyle') {
+    p(6,2,10,6,'#208020'); p(9,-3,7,6,'#309030');
+    p(-7,-4,13,13,'#30a030'); p(-4,1,7,8,'#78b848');
+    p(-11,-2,5,6,'#30a030'); p(8,-2,5,6,'#30a030');
+    p(-13,-1,4,3,'#50c050'); p(9,-1,5,3,'#50c050');
+    p(-7,-18,13,15,'#30a030');
+    p(-3,-22,8,6,'#50c050'); p(-4,-20,10,4,'#40b040');
+    p(-5,-14,4,3,'#fff'); p(1,-14,4,3,'#fff');
+    p(-4,-13,2,2,'#111'); p(2,-13,2,2,'#111');
+    p(-4,-8,8,3,'#e03030');
+    p(-5,9,4,6,'#30a030'); p(2,9,4,6,'#30a030');
+
+  } else if (name==='Sceptile') {
+    p(-5,-8,3,4,'#f8d030'); p(2,-8,3,4,'#f8d030');
+    p(-6,-2,3,4,'#f8d030'); p(3,-2,3,4,'#f8d030');
+    p(7,4,12,5,'#187018'); p(11,-2,8,5,'#207020');
+    p(-7,-5,14,14,'#1e8c1e'); p(-4,1,8,9,'#60a040');
+    p(-7,-20,13,16,'#1e8c1e');
+    p(-6,-12,12,3,'#e03030');
+    p(-5,-18,4,4,'#fff'); p(1,-18,4,4,'#fff');
+    p(-4,-17,2,2,'#111'); p(2,-17,2,2,'#111');
+    p(-12,-3,6,7,'#1e8c1e'); p(8,-3,6,7,'#1e8c1e');
+    p(-13,-4,5,4,'#50c050'); p(9,-4,5,4,'#50c050');
+    p(-6,9,5,7,'#1e8c1e'); p(2,9,5,7,'#1e8c1e');
+
+  } else if (name==='Fletchinder') {
+    p(6,0,10,5,'#d02000'); p(8,-3,7,4,'#b81800');
+    p(-8,-3,15,11,'#d02000'); p(-5,1,9,7,'#f0e0d0');
+    p(-9,0,14,7,'#b01800');
+    p(-7,-14,13,12,'#202020');
+    p(-5,-14,10,7,'#f06000'); p(-3,-16,6,4,'#f8a000');
+    p(-5,-11,4,4,'#fff'); p(1,-11,4,4,'#fff');
+    p(-4,-10,2,2,'#111'); p(2,-10,2,2,'#111');
+    p(-2,-7,5,3,'#f0c030'); p(1,-6,3,4,'#d0a020');
+    p(-5,8,4,5,'#f0c030'); p(2,8,4,5,'#f0c030');
+
+  } else if (name==='Talonflame') {
+    p(-14,-8,10,18,'#c01800'); p(5,-8,10,18,'#c01800');
+    p(-13,0,4,6,'#f08000'); p(10,0,4,6,'#f08000');
+    p(-8,-4,16,12,'#c01800'); p(-5,1,10,8,'#f0e0c0');
+    p(-7,-17,14,14,'#202020'); p(-4,-17,8,8,'#f06000');
+    p(-6,-13,5,5,'#fff'); p(1,-13,5,5,'#fff');
+    p(-5,-12,3,3,'#d03020'); p(2,-12,3,3,'#d03020');
+    p(-4,-11,2,2,'#111'); p(3,-11,2,2,'#111');
+    p(-2,-8,6,4,'#f0c030'); p(2,-7,4,5,'#d0a020');
+    p(-6,8,5,6,'#202020'); p(2,8,5,6,'#202020');
+    p(-8,13,5,3,'#f0c030'); p(2,13,6,3,'#f0c030');
+
+  } else if (name==='Luxio') {
+    p(-9,-16,18,10,'#f8e030');
+    p(-8,-4,12,12,'#3030b0'); p(4,-4,6,12,'#111');
+    p(8,3,7,4,'#3030b0'); p(13,0,5,5,'#f8e030');
+    p(-8,-15,16,12,'#3030b0');
+    p(-10,-17,5,6,'#3030b0'); p(5,-17,5,6,'#3030b0');
+    p(-6,-12,5,5,'#40d0f0'); p(1,-12,5,5,'#40d0f0');
+    p(-5,-11,3,3,'#111'); p(2,-11,3,3,'#111');
+    p(-1,-7,2,2,'#111'); p(-2,-5,4,2,'#d06080');
+    p(-8,8,5,6,'#3030b0'); p(0,8,5,6,'#111');
+    p(-9,12,5,3,'#f8e030'); p(0,12,5,3,'#f8e030');
+
+  } else if (name==='Luxray') {
+    p(-10,-18,20,12,'#f8e030');
+    p(-9,-5,18,14,'#111'); p(-7,-3,8,10,'#2020a0');
+    p(9,4,8,5,'#111'); p(14,0,6,6,'#f8e030');
+    p(-9,-18,18,14,'#111'); p(-6,-19,7,5,'#2020a0');
+    p(-11,-22,6,8,'#111'); p(5,-22,6,8,'#111');
+    p(-10,-21,4,5,'#f8e030'); p(6,-21,4,5,'#f8e030');
+    p(-7,-15,6,6,'#40d0f0'); p(1,-15,6,6,'#40d0f0');
+    p(-6,-14,4,4,'#80f0ff'); p(2,-14,4,4,'#80f0ff');
+    p(-5,-13,2,2,'#111'); p(3,-13,2,2,'#111');
+    p(-9,9,6,7,'#111'); p(3,9,6,7,'#111');
+    p(-10,14,6,3,'#f8e030'); p(3,14,7,3,'#f8e030');
+
+  } else if (name==='Metang') {
+    p(-14,-3,6,9,'#5060a0'); p(8,-3,6,9,'#5060a0');
+    p(-15,-4,5,6,'#6070b0'); p(-15,3,5,6,'#6070b0');
+    p(10,-4,5,6,'#6070b0'); p(10,3,5,6,'#6070b0');
+    p(-8,-7,16,16,'#5868a0'); p(-7,-6,10,9,'#7080b8');
+    p(-2,-4,4,12,'#404878'); p(-6,0,12,4,'#404878');
+    p(-5,-4,4,4,'#e03020'); p(1,-4,4,4,'#e03020');
+    p(-4,-3,2,2,'#f05040'); p(2,-3,2,2,'#f05040');
+
+  } else if (name==='Metagross') {
+    p(-12,8,5,7,'#4050a0'); p(-4,8,5,7,'#4050a0');
+    p(2,8,5,7,'#4050a0'); p(8,8,5,7,'#4050a0');
+    p(-12,-10,24,20,'#4858a8'); p(-11,-9,16,12,'#6070c0');
+    p(-2,-8,4,18,'#a0a8c8'); p(-10,-2,20,4,'#a0a8c8');
+    p(-9,-7,5,5,'#e03020'); p(-1,-7,5,5,'#e03020');
+    p(-9,1,5,5,'#e03020'); p(-1,1,5,5,'#e03020');
+    p(-18,-4,8,10,'#4050a0'); p(10,-4,8,10,'#4050a0');
+    p(-20,-5,6,6,'#5060b0'); p(-20,3,6,6,'#5060b0');
+    p(14,-5,6,6,'#5060b0'); p(14,3,6,6,'#5060b0');
+
+  } else if (name==='Kirlia') {
+    p(-9,-21,5,8,'#e8e8e8'); p(4,-21,5,8,'#e8e8e8');
+    p(-6,-16,12,6,'#40c040');
+    p(-6,-6,12,14,'#f0f0f0');
+    p(-8,4,16,7,'#e0e0e0'); p(-9,7,18,6,'#d8d8d8');
+    p(-6,-14,12,9,'#f8d0c8');
+    p(-5,-11,4,3,'#e03030'); p(1,-11,4,3,'#e03030');
+    p(-9,0,3,6,'#f0f0f0'); p(6,0,3,6,'#f0f0f0');
+    p(-4,12,3,5,'#f0f0f0'); p(2,12,3,5,'#f0f0f0');
+
+  } else if (name==='Gardevoir') {
+    p(-2,0,4,12,'#e8e8e8'); p(-3,2,6,8,'#d0d0d0');
+    p(-10,4,20,14,'#f0f0f0'); p(-11,8,22,12,'#e8e8e8'); p(-12,12,24,10,'#e0e0e0');
+    p(-7,-20,14,8,'#40c040'); p(-8,-16,6,8,'#40c040'); p(3,-16,6,8,'#40c040');
+    p(-6,-8,12,14,'#f0f0f0');
+    p(-7,-18,14,11,'#f8d0c8');
+    p(-2,-22,4,6,'#e8e8e8');
+    p(-6,-14,5,3,'#e03030'); p(1,-14,5,3,'#e03030');
+    p(-11,-2,4,7,'#f0f0f0'); p(7,-2,4,7,'#f0f0f0');
+
+  } else if (name==='Eldegoss') {
+    p(-13,-20,26,18,'#f8f8f8'); p(-14,-16,28,14,'#f0f0f0');
+    p(-10,-20,4,4,'#f8e030'); p(6,-20,4,4,'#f8e030');
+    p(-12,-13,4,4,'#f8e030'); p(8,-13,4,4,'#f8e030');
+    p(-2,-22,4,4,'#f8e030');
+    p(-5,-4,10,12,'#50b838');
+    p(-4,-14,4,4,'#111'); p(0,-14,4,4,'#111');
+    p(-3,-14,2,2,'#fff'); p(1,-14,2,2,'#fff');
+    p(-7,-11,4,3,'#f0a0b0'); p(3,-11,4,3,'#f0a0b0');
+    p(-2,-10,4,2,'#c06080');
+    p(-3,8,3,4,'#50b838'); p(1,8,3,4,'#50b838');
+
+  } else if (name==='Quagsire') {
+    p(-9,-4,18,15,'#6080d0'); p(-6,2,12,10,'#b0c8f0');
+    p(-10,-16,20,13,'#6080d0');
+    p(-8,-13,6,6,'#fff'); p(2,-13,6,6,'#fff');
+    p(-7,-12,4,4,'#111'); p(3,-12,4,4,'#111');
+    p(-6,-12,2,2,'#fff'); p(4,-12,2,2,'#fff');
+    p(-6,-5,12,3,'#111'); p(-7,-4,3,4,'#111'); p(4,-4,3,4,'#111');
+    p(-5,-3,10,4,'#e05050');
+    p(-12,0,4,7,'#6080d0'); p(8,0,4,7,'#6080d0');
+    p(-7,11,6,6,'#6080d0'); p(2,11,6,6,'#6080d0');
+    p(-8,15,7,3,'#4060b0'); p(2,15,8,3,'#4060b0');
+
+  } else if (name==='Houndstone') {
+    p(-5,-22,10,10,'#808088'); p(-6,-20,12,8,'#909098');
+    p(-9,-6,18,16,'#e8e8f0');
+    p(-10,-3,5,10,'#d8d8e0'); p(5,-3,5,10,'#d8d8e0');
+    p(-9,9,4,6,'#e8e8f0'); p(-4,8,4,7,'#e8e8f0'); p(1,9,4,6,'#e8e8f0');
+    p(-9,-17,18,12,'#e8e8f0');
+    p(-12,-14,5,12,'#d8d8e0'); p(7,-14,5,12,'#d8d8e0');
+    p(-6,-13,5,5,'#f8e030'); p(1,-13,5,5,'#f8e030');
+    p(-5,-12,3,3,'#fff8a0'); p(2,-12,3,3,'#fff8a0');
+    p(-5,-6,10,3,'#111');
+    p(-4,-5,3,3,'#fff'); p(2,-5,3,3,'#fff');
+
+  } else {
+    // Fallback generic sprite
+    var col = '#f08030';
+    p(-7,-14,14,22,col);
+    p(-5,-8,10,8,'rgba(255,255,255,0.3)');
+    p(-3,-12,3,3,'#111'); p(1,-12,3,3,'#111');
+    p(-2,-8,4,2,'#111');
+  }
 }
 
 function drawOakProfCanvas() {
