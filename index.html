@@ -11,6 +11,153 @@
   }
   fixHeight();
   window.addEventListener('resize', fixHeight);
+
+// ============================================================
+// SAVE / LOGIN SYSTEM
+// ============================================================
+var SAVE_KEY_PREFIX = 'pkcastle_save_';
+
+function getSaveKey(user) { return SAVE_KEY_PREFIX + user.toLowerCase(); }
+
+function hashPass(pass) {
+  // Simple deterministic hash (not crypto, but good enough for a game)
+  var h = 0;
+  for (var i = 0; i < pass.length; i++) {
+    h = ((h << 5) - h) + pass.charCodeAt(i);
+    h |= 0;
+  }
+  return h.toString(36);
+}
+
+function saveGame() {
+  if (!username) return;
+  var key = getSaveKey(username);
+  var existing = JSON.parse(localStorage.getItem(key) || '{}');
+  var save = {
+    passHash: existing.passHash,
+    username: username,
+    starterChosen: starterChosen,
+    activePokemon: activePokemon,
+    caughtPokemon: caughtPokemon,
+    pokemonProgress: pokemonProgress,
+    inventory: inventory,
+    pokeballs_claimed: pokeballs_claimed,
+    nurseSeen: nurseSeen,
+    momCutsceneSeen: momCutsceneSeen,
+    dukeSeenFirst: dukeSeenFirst,
+    currentMap: currentMap,
+    playerX: player.x,
+    playerY: player.y,
+    playerRank: playerRank,
+    savedAt: Date.now()
+  };
+  localStorage.setItem(key, JSON.stringify(save));
+}
+
+function loadSave(save) {
+  username       = save.username || username;
+  starterChosen  = save.starterChosen || false;
+  activePokemon  = save.activePokemon || null;
+  caughtPokemon  = save.caughtPokemon || [];
+  pokemonProgress= save.pokemonProgress || {};
+  inventory      = save.inventory || { pokeballs: 0 };
+  pokeballs_claimed = save.pokeballs_claimed || false;
+  nurseSeen      = save.nurseSeen || false;
+  momCutsceneSeen= save.momCutsceneSeen || false;
+  dukeSeenFirst  = save.dukeSeenFirst || false;
+  playerRank     = save.playerRank || 'Bronze';
+  if (save.currentMap) {
+    currentMap = save.currentMap;
+    var mapCfg = MAPS[currentMap];
+    if (mapCfg) {
+      player.x = save.playerX || mapCfg.spawn[0];
+      player.y = save.playerY || mapCfg.spawn[1];
+    }
+  }
+}
+
+function showLogin() {
+  document.getElementById('title-screen').classList.remove('active');
+  document.getElementById('login-screen').classList.add('active');
+}
+
+function doLogin() {
+  var user = document.getElementById('login-user').value.trim();
+  var pass = document.getElementById('login-pass').value;
+  var msg  = document.getElementById('login-msg');
+  if (!user || !pass) { msg.textContent = 'Fill in both fields!'; return; }
+
+  var key  = getSaveKey(user);
+  var data = localStorage.getItem(key);
+  if (!data) { msg.textContent = 'No save found. Use NEW GAME!'; return; }
+
+  var save = JSON.parse(data);
+  if (save.passHash !== hashPass(pass)) { msg.textContent = 'Wrong password!'; return; }
+
+  // Load save and jump straight into game
+  loadSave(save);
+  msg.style.color = '#38c070';
+  msg.textContent = 'Welcome back ' + username + '!';
+  setTimeout(function() {
+    document.getElementById('login-screen').classList.remove('active');
+    if (starterChosen) {
+      document.getElementById('game-screen').classList.add('active');
+      startGameLoop();
+    } else {
+      // New account with no progress - start the intro
+      document.getElementById('intro-screen').classList.add('active');
+      drawProfessor();
+      runDialogue();
+    }
+  }, 800);
+}
+
+function doRegister() {
+  var user = document.getElementById('login-user').value.trim();
+  var pass = document.getElementById('login-pass').value;
+  var msg  = document.getElementById('login-msg');
+  if (!user || !pass) { msg.textContent = 'Fill in both fields!'; return; }
+  if (pass.length < 3) { msg.textContent = 'Password too short!'; return; }
+
+  var key  = getSaveKey(user);
+  var existing = localStorage.getItem(key);
+  if (existing) { msg.textContent = 'Name taken! Try login.'; return; }
+
+  // Create new save
+  var newSave = { passHash: hashPass(pass), username: user };
+  localStorage.setItem(key, JSON.stringify(newSave));
+  username = user;
+
+  msg.style.color = '#38c070';
+  msg.textContent = 'Account created!';
+  setTimeout(function() {
+    document.getElementById('login-screen').classList.remove('active');
+    document.getElementById('intro-screen').classList.add('active');
+    drawProfessor();
+    runDialogue();
+  }, 700);
+}
+
+// Auto-save every 30 seconds and on map change
+setInterval(function() { if (username && starterChosen) saveGame(); }, 30000);
+
+// Patch travelTo to auto-save on map transitions
+var _origTravelTo = null;
+window.addEventListener('DOMContentLoaded', function() {});
+
+// ── Keyboard Enter support on login ──
+document.addEventListener('DOMContentLoaded', function() {
+  ['login-user','login-pass'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doLogin();
+    });
+  });
+});
+// ============================================================
+// END SAVE SYSTEM
+// ============================================================
+
 </script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -361,6 +508,32 @@
 <body>
 
 <!-- TITLE SCREEN -->
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="screen" style="background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:20px;">
+  <div style="font-family:'Press Start 2P',cursive;font-size:clamp(14px,4vw,22px);color:#f8d030;text-shadow:0 0 20px #f8d030;margin-bottom:6px;letter-spacing:2px;">POKÉMON</div>
+  <div style="font-family:'Press Start 2P',cursive;font-size:clamp(10px,3vw,16px);color:#60c0ff;margin-bottom:28px;letter-spacing:3px;">CASTLE</div>
+
+  <div id="login-panel" style="background:#111a2a;border:3px solid #38c070;border-radius:14px;padding:22px 20px;width:88%;max-width:320px;display:flex;flex-direction:column;gap:14px;">
+    <div id="login-title" style="font-family:'Press Start 2P',cursive;font-size:10px;color:#38c070;text-align:center;">TRAINER LOGIN</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <label style="font-family:'Press Start 2P',cursive;font-size:7px;color:#aaa;">USERNAME</label>
+      <input id="login-user" type="text" maxlength="12" placeholder="Enter username..." autocomplete="off" autocorrect="off" spellcheck="false"
+        style="font-family:'Press Start 2P',cursive;font-size:9px;background:#0a1a0a;color:#e0e0e0;border:2px solid #38c070;border-radius:6px;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;"/>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <label style="font-family:'Press Start 2P',cursive;font-size:7px;color:#aaa;">PASSWORD</label>
+      <input id="login-pass" type="password" maxlength="20" placeholder="Enter password..." autocomplete="off"
+        style="font-family:'Press Start 2P',cursive;font-size:9px;background:#0a1a0a;color:#e0e0e0;border:2px solid #38c070;border-radius:6px;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;"/>
+    </div>
+    <div id="login-msg" style="font-family:'Press Start 2P',cursive;font-size:7px;color:#f05050;min-height:14px;text-align:center;"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="doLogin()" style="flex:1;font-family:'Press Start 2P',cursive;font-size:8px;background:#38c070;color:#fff;border:none;border-radius:8px;padding:10px;cursor:pointer;">LOGIN</button>
+      <button onclick="doRegister()" style="flex:1;font-family:'Press Start 2P',cursive;font-size:8px;background:#2255aa;color:#fff;border:none;border-radius:8px;padding:10px;cursor:pointer;">NEW GAME</button>
+    </div>
+    <div id="save-slots-area" style="display:none;flex-direction:column;gap:8px;margin-top:4px;"></div>
+  </div>
+</div>
+
 <div id="title-screen" class="screen active">
   <div class="stars"></div>
   <div class="castle-bg"></div>
@@ -401,7 +574,7 @@
   </div>
   <div class="castle-title" id="castle-title">CASTLE</div>
   <div class="made-by" id="made-by">made by Kyan and Esteban</div>
-  <div class="press-start" id="press-start" onclick="startIntro()">&#9654; Press to Start</div>
+  <div class="press-start" id="press-start" onclick="showLogin()">&#9654; Press to Start</div>
   <div class="sparkle">&#10022;</div>
 </div>
 
@@ -1543,6 +1716,7 @@ function battleCatch() {
       var isWildBase = WILD_POKEMON.some(function(p){ return p.name === battle.enemyPokemon.name; });
       if (isWildBase && caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
         caughtPokemon.push(battle.enemyPokemon.name);
+        saveGame();
       }
       var myProg = getPokemonProgress(battle.playerName);
       var xpGain = 50 + battle.enemyLevel * 15;
@@ -1554,7 +1728,7 @@ function battleCatch() {
       setBattleLog(msg);
       if (levelled) {
         checkEvolution(battle.playerName, function(newName, evolved, oldName) {
-          if (evolved) { battle.playerName = newName; drawBattleSprite('battle-player-sprite', newName, EVO_COLORS[newName]||'#f08030', false); }
+          if (evolved) { battle.playerName = newName; drawBattleSprite('battle-player-sprite', newName, EVO_COLORS[newName]||'#f08030', false); saveGame(); }
           setTimeout(closeBattle, 1400);
         });
       } else {
