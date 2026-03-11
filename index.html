@@ -1358,17 +1358,17 @@ function startBattle(wildPoke) {
 
   var myName = activePokemon || starterChosen;
   var myProg = getPokemonProgress(myName);
-  battle.playerMaxHP = 500 + (myProg.level - 1) * 40;
+  battle.playerMaxHP = 120 + (myProg.level - 1) * 15;
   battle.playerHP = battle.playerMaxHP;
   battle.playerName = myName;
 
   var enemyLevel = Math.floor(Math.random() * 5) + 1;
-  battle.enemyMaxHP = 400 + (enemyLevel - 1) * 30;
+  battle.enemyMaxHP = 90 + (enemyLevel - 1) * 12;
   battle.enemyHP = battle.enemyMaxHP;
   battle.enemyLevel = enemyLevel;
-  battle.lastUsedMove = null;
+  battle.playerTurn = true;
+  battle.phase = 'action';
   battle.logQueue = [];
-  battle.lastMove = null;
 
   var bs = document.getElementById('battle-screen');
   bs.style.display = 'flex';
@@ -1429,10 +1429,9 @@ function showBattleActions() {
   actDiv.style.display = 'grid';
   data.moves.forEach(function(m) {
     var btn = document.createElement('button');
-    var isLast = (battle.lastMove === m.name);
-    btn.style.cssText = 'font-family:"Press Start 2P",cursive;font-size:clamp(6px,1.5vw,8px);background:' + (isLast ? '#222' : '#1a3a1a') + ';color:' + (isLast ? '#666' : '#fff') + ';border:2px solid ' + (isLast ? '#444' : '#60a060') + ';border-radius:6px;padding:7px 5px;cursor:' + (isLast ? 'not-allowed' : 'pointer') + ';opacity:' + (isLast ? '0.45' : '1') + ';';
-    btn.textContent = m.name + (m.dmg > 0 ? ' (' + m.dmg + ')' : ' (Status)') + (isLast ? ' ✗' : '');
-    if (!isLast) btn.onclick = function(){ playerAttack(m); };
+    btn.style.cssText = 'font-family:"Press Start 2P",cursive;font-size:clamp(6px,1.5vw,8px);background:#1a3a1a;color:#fff;border:2px solid #60a060;border-radius:6px;padding:7px 5px;cursor:pointer;';
+    btn.textContent = m.name + (m.dmg > 0 ? ' (' + m.dmg + ')' : ' (Status)');
+    btn.onclick = function(){ playerAttack(m); };
     actDiv.appendChild(btn);
   });
 }
@@ -1441,7 +1440,6 @@ function playerAttack(move) {
   if (!battle.playerTurn || battle.phase !== 'action') return;
   hideBattleActions();
   battle.playerTurn = false;
-  battle.lastMove = move.name;
 
   var dmg = move.dmg === 0 ? 0 : Math.max(1, move.dmg + Math.floor(Math.random()*10) - 5);
   battle.enemyHP = Math.max(0, battle.enemyHP - dmg);
@@ -1978,7 +1976,7 @@ function showPokedexDetail(p) {
   var xpNeeded = prog.level * 100;
   var xpPct = Math.min(100, Math.round(prog.xp / xpNeeded * 100));
 
-  var maxHP = 500 + (prog.level - 1) * 40;
+  var maxHP = 120 + (prog.level - 1) * 15;
   var currentHP = maxHP;
   var hpColor = '#40d060';
 
