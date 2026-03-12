@@ -593,26 +593,27 @@
 
 <!-- BATTLE SCREEN -->
 <div id="battle-screen" style="display:none;position:fixed;inset:0;z-index:350;flex-direction:column;background:#1a2a1a;">
-  <div id="battle-field" style="flex:1;position:relative;background:#1a2a1a;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 20px;">
+  <div id="battle-field" style="flex:1;position:relative;background:#1a2a1a;overflow:hidden;">
+    <!-- BG + FX -->
     <canvas id="battle-bg-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
-    <div id="battle-fx-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;background:transparent;border-radius:inherit;"></div>
-    <canvas id="battle-trainer-canvas" width="64" height="96" style="position:absolute;bottom:20px;left:20px;image-rendering:pixelated;width:100px;height:150px;z-index:1;opacity:0.9;"></canvas>
-    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:20px;left:20px;image-rendering:pixelated;width:140px;height:210px;z-index:1;opacity:0.9;display:none;"></canvas>
-    <div style="display:flex;flex-direction:column;align-items:center;position:absolute;top:20px;right:24px;">
-      <div id="battle-enemy-hud" style="background:rgba(0,0,0,0.7);border:2px solid #f8d030;border-radius:8px;padding:6px 10px;margin-bottom:6px;min-width:140px;">
-        <div id="battle-enemy-name" style="font-family:'Press Start 2P',cursive;font-size:8px;color:#f8d030;"></div>
-        <div style="font-family:'Press Start 2P',cursive;font-size:7px;color:#aaa;margin-top:2px;">HP <span id="battle-enemy-hp-val"></span></div>
-        <div style="background:#333;border-radius:3px;height:7px;margin-top:3px;overflow:hidden;"><div id="battle-enemy-hp-bar" style="height:100%;background:#40d060;border-radius:3px;transition:width 0.4s;"></div></div>
-      </div>
-      <canvas id="battle-enemy-sprite" width="64" height="64" style="image-rendering:pixelated;width:96px;height:96px;"></canvas>
+    <div id="battle-fx-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;background:transparent;"></div>
+
+    <!-- ENEMY side: trainer top-left, pokemon top-right, HUD top-right corner -->
+    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:16px;left:16px;image-rendering:pixelated;width:110px;height:165px;z-index:2;display:none;"></canvas>
+    <canvas id="battle-enemy-sprite" width="64" height="64" style="position:absolute;top:16px;right:16px;image-rendering:pixelated;width:90px;height:90px;z-index:2;"></canvas>
+    <div id="battle-enemy-hud" style="position:absolute;top:112px;right:16px;background:rgba(0,0,0,0.82);border:2px solid #f8d030;border-radius:8px;padding:5px 10px;min-width:150px;z-index:5;">
+      <div id="battle-enemy-name" style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.6vw,8px);color:#f8d030;"></div>
+      <div style="font-family:'Press Start 2P',cursive;font-size:6px;color:#aaa;margin-top:2px;">HP <span id="battle-enemy-hp-val"></span></div>
+      <div style="background:#333;border-radius:3px;height:6px;margin-top:3px;overflow:hidden;"><div id="battle-enemy-hp-bar" style="height:100%;background:#40d060;border-radius:3px;transition:width 0.4s;"></div></div>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:center;position:absolute;bottom:20px;left:24px;">
-      <canvas id="battle-player-sprite" width="64" height="64" style="image-rendering:pixelated;width:80px;height:80px;"></canvas>
-      <div id="battle-player-hud" style="background:rgba(0,0,0,0.7);border:2px solid #60c060;border-radius:8px;padding:6px 10px;margin-top:6px;min-width:140px;">
-        <div id="battle-player-name" style="font-family:'Press Start 2P',cursive;font-size:8px;color:#60c060;"></div>
-        <div style="font-family:'Press Start 2P',cursive;font-size:7px;color:#aaa;margin-top:2px;">HP <span id="battle-player-hp-val"></span></div>
-        <div style="background:#333;border-radius:3px;height:7px;margin-top:3px;overflow:hidden;"><div id="battle-player-hp-bar" style="height:100%;background:#40d060;border-radius:3px;transition:width 0.4s;"></div></div>
-      </div>
+
+    <!-- PLAYER side: pokemon bottom-left, trainer bottom-right of pokemon, HUD bottom-left corner -->
+    <canvas id="battle-player-sprite" width="64" height="64" style="position:absolute;bottom:16px;left:16px;image-rendering:pixelated;width:80px;height:80px;z-index:2;"></canvas>
+    <canvas id="battle-trainer-canvas" width="64" height="96" style="position:absolute;bottom:16px;left:110px;image-rendering:pixelated;width:110px;height:165px;z-index:1;opacity:0.9;"></canvas>
+    <div id="battle-player-hud" style="position:absolute;bottom:16px;right:16px;background:rgba(0,0,0,0.82);border:2px solid #60c060;border-radius:8px;padding:5px 10px;min-width:150px;z-index:5;">
+      <div id="battle-player-name" style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.6vw,8px);color:#60c060;"></div>
+      <div style="font-family:'Press Start 2P',cursive;font-size:6px;color:#aaa;margin-top:2px;">HP <span id="battle-player-hp-val"></span></div>
+      <div style="background:#333;border-radius:3px;height:6px;margin-top:3px;overflow:hidden;"><div id="battle-player-hp-bar" style="height:100%;background:#40d060;border-radius:3px;transition:width 0.4s;"></div></div>
     </div>
   </div>
   <div style="background:#0a1a0a;border-top:3px solid #f8d030;padding:10px 14px;min-height:120px;display:flex;flex-direction:column;gap:8px;">
@@ -1434,32 +1435,43 @@ function drawBattleBG(mapType) {
   c.clearRect(0, 0, W, H);
 
   if (mapType === 'arena') {
-    // Arena background: sandy floor + crowd
-    // Sky / crowd area (top half)
-    c.fillStyle = '#2a1a0a'; c.fillRect(0, 0, W, H);
-    // Crowd rows
-    var crowdColors = ['#c03030','#3060c0','#f0d020','#208040','#c060c0','#f06020'];
-    for (var row = 0; row < 4; row++) {
-      for (var col = 0; col < Math.ceil(W/18); col++) {
-        c.fillStyle = crowdColors[(row*7+col) % crowdColors.length];
-        c.fillRect(col*18 + (row%2)*9, row*14+4, 10, 10);
+    // Stands at top (dark)
+    c.fillStyle = '#1a1008'; c.fillRect(0, 0, W, H*0.38);
+    // Stand rows gradient
+    c.fillStyle = '#2a1810'; c.fillRect(0, H*0.28, W, H*0.10);
+    // Crowd — small dots, 2 rows
+    var crowdColors = ['#c03030','#3060c0','#f0d020','#208040','#c060c0','#f06020','#20a0c0','#e08020'];
+    var dotW = 9, dotH = 9;
+    for (var row = 0; row < 2; row++) {
+      var rowY = row * 13 + 6;
+      for (var col = 0; col < Math.ceil(W / dotW); col++) {
+        // Body
+        c.fillStyle = crowdColors[(row * 11 + col * 3) % crowdColors.length];
+        c.fillRect(col * dotW, rowY + 4, dotW - 1, dotH - 2);
+        // Head
         c.fillStyle = '#f0c890';
-        c.fillRect(col*18 + (row%2)*9 + 2, row*14, 6, 7);
+        c.fillRect(col * dotW + 2, rowY, dotW - 4, 5);
       }
     }
-    // Arena floor (bottom half - sandy)
-    var floorY = H * 0.48;
-    c.fillStyle = '#c8a870'; c.fillRect(0, floorY, W, H - floorY);
-    c.fillStyle = '#b89860'; c.fillRect(0, floorY, W, 4);
-    // Arena floor markings
-    c.strokeStyle = 'rgba(255,255,255,0.15)'; c.lineWidth = 2;
+    // Stand wall separator
+    c.fillStyle = '#8a6030'; c.fillRect(0, H*0.36, W, 6);
+    c.fillStyle = '#c09050'; c.fillRect(0, H*0.36, W, 2);
+    // Arena sandy floor
+    var floorY = H * 0.38;
+    var floorGrad = c.createLinearGradient(0, floorY, 0, H);
+    floorGrad.addColorStop(0, '#d4b070');
+    floorGrad.addColorStop(1, '#c09860');
+    c.fillStyle = floorGrad; c.fillRect(0, floorY, W, H - floorY);
+    // Floor lines
+    c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 2;
     c.beginPath(); c.moveTo(W*0.3, floorY); c.lineTo(W*0.3, H); c.stroke();
     c.beginPath(); c.moveTo(W*0.7, floorY); c.lineTo(W*0.7, H); c.stroke();
-    c.beginPath(); c.arc(W/2, H+10, H*0.4, Math.PI, 0); c.stroke();
-    // Center pokeball circle
-    c.strokeStyle = 'rgba(255,255,255,0.12)'; c.lineWidth = 3;
-    c.beginPath(); c.arc(W/2, H*0.8, 30, 0, Math.PI*2); c.stroke();
-    c.beginPath(); c.moveTo(W/2-30, H*0.8); c.lineTo(W/2+30, H*0.8); c.stroke();
+    // Center circle
+    c.beginPath(); c.arc(W/2, H*0.75, H*0.22, 0, Math.PI*2); c.stroke();
+    c.beginPath(); c.moveTo(W/2, floorY); c.lineTo(W/2, H); c.stroke();
+    // Pokeball divider line
+    c.strokeStyle = 'rgba(200,50,50,0.25)'; c.lineWidth = 3;
+    c.beginPath(); c.moveTo(0, H*0.6); c.lineTo(W, H*0.6); c.stroke();
 
   } else if (mapType === 'wild' || mapType === 'home') {
     // Wild grass background
