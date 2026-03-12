@@ -593,10 +593,11 @@
 
 <!-- BATTLE SCREEN -->
 <div id="battle-screen" style="display:none;position:fixed;inset:0;z-index:350;flex-direction:column;background:#1a2a1a;">
-  <div id="battle-field" style="flex:1;position:relative;background:linear-gradient(180deg,#2a4a2a 0%,#3a6a3a 50%,#4a7a3a 100%);display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 20px;">
+  <div id="battle-field" style="flex:1;position:relative;background:#1a2a1a;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 20px;">
+    <canvas id="battle-bg-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
     <div id="battle-fx-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;background:transparent;border-radius:inherit;"></div>
-    <canvas id="battle-trainer-canvas" width="64" height="96" style="position:absolute;bottom:20px;left:160px;image-rendering:pixelated;width:140px;height:210px;z-index:1;opacity:0.9;"></canvas>
-    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;bottom:60px;left:60px;image-rendering:pixelated;width:140px;height:210px;z-index:1;opacity:0.9;display:none;"></canvas>
+    <canvas id="battle-trainer-canvas" width="64" height="96" style="position:absolute;bottom:20px;left:20px;image-rendering:pixelated;width:100px;height:150px;z-index:1;opacity:0.9;"></canvas>
+    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:20px;left:20px;image-rendering:pixelated;width:140px;height:210px;z-index:1;opacity:0.9;display:none;"></canvas>
     <div style="display:flex;flex-direction:column;align-items:center;position:absolute;top:20px;right:24px;">
       <div id="battle-enemy-hud" style="background:rgba(0,0,0,0.7);border:2px solid #f8d030;border-radius:8px;padding:6px 10px;margin-bottom:6px;min-width:140px;">
         <div id="battle-enemy-name" style="font-family:'Press Start 2P',cursive;font-size:8px;color:#f8d030;"></div>
@@ -1393,6 +1394,8 @@ function startBattle(wildPoke) {
   var bs = document.getElementById('battle-screen');
   bs.style.display = 'flex';
 
+  drawBattleBG(wildPoke.isTrainer ? 'arena' : currentMap);
+
   // Draw trainer character behind enemy
   drawBattleTrainer(false);
   drawBattleSprite('battle-player-sprite', myName,
@@ -1419,6 +1422,94 @@ function startBattle(wildPoke) {
   setTimeout(function(){ showBattleActions(); }, 1100);
 }
 
+
+// ── BATTLE BACKGROUND ────────────────────────────────────────
+function drawBattleBG(mapType) {
+  var canvas = document.getElementById('battle-bg-canvas');
+  if (!canvas) return;
+  var W = canvas.offsetWidth || 400;
+  var H = canvas.offsetHeight || 220;
+  canvas.width = W; canvas.height = H;
+  var c = canvas.getContext('2d');
+  c.clearRect(0, 0, W, H);
+
+  if (mapType === 'arena') {
+    // Arena background: sandy floor + crowd
+    // Sky / crowd area (top half)
+    c.fillStyle = '#2a1a0a'; c.fillRect(0, 0, W, H);
+    // Crowd rows
+    var crowdColors = ['#c03030','#3060c0','#f0d020','#208040','#c060c0','#f06020'];
+    for (var row = 0; row < 4; row++) {
+      for (var col = 0; col < Math.ceil(W/18); col++) {
+        c.fillStyle = crowdColors[(row*7+col) % crowdColors.length];
+        c.fillRect(col*18 + (row%2)*9, row*14+4, 10, 10);
+        c.fillStyle = '#f0c890';
+        c.fillRect(col*18 + (row%2)*9 + 2, row*14, 6, 7);
+      }
+    }
+    // Arena floor (bottom half - sandy)
+    var floorY = H * 0.48;
+    c.fillStyle = '#c8a870'; c.fillRect(0, floorY, W, H - floorY);
+    c.fillStyle = '#b89860'; c.fillRect(0, floorY, W, 4);
+    // Arena floor markings
+    c.strokeStyle = 'rgba(255,255,255,0.15)'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(W*0.3, floorY); c.lineTo(W*0.3, H); c.stroke();
+    c.beginPath(); c.moveTo(W*0.7, floorY); c.lineTo(W*0.7, H); c.stroke();
+    c.beginPath(); c.arc(W/2, H+10, H*0.4, Math.PI, 0); c.stroke();
+    // Center pokeball circle
+    c.strokeStyle = 'rgba(255,255,255,0.12)'; c.lineWidth = 3;
+    c.beginPath(); c.arc(W/2, H*0.8, 30, 0, Math.PI*2); c.stroke();
+    c.beginPath(); c.moveTo(W/2-30, H*0.8); c.lineTo(W/2+30, H*0.8); c.stroke();
+
+  } else if (mapType === 'wild' || mapType === 'home') {
+    // Wild grass background
+    // Sky
+    var skyGrad = c.createLinearGradient(0,0,0,H*0.55);
+    skyGrad.addColorStop(0, '#4a8a6a');
+    skyGrad.addColorStop(1, '#3a7a5a');
+    c.fillStyle = skyGrad; c.fillRect(0, 0, W, H*0.55);
+    // Distant trees/hills
+    c.fillStyle = '#2a5a30';
+    for (var t = 0; t < 8; t++) {
+      c.beginPath();
+      c.arc(t*W/6 + 20, H*0.5, 28+Math.sin(t*1.7)*8, 0, Math.PI*2);
+      c.fill();
+    }
+    // Ground
+    var groundGrad = c.createLinearGradient(0, H*0.5, 0, H);
+    groundGrad.addColorStop(0, '#3a6a30');
+    groundGrad.addColorStop(1, '#2a5020');
+    c.fillStyle = groundGrad; c.fillRect(0, H*0.5, W, H*0.5);
+    // Grass blades on floor
+    c.strokeStyle = '#50a040'; c.lineWidth = 2;
+    for (var g = 0; g < 40; g++) {
+      var gx = (g * W/38) % W;
+      var gy = H*0.5 + (g%5)*6;
+      var gh = 8 + (g%4)*5;
+      c.beginPath();
+      c.moveTo(gx, gy+gh);
+      c.quadraticCurveTo(gx + (g%3-1)*5, gy+gh*0.4, gx+(g%2)*4-2, gy);
+      c.stroke();
+    }
+    c.strokeStyle = '#70c050'; c.lineWidth = 1.5;
+    for (var g2 = 0; g2 < 25; g2++) {
+      var gx2 = (g2*W/22 + 10) % W;
+      var gy2 = H*0.55 + (g2%4)*8;
+      c.beginPath();
+      c.moveTo(gx2, gy2+10);
+      c.quadraticCurveTo(gx2+(g2%3-1)*4, gy2+4, gx2+(g2%2)*3, gy2);
+      c.stroke();
+    }
+
+  } else {
+    // Default: simple green gradient (center, castle etc)
+    var grad = c.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0, '#2a4a2a');
+    grad.addColorStop(0.5, '#3a6a3a');
+    grad.addColorStop(1, '#4a7a3a');
+    c.fillStyle = grad; c.fillRect(0, 0, W, H);
+  }
+}
 
 // ── ATTACK VISUAL FX ─────────────────────────────────────────
 var FX_COLORS = {
@@ -1580,11 +1671,52 @@ function playerAttack(move) {
   });
 }
 
+function drawOpponentPointing(trainer, pointing) {
+  var oc = document.getElementById('battle-opponent-canvas');
+  if (!oc || oc.style.display === 'none') return;
+  var c = oc.getContext('2d');
+  c.imageSmoothingEnabled = false;
+  c.clearRect(0, 0, 64, 96);
+  var sc = trainer ? trainer.shirtColor : '#2060e0';
+  var hc = trainer ? trainer.hairColor : '#c8a820';
+  function dp(rx,ry,rw,rh,col){ c.fillStyle=col; c.fillRect(32+rx,72+ry,rw,rh); }
+  c.fillStyle='rgba(0,0,0,0.18)';
+  c.beginPath(); c.ellipse(32, 76, 10, 4, 0, 0, Math.PI*2); c.fill();
+  dp(-7,-8,6,5,'#222'); dp(1,-8,6,5,'#222');
+  dp(-6,-22,5,14,'#1a1a3a'); dp(1,-22,5,14,'#1a1a3a');
+  dp(-8,-40,16,20,sc);
+  dp(-1,-40,2,20,'rgba(255,255,255,0.3)');
+  if (pointing) {
+    // right arm extends toward right (toward player pokemon)
+    dp(7,-38,5,14,sc);
+    dp(12,-38,10,5,sc);
+    dp(22,-38,5,5,'#f0c890');
+    dp(26,-37,4,3,'#f0c890');
+    // left arm normal
+    dp(-12,-38,5,14,sc);
+    dp(-13,-24,5,5,'#f0c890');
+  } else {
+    dp(-12,-38,5,14,sc); dp(7,-38,5,14,sc);
+    dp(-13,-24,5,5,'#f0c890'); dp(8,-24,5,5,'#f0c890');
+  }
+  dp(-6,-56,12,16,'#f0c890');
+  dp(-8,-53,3,7,'#e8b888'); dp(5,-53,3,7,'#e8b888');
+  dp(-3,-52,2,3,'#333'); dp(1,-52,2,3,'#333');
+  dp(-2,-52,1,1,'#fff'); dp(2,-52,1,1,'#fff');
+  dp(0,-47,2,2,'#e0a878');
+  dp(-2,-43,5,1,'#c08070');
+  dp(-6,-58,12,6,hc);
+  dp(-7,-56,2,4,hc); dp(5,-56,2,4,hc);
+}
+
 function enemyAttack() {
   var data = POKEMON_DATA[battle.enemyPokemon.name] || { moves:[{name:'Tackle',dmg:35}] };
   var move = data.moves[Math.floor(Math.random() * data.moves.length)];
   var enemyType = (POKEMON_DATA[battle.enemyPokemon.name] || {}).type || 'Normal';
-
+  if (battle.currentTrainer) {
+    drawOpponentPointing(battle.currentTrainer, true);
+    setTimeout(function(){ drawOpponentPointing(battle.currentTrainer, false); }, 700);
+  }
   setBattleLog(battle.enemyPokemon.name + ' used ' + move.name + '!');
 
   drawAttackFX(move.name, enemyType, 'player', function() {
@@ -1693,6 +1825,7 @@ function battleCatch() {
 function closeBattle() {
   var oc = document.getElementById('battle-opponent-canvas');
   if (oc) oc.style.display = 'none';
+  battle.currentTrainer = null;
   document.getElementById('battle-screen').style.display = 'none';
   if (battle.playerHP > 0) playerCurrentHP = battle.playerHP;
   battleActive = false;
@@ -2939,6 +3072,7 @@ function drawOpponentTrainer(trainer) {
 function refAcceptFight() {
   refCloseScreen();
   var trainer = TRAINERS[Math.floor(Math.random() * TRAINERS.length)];
+  battle.currentTrainer = trainer;
   var tp = trainer.pokemon[Math.floor(Math.random() * trainer.pokemon.length)];
   var trainerPoke = { name: tp.name, color: tp.color, isTrainer: true };
   startBattle(trainerPoke);
@@ -2947,7 +3081,7 @@ function refAcceptFight() {
   battle.enemyHP = battle.enemyMaxHP;
   document.getElementById('battle-enemy-name').textContent = trainer.name + "'s " + tp.name + ' Lv.' + battle.enemyLevel;
   updateBattleHUD();
-  drawOpponentTrainer(trainer);
+  drawOpponentPointing(trainer, false);
 }
 
 function refDeclineFight() {
