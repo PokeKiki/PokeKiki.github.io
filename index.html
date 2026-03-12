@@ -364,32 +364,6 @@
 <body>
 
 <!-- TITLE SCREEN -->
-<!-- LOGIN SCREEN -->
-<div id="login-screen" class="screen" style="background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:20px;">
-  <div style="font-family:'Press Start 2P',cursive;font-size:clamp(14px,4vw,22px);color:#f8d030;text-shadow:0 0 20px #f8d030;margin-bottom:6px;letter-spacing:2px;">POKÉMON</div>
-  <div style="font-family:'Press Start 2P',cursive;font-size:clamp(10px,3vw,16px);color:#60c0ff;margin-bottom:28px;letter-spacing:3px;">CASTLE</div>
-
-  <div id="login-panel" style="background:#111a2a;border:3px solid #38c070;border-radius:14px;padding:22px 20px;width:88%;max-width:320px;display:flex;flex-direction:column;gap:14px;">
-    <div id="login-title" style="font-family:'Press Start 2P',cursive;font-size:10px;color:#38c070;text-align:center;">TRAINER LOGIN</div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      <label style="font-family:'Press Start 2P',cursive;font-size:7px;color:#aaa;">USERNAME</label>
-      <input id="login-user" type="text" maxlength="12" placeholder="Enter username..." autocomplete="off" autocorrect="off" spellcheck="false"
-        style="font-family:'Press Start 2P',cursive;font-size:9px;background:#0a1a0a;color:#e0e0e0;border:2px solid #38c070;border-radius:6px;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;"/>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      <label style="font-family:'Press Start 2P',cursive;font-size:7px;color:#aaa;">PASSWORD</label>
-      <input id="login-pass" type="password" maxlength="20" placeholder="Enter password..." autocomplete="off"
-        style="font-family:'Press Start 2P',cursive;font-size:9px;background:#0a1a0a;color:#e0e0e0;border:2px solid #38c070;border-radius:6px;padding:8px 10px;outline:none;width:100%;box-sizing:border-box;"/>
-    </div>
-    <div id="login-msg" style="font-family:'Press Start 2P',cursive;font-size:7px;color:#f05050;min-height:14px;text-align:center;"></div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="doLogin()" style="flex:1;font-family:'Press Start 2P',cursive;font-size:8px;background:#38c070;color:#fff;border:none;border-radius:8px;padding:10px;cursor:pointer;">LOGIN</button>
-      <button onclick="doRegister()" style="flex:1;font-family:'Press Start 2P',cursive;font-size:8px;background:#2255aa;color:#fff;border:none;border-radius:8px;padding:10px;cursor:pointer;">NEW GAME</button>
-    </div>
-    <div id="save-slots-area" style="display:none;flex-direction:column;gap:8px;margin-top:4px;"></div>
-  </div>
-</div>
-
 <div id="title-screen" class="screen active">
   <div class="stars"></div>
   <div class="castle-bg"></div>
@@ -430,7 +404,7 @@
   </div>
   <div class="castle-title" id="castle-title">CASTLE</div>
   <div class="made-by" id="made-by">made by Kyan and Esteban</div>
-  <div class="press-start" id="press-start" onclick="showLogin()">&#9654; Press to Start</div>
+  <div class="press-start" id="press-start" onclick="startIntro()">&#9654; Press to Start</div>
   <div class="sparkle">&#10022;</div>
 </div>
 
@@ -779,7 +753,6 @@ document.getElementById('intro-screen').addEventListener('click', function(e) {
       document.getElementById('intro-screen').classList.remove('active');
       document.getElementById('game-screen').classList.add('active');
       startGame();
-      setTimeout(saveGame, 500);
     }
   }
 });
@@ -794,7 +767,7 @@ document.getElementById('username-field').addEventListener('keydown', function(e
 var TILE = 32;
 var COLS = 12;
 var ROWS = 10;
-var T_FLOOR=0, T_WALL=1, T_RUG=2, T_GRASS=3, T_TREE=4, T_WATER=5, T_CASTLE_FLOOR=6, T_CARPET=7, T_PC_FLOOR=8, T_PC_COUNTER=9, T_TALL_GRASS=10;
+var T_FLOOR=0, T_WALL=1, T_RUG=2, T_GRASS=3, T_TREE=4, T_WATER=5, T_CASTLE_FLOOR=6, T_CARPET=7, T_PC_FLOOR=8, T_PC_COUNTER=9, T_TALL_GRASS=10, T_ARENA_EDGE=11, T_ARENA_FLOOR=12;
 
 var maps = {
   home: {
@@ -803,10 +776,10 @@ var maps = {
       [1,0,0,0,0,0,0,0,0,0,0,1],
       [1,0,0,0,0,0,0,0,0,0,0,1],
       [1,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,0,0,2,2,2,2,0,0,0,1],
-      [1,0,0,0,2,2,2,2,0,0,0,1],
-      [1,0,0,0,2,2,2,2,0,0,0,1],
-      [1,0,0,0,2,2,2,2,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1],
       [1,0,0,0,0,0,0,0,0,0,0,1],
       [1,1,1,1,1,0,0,1,1,1,1,1]
     ],
@@ -861,23 +834,41 @@ var maps = {
   castle: {
     data: [
       [1,1,1,1,1,1,1,1,1,1,1,1],
-      [1,6,6,6,6,6,6,6,6,6,6,1],
-      [1,6,6,6,6,6,6,6,6,6,6,1],
+      [1,6,6,7,7,0,0,7,7,6,6,1],
       [1,6,6,7,7,7,7,7,7,6,6,1],
       [1,6,6,7,7,7,7,7,7,6,6,1],
       [1,6,6,7,7,7,7,7,7,6,6,1],
       [1,6,6,7,7,7,7,7,7,6,6,1],
-      [1,6,6,6,6,6,6,6,6,6,6,1],
+      [1,6,6,7,7,7,7,7,7,6,6,1],
+      [1,6,6,7,7,7,7,7,7,6,6,1],
       [1,6,6,6,6,6,6,6,6,6,6,1],
       [1,1,1,1,1,0,0,1,1,1,1,1]
     ],
     collision: [
       {x:1,y:1,w:2,h:8},{x:9,y:1,w:2,h:8},
-      {x:2,y:1,w:8,h:1},
+      {x:2,y:1,w:3,h:1},{x:7,y:1,w:3,h:1},
       {x:7.5,y:6.8,w:1.2,h:1.4}
     ],
     spawn: {x:5.5,y:7.5},
-    hasDoorTrigger: true
+    hasDoorTrigger: true,
+    hasArenaDoor: true
+  },
+  arena: {
+    data: [
+      [1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,11,11,11,11,11,11,11,11,11,11,1],
+      [1,11,12,12,12,12,12,12,12,12,11,1],
+      [1,11,12,12,12,12,12,12,12,12,11,1],
+      [1,11,12,12,12,12,12,12,12,12,11,1],
+      [1,11,12,12,12,12,12,12,12,12,11,1],
+      [1,11,12,12,12,12,12,12,12,12,11,1],
+      [1,11,12,12,12,12,12,12,12,12,11,1],
+      [1,11,11,11,11,11,11,11,11,11,11,1],
+      [1,1,1,1,1,0,0,1,1,1,1,1]
+    ],
+    collision: [],
+    spawn: {x:5.5,y:7.5},
+    hasDoorTrigger: false
   }
 };
 
@@ -1021,151 +1012,6 @@ function startGame() {
   requestAnimationFrame(gameLoop);
 }
 
-// ============================================================
-// SAVE / LOGIN SYSTEM
-// ============================================================
-var SAVE_KEY_PREFIX = 'pkcastle_save_';
-
-function getSaveKey(user) { return SAVE_KEY_PREFIX + user.toLowerCase(); }
-
-function hashPass(pass) {
-  // Simple deterministic hash (not crypto, but good enough for a game)
-  var h = 0;
-  for (var i = 0; i < pass.length; i++) {
-    h = ((h << 5) - h) + pass.charCodeAt(i);
-    h |= 0;
-  }
-  return h.toString(36);
-}
-
-function saveGame() {
-  if (!username) return;
-  var key = getSaveKey(username);
-  var existing = JSON.parse(localStorage.getItem(key) || '{}');
-  var save = {
-    passHash: existing.passHash,
-    username: username,
-    starterChosen: starterChosen,
-    activePokemon: activePokemon,
-    caughtPokemon: caughtPokemon,
-    pokemonProgress: pokemonProgress,
-    inventory: inventory,
-    pokeballs_claimed: pokeballs_claimed,
-    nurseSeen: nurseSeen,
-    momCutsceneSeen: momCutsceneSeen,
-    dukeSeenFirst: dukeSeenFirst,
-    currentMap: currentMap,
-    playerX: player.x,
-    playerY: player.y,
-    playerRank: playerRank,
-    savedAt: Date.now()
-  };
-  localStorage.setItem(key, JSON.stringify(save));
-}
-
-function loadSave(save) {
-  username       = save.username || username;
-  starterChosen  = save.starterChosen || false;
-  activePokemon  = save.activePokemon || null;
-  caughtPokemon  = save.caughtPokemon || [];
-  pokemonProgress= save.pokemonProgress || {};
-  inventory      = save.inventory || { pokeballs: 0 };
-  pokeballs_claimed = save.pokeballs_claimed || false;
-  nurseSeen      = save.nurseSeen || false;
-  momCutsceneSeen= save.momCutsceneSeen || false;
-  dukeSeenFirst  = save.dukeSeenFirst || false;
-  playerRank     = save.playerRank || 'Bronze';
-  if (save.currentMap) {
-    currentMap = save.currentMap;
-    var mapCfg = MAPS[currentMap];
-    if (mapCfg) {
-      player.x = save.playerX || mapCfg.spawn[0];
-      player.y = save.playerY || mapCfg.spawn[1];
-    }
-  }
-}
-
-function showLogin() {
-  document.getElementById('title-screen').classList.remove('active');
-  document.getElementById('login-screen').classList.add('active');
-}
-
-function doLogin() {
-  var user = document.getElementById('login-user').value.trim();
-  var pass = document.getElementById('login-pass').value;
-  var msg  = document.getElementById('login-msg');
-  if (!user || !pass) { msg.textContent = 'Fill in both fields!'; return; }
-
-  var key  = getSaveKey(user);
-  var data = localStorage.getItem(key);
-  if (!data) { msg.textContent = 'No save found. Use NEW GAME!'; return; }
-
-  var save = JSON.parse(data);
-  if (save.passHash !== hashPass(pass)) { msg.textContent = 'Wrong password!'; return; }
-
-  // Load save and jump straight into game
-  loadSave(save);
-  msg.style.color = '#38c070';
-  msg.textContent = 'Welcome back ' + username + '!';
-  setTimeout(function() {
-    document.getElementById('login-screen').classList.remove('active');
-    if (starterChosen) {
-      document.getElementById('game-screen').classList.add('active');
-      startGame();
-    } else {
-      // New account with no progress - start the intro
-      document.getElementById('intro-screen').classList.add('active');
-      drawProfessor();
-      runDialogue();
-    }
-  }, 800);
-}
-
-function doRegister() {
-  var user = document.getElementById('login-user').value.trim();
-  var pass = document.getElementById('login-pass').value;
-  var msg  = document.getElementById('login-msg');
-  if (!user || !pass) { msg.textContent = 'Fill in both fields!'; return; }
-  if (pass.length < 3) { msg.textContent = 'Password too short!'; return; }
-
-  var key  = getSaveKey(user);
-  var existing = localStorage.getItem(key);
-  if (existing) { msg.textContent = 'Name taken! Try login.'; return; }
-
-  // Create new save
-  var newSave = { passHash: hashPass(pass), username: user };
-  localStorage.setItem(key, JSON.stringify(newSave));
-  username = user;
-
-  msg.style.color = '#38c070';
-  msg.textContent = 'Account created!';
-  setTimeout(function() {
-    document.getElementById('login-screen').classList.remove('active');
-    document.getElementById('intro-screen').classList.add('active');
-    drawProfessor();
-    runDialogue();
-  }, 700);
-}
-
-// Auto-save every 30 seconds and on map change
-setInterval(function() { if (username && starterChosen) saveGame(); }, 30000);
-
-// Patch travelTo to auto-save on map transitions
-var _origTravelTo = null;
-window.addEventListener('DOMContentLoaded', function() {});
-
-// ── Keyboard Enter support on login ──
-document.addEventListener('DOMContentLoaded', function() {
-  ['login-user','login-pass'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') doLogin();
-    });
-  });
-});
-// ============================================================
-// END SAVE SYSTEM
-// ============================================================
 
 function resizeCanvas() {
   var wrap = document.getElementById('game-screen');
@@ -1277,6 +1123,12 @@ function gameLoop(ts) {
     if (mapCfg.hasDoorTrigger && !travelMenuOpen && player.y > 8.5 && player.x > 4.5 && player.x < 7.5) {
       showTravelMenu();
     }
+    if (mapCfg.hasArenaDoor && !travelMenuOpen && player.y < 1.5 && player.x > 4.5 && player.x < 7.5) {
+      changeMap('arena', 5.5, 7.5);
+    }
+    if (currentMap === 'arena' && !travelMenuOpen && player.y > 8.5 && player.x > 4.5 && player.x < 7.5) {
+      changeMap('castle', 5.5, 2.5);
+    }
 
     if (currentMap === 'center' && !nurseDialogueActive
         && player.x > 3.5 && player.x < 8.5 && player.y > 2.2 && player.y < 3.5) {
@@ -1337,6 +1189,7 @@ function showTravelMenu() {
     { dest: 'center', label: 'Go to Pokemon Center' },
     { dest: 'wild',   label: 'Go to the Wild Area' },
     { dest: 'home',   label: 'Go back Home' },
+    { dest: 'arena',  label: 'Go to the Arena' },
     { dest: 'stay',   label: 'Stay here' }
   ];
   box.innerHTML = '';
@@ -1368,6 +1221,7 @@ function travelTo(dest) {
   else if (dest === 'center') { changeMap('center', 5.5, 7.5); }
   else if (dest === 'wild') { changeMap('wild', 5.5, 7.5); }
   else if (dest === 'home') { changeMap('home', 5.5, 7.5); }
+  else if (dest === 'arena') { changeMap('arena', 5.5, 7.5); }
   else { player.y = 7.8; player.x = 5.5; }
 }
 
@@ -1719,7 +1573,6 @@ function battleCatch() {
       var isWildBase = WILD_POKEMON.some(function(p){ return p.name === battle.enemyPokemon.name; });
       if (isWildBase && caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
         caughtPokemon.push(battle.enemyPokemon.name);
-        saveGame();
       }
       var myProg = getPokemonProgress(battle.playerName);
       var xpGain = 50 + battle.enemyLevel * 15;
@@ -1731,7 +1584,7 @@ function battleCatch() {
       setBattleLog(msg);
       if (levelled) {
         checkEvolution(battle.playerName, function(newName, evolved, oldName) {
-          if (evolved) { battle.playerName = newName; drawBattleSprite('battle-player-sprite', newName, EVO_COLORS[newName]||'#f08030', false); saveGame(); }
+          if (evolved) { battle.playerName = newName; drawBattleSprite('battle-player-sprite', newName, EVO_COLORS[newName]||'#f08030', false); }
           setTimeout(closeBattle, 1400);
         });
       } else {
@@ -2431,7 +2284,6 @@ function selectStarter(name) {
   // Add starter to caught list
   if (caughtPokemon.indexOf(name) === -1) caughtPokemon.push(name);
   companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
-  saveGame();
   oakPhase = 'congrats';
   oakCongratsLines = [
     'Congratulations! You have chosen ' + name + '!\nTake good care of your partner!',
@@ -2587,6 +2439,7 @@ function drawGame() {
   if (currentMap === 'center') drawCenterDecorations(c);
   if (currentMap === 'wild') drawWildDecorations(c);
   if (currentMap === 'castle') drawCastleDecorations(c);
+  if (currentMap === 'arena') drawArenaDecorations(c);
 
   drawPlayer(c, player.x*TILE, player.y*TILE, player.dir, player.frame);
   if (companion) drawCompanion(c, companion.x*TILE, companion.y*TILE, companion.frame);
@@ -2652,6 +2505,18 @@ function drawTile(c, t, px, py, r, col) {
     c.fillStyle='#f07080'; c.fillRect(px+2,py+2,TILE-4,TILE/2);
     c.strokeStyle='#c04060'; c.lineWidth=1;
     c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+  } else if (t === T_ARENA_EDGE) {
+    c.fillStyle = (r+col)%2===0 ? '#b09050' : '#a88840';
+    c.fillRect(px,py,TILE,TILE);
+    c.fillStyle='rgba(0,0,0,0.08)';
+    c.fillRect(px,py,TILE,3);
+    c.strokeStyle='#c8a820'; c.lineWidth=1;
+    c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+  } else if (t === T_ARENA_FLOOR) {
+    c.fillStyle = (r+col)%2===0 ? '#d4c090' : '#cdb880';
+    c.fillRect(px,py,TILE,TILE);
+    c.strokeStyle='rgba(180,150,80,0.4)'; c.lineWidth=0.5;
+    c.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
   } else if (t === T_TALL_GRASS) {
     c.fillStyle='#409020'; c.fillRect(px,py,TILE,TILE);
     c.fillStyle='#50b828';
@@ -2715,23 +2580,87 @@ function drawMom(c, px, py) {
 
 // ---- POKEMON CENTER DECORATIONS ----
 function drawCenterDecorations(c) {
-  c.fillStyle='#c04060';
-  c.fillRect(1*TILE, 3*TILE, 10*TILE, 6);
-  drawNurseJoy(c, 5*TILE+8, 1*TILE+4);
-  drawPCMachine(c, 1*TILE+4, 1*TILE+2);
-  drawPCMachine(c, 9*TILE-4, 1*TILE+2);
-  drawSmallPlant(c, 1*TILE+6, 2*TILE-4);
-  drawSmallPlant(c, 10*TILE-10, 2*TILE-4);
-  var cx = 6*TILE, cy = 6*TILE;
-  c.strokeStyle='rgba(180,160,140,0.6)'; c.lineWidth=3;
-  c.beginPath(); c.arc(cx,cy,28,0,Math.PI*2); c.stroke();
-  c.beginPath(); c.moveTo(cx-28,cy); c.lineTo(cx+28,cy); c.stroke();
-  c.fillStyle='rgba(200,160,150,0.3)';
-  c.beginPath(); c.arc(cx,cy,28,-Math.PI,0); c.fill();
-  c.fillStyle='rgba(200,200,200,0.3)';
-  c.beginPath(); c.arc(cx,cy,28,0,Math.PI); c.fill();
-  c.fillStyle='rgba(180,160,140,0.5)';
-  c.beginPath(); c.arc(cx,cy,8,0,Math.PI*2); c.fill();
+  // GBA-style curved counter (like original Pokemon Center)
+  var cw = 10*TILE; // counter width
+  var cx0 = 1*TILE;
+  var cy0 = 1*TILE;
+  var counterH = TILE * 1.8;
+
+  // Counter back wall / shadow strip
+  c.fillStyle = '#e8a0b0';
+  c.fillRect(cx0, cy0, cw, counterH + 6);
+
+  // Main counter body — pink desk
+  c.fillStyle = '#f0b8c8';
+  c.fillRect(cx0, cy0, cw, counterH);
+
+  // Counter top surface highlight
+  c.fillStyle = '#f8d0dc';
+  c.fillRect(cx0, cy0, cw, 6);
+
+  // Counter bottom lip / shadow
+  c.fillStyle = '#c87090';
+  c.fillRect(cx0, cy0 + counterH - 5, cw, 5);
+
+  // Left rounded end cap
+  c.fillStyle = '#f0b8c8';
+  c.beginPath();
+  c.arc(cx0, cy0 + counterH/2, counterH/2, Math.PI/2, -Math.PI/2);
+  c.fill();
+  c.fillStyle = '#f8d0dc';
+  c.beginPath();
+  c.arc(cx0, cy0 + counterH/2, counterH/2, Math.PI*0.55, -Math.PI*0.55);
+  c.lineTo(cx0, cy0 + counterH/2);
+  c.fill();
+
+  // Right rounded end cap
+  c.fillStyle = '#f0b8c8';
+  c.beginPath();
+  c.arc(cx0 + cw, cy0 + counterH/2, counterH/2, -Math.PI/2, Math.PI/2);
+  c.fill();
+  c.fillStyle = '#f8d0dc';
+  c.beginPath();
+  c.arc(cx0 + cw, cy0 + counterH/2, counterH/2, -Math.PI*0.55, Math.PI*0.55);
+  c.lineTo(cx0 + cw, cy0 + counterH/2);
+  c.fill();
+
+  // Dark screen / monitor on counter (center)
+  var monW = 40, monH = 16;
+  var monX = cx0 + cw/2 - monW/2;
+  var monY = cy0 + 6;
+  c.fillStyle = '#333344';
+  c.fillRect(monX, monY, monW, monH);
+  // Screen glow - green dots
+  c.fillStyle = '#40e040';
+  for (var i = 0; i < 3; i++) {
+    c.beginPath(); c.arc(monX + 8 + i*12, monY + monH/2, 3, 0, Math.PI*2); c.fill();
+  }
+  c.fillStyle = '#e03030';
+  c.beginPath(); c.arc(monX + monW - 6, monY + monH/2, 3, 0, Math.PI*2); c.fill();
+  c.strokeStyle = '#555'; c.lineWidth = 1;
+  c.strokeRect(monX, monY, monW, monH);
+
+  // Red cross symbol on counter
+  c.fillStyle = '#e02040';
+  c.fillRect(cx0 + cw/2 - 3, cy0 + counterH - 22, 6, 16);
+  c.fillRect(cx0 + cw/2 - 8, cy0 + counterH - 17, 16, 6);
+
+  // Plants on counter ends
+  drawSmallPlant(c, cx0 + 6, cy0 + counterH - 22);
+  drawSmallPlant(c, cx0 + cw - 22, cy0 + counterH - 22);
+
+  // Nurse behind counter
+  drawNurseJoy(c, cx0 + cw/2, cy0 - 4);
+
+  // Pokeball emblem on floor (decorative circle)
+  var fx = 6*TILE, fy = 6*TILE;
+  c.strokeStyle='rgba(200,150,160,0.5)'; c.lineWidth=3;
+  c.beginPath(); c.arc(fx,fy,30,0,Math.PI*2); c.stroke();
+  c.strokeStyle='rgba(200,150,160,0.3)'; c.lineWidth=1;
+  c.beginPath(); c.moveTo(fx-30,fy); c.lineTo(fx+30,fy); c.stroke();
+  c.fillStyle='rgba(200,150,160,0.2)';
+  c.beginPath(); c.arc(fx,fy,10,0,Math.PI*2); c.fill();
+
   drawHealingMachine(c, 9*TILE, 7*TILE);
   if (pokeballs_claimed) drawPokeballMachine(c, 1*TILE, 7*TILE);
 }
@@ -2874,8 +2803,8 @@ function drawCastleDecorations(c) {
   drawPillar(c, 10*TILE, 1*TILE);
   drawPillar(c, 10*TILE, 4*TILE);
   drawPillar(c, 10*TILE, 7*TILE);
-  drawThrone(c, 4*TILE+8, 1*TILE+4);
-  drawBanner(c, 3*TILE, 0);
+
+  drawBanner(c, 4*TILE, 0);
   drawBanner(c, 7*TILE, 0);
   drawTorch(c, 2*TILE+8, 2*TILE);
   drawTorch(c, 9*TILE+8, 2*TILE);
@@ -2886,9 +2815,73 @@ function drawCastleDecorations(c) {
   drawArmor(c, 2*TILE+6, 7*TILE+2);
   drawArmor(c, 9*TILE+6, 7*TILE+2);
   drawDukeNPC(c, 8*TILE+8, 7*TILE+4);
-  c.fillStyle='#8b1020'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
+  c.fillStyle='#4a3010'; c.fillRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
   c.strokeStyle='#c8a820'; c.lineWidth=1.5;
   c.strokeRect(5*TILE+2,9*TILE+2,TILE*2-4,12);
+
+  // Arena door exactly over cols 5-6 (the 0,0 gap tiles)
+  var dx = 5*TILE, dy = 0;
+  c.fillStyle='#4a3010'; c.fillRect(dx,dy,TILE*2,TILE);
+  c.fillStyle='#6b4820'; c.fillRect(dx+3,dy+3,TILE*2-6,TILE-8);
+  c.fillStyle='#c8a820'; c.fillRect(dx,dy,TILE*2,4);
+  c.fillStyle='#c8a820'; c.fillRect(dx,dy,3,TILE);
+  c.fillStyle='#c8a820'; c.fillRect(dx+TILE*2-3,dy,3,TILE);
+  c.fillStyle='#f8d040'; c.fillRect(dx+TILE-3,dy+TILE*0.4,6,6);
+}
+
+function drawArenaDecorations(c) {
+  // Sandy arena floor center marking
+  var ax = 2*TILE, ay = 2*TILE;
+  var aw = 8*TILE, ah = 6*TILE;
+
+  // Main arena boundary line
+  c.strokeStyle='#7a5a20'; c.lineWidth=3;
+  c.strokeRect(ax+4, ay+4, aw-8, ah-8);
+
+  // Center line (half-court)
+  c.beginPath(); c.moveTo(ax+4, ay+ah/2); c.lineTo(ax+aw-4, ay+ah/2); c.stroke();
+
+  // Center circle
+  c.beginPath(); c.arc(ax+aw/2, ay+ah/2, 30, 0, Math.PI*2); c.stroke();
+
+  // Inner center circle
+  c.lineWidth=2;
+  c.beginPath(); c.arc(ax+aw/2, ay+ah/2, 8, 0, Math.PI*2); c.stroke();
+
+  // Left semi-circle (goal area)
+  c.beginPath(); c.arc(ax+4, ay+ah/2, 24, -Math.PI/2, Math.PI/2); c.stroke();
+
+  // Right semi-circle (goal area)
+  c.beginPath(); c.arc(ax+aw-4, ay+ah/2, 24, Math.PI/2, -Math.PI/2); c.stroke();
+
+  // Spectator benches at top
+  for (var b = 0; b < 2; b++) {
+    var bx = 2*TILE + b*5*TILE;
+    var by2 = 1*TILE + 2;
+    c.fillStyle='#706050'; c.fillRect(bx, by2, 3*TILE, TILE*0.7);
+    c.fillStyle='#908070'; c.fillRect(bx, by2, 3*TILE, 4);
+    // Bench seats
+    for (var s = 0; s < 6; s++) {
+      c.fillStyle = s%2===0 ? '#a01020' : '#801018';
+      c.fillRect(bx+4+s*12, by2+5, 10, 8);
+    }
+    c.strokeStyle='#504030'; c.lineWidth=1;
+    c.strokeRect(bx, by2, 3*TILE, TILE*0.7);
+  }
+
+  // Pokéball emblem center
+  c.fillStyle='rgba(180,100,40,0.25)';
+  c.beginPath(); c.arc(ax+aw/2, ay+ah/2, 28, Math.PI, 0); c.fill();
+  c.fillStyle='rgba(240,240,240,0.15)';
+  c.beginPath(); c.arc(ax+aw/2, ay+ah/2, 28, 0, Math.PI); c.fill();
+  c.fillStyle='rgba(180,100,40,0.3)';
+  c.beginPath(); c.arc(ax+aw/2, ay+ah/2, 7, 0, Math.PI*2); c.fill();
+
+  // Exit door at bottom
+  c.fillStyle='#4a3010'; c.fillRect(5*TILE, 9*TILE+2, TILE*2, TILE-2);
+  c.fillStyle='#6b4820'; c.fillRect(5*TILE+3, 9*TILE+5, TILE*2-6, TILE-10);
+  c.fillStyle='#c8a820'; c.fillRect(5*TILE, 9*TILE+2, TILE*2, 3);
+  c.fillStyle='#f8d040'; c.fillRect(5*TILE+TILE-2, 9*TILE+TILE*0.5, 4, 5);
 }
 
 function drawPillar(c, x, y) {
