@@ -187,6 +187,27 @@
     font-size: clamp(6px,1.5vw,8px);
     text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
   }
+  #save-btn {
+    background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
+    padding: 0;
+  }
+  #save-btn:active { transform: scale(0.9); }
+  #save-btn-label {
+    color: #fff; font-family:'Press Start 2P',cursive;
+    font-size: clamp(6px,1.5vw,8px);
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  }
+  #save-toast {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,20,10,0.92); border: 2px solid #38c070;
+    border-radius: 8px; padding: 8px 16px;
+    font-family:'Press Start 2P',cursive; font-size: 8px; color: #38c070;
+    pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    z-index: 500; white-space: nowrap;
+  }
+  #save-toast.show { opacity: 1; }
 
   /* POKÉDEX OVERLAY */
   #pokedex-overlay {
@@ -363,6 +384,23 @@
 </head>
 <body>
 
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="screen" style="flex-direction:column;align-items:center;justify-content:center;background:#0a1530;gap:0;position:relative;overflow:hidden;">
+  <div class="stars" style="position:absolute;inset:0;z-index:0;"></div>
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:0;">
+    <div style="font-family:'Press Start 2P',cursive;font-size:clamp(10px,2.5vw,14px);color:#f8d030;text-shadow:0 0 16px #f8d030aa;margin-bottom:28px;text-align:center;line-height:1.8;">POKÉMON CASTLE</div>
+    <div id="login-box" style="background:rgba(0,10,30,0.92);border:3px solid #f8d030;border-radius:14px;padding:26px 22px;width:min(86vw,310px);display:flex;flex-direction:column;gap:14px;align-items:center;box-shadow:0 0 32px #0006;">
+      <div style="font-family:'Press Start 2P',cursive;font-size:clamp(7px,1.8vw,9px);color:#aac8ff;text-align:center;line-height:1.8;">Enter your trainer name</div>
+      <input id="login-name" type="text" maxlength="12" placeholder="Trainer name..." autocomplete="off" autocorrect="off" spellcheck="false"
+        style="font-family:'Press Start 2P',cursive;font-size:clamp(8px,2vw,11px);border:2px solid #60c0ff;padding:10px 12px;background:#071020;color:#fff;width:100%;box-sizing:border-box;outline:none;border-radius:6px;text-align:center;"/>
+      <div id="login-save-status" style="font-family:'Press Start 2P',cursive;font-size:6px;color:#888;text-align:center;min-height:14px;line-height:1.8;"></div>
+      <button id="login-play-btn" onclick="loginPlay()" style="font-family:'Press Start 2P',cursive;font-size:clamp(8px,2vw,10px);background:#38c070;color:#fff;border:2px solid #fff;border-radius:8px;padding:13px 0;cursor:pointer;width:100%;letter-spacing:1px;">&#9654; START ADVENTURE</button>
+      <button onclick="loginDelete()" style="font-family:'Press Start 2P',cursive;font-size:6px;background:#501010;color:#f08080;border:1px solid #804040;border-radius:6px;padding:8px 0;cursor:pointer;width:100%;">&#128465; Delete save</button>
+      <div id="login-msg" style="font-family:'Press Start 2P',cursive;font-size:6px;color:#f06060;min-height:10px;text-align:center;"></div>
+    </div>
+  </div>
+</div>
+
 <!-- TITLE SCREEN -->
 <div id="title-screen" class="screen active">
   <div class="stars"></div>
@@ -430,6 +468,7 @@
 
 <!-- GAME SCREEN -->
 <div id="game-screen" class="screen">
+  <div id="save-toast">&#10004; Game Saved!</div>
   <canvas id="game-canvas"></canvas>
   <div class="joystick-wrap">
     <div id="joystick-zone">
@@ -454,6 +493,10 @@
         <rect x="10" y="9" width="14" height="3" rx="1" fill="rgba(255,255,255,0.25)"/>
       </svg>
       <div id="pokedex-btn-label">POKéDEX</div>
+    </button>
+    <button id="save-btn" onclick="manualSave()" title="Save game">
+      <svg width="26" height="26" viewBox="0 0 26 26"><rect x="2" y="2" width="22" height="22" rx="3" fill="#2050a0"/><rect x="6" y="2" width="10" height="8" rx="1" fill="#60a0e0"/><rect x="9" y="3" width="2" height="6" fill="#2050a0"/><rect x="4" y="14" width="18" height="8" rx="1" fill="#4080c0"/><rect x="7" y="16" width="12" height="4" rx="1" fill="#2050a0"/></svg>
+      <div id="save-btn-label">SAVE</div>
     </button>
   </div>
 </div>
@@ -599,8 +642,8 @@
     <div id="battle-fx-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;background:transparent;"></div>
 
     <!-- ENEMY side: trainer top-left, pokemon top-right, HUD top-right corner -->
-    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:16px;right:16px;image-rendering:pixelated;width:110px;height:165px;z-index:2;display:none;"></canvas>
-    <canvas id="battle-enemy-sprite" width="64" height="64" style="position:absolute;top:120px;right:16px;image-rendering:pixelated;width:90px;height:90px;z-index:2;"></canvas>
+    <canvas id="battle-enemy-sprite" width="64" height="64" style="position:absolute;top:16px;right:130px;image-rendering:pixelated;width:90px;height:90px;z-index:2;"></canvas>
+    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:16px;right:224px;image-rendering:pixelated;width:110px;height:165px;z-index:1;display:none;"></canvas>
     <div id="battle-enemy-hud" style="position:absolute;top:16px;left:16px;background:rgba(0,0,0,0.82);border:2px solid #f8d030;border-radius:8px;padding:5px 10px;min-width:150px;z-index:5;">
       <div id="battle-enemy-name" style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.6vw,8px);color:#f8d030;"></div>
       <div style="font-family:'Press Start 2P',cursive;font-size:6px;color:#aaa;margin-top:2px;">HP <span id="battle-enemy-hp-val"></span></div>
@@ -609,7 +652,7 @@
 
     <!-- PLAYER side: pokemon bottom-left, trainer bottom-right of pokemon, HUD bottom-left corner -->
     <canvas id="battle-trainer-canvas" width="64" height="96" style="position:absolute;bottom:16px;left:16px;image-rendering:pixelated;width:110px;height:165px;z-index:1;opacity:0.9;"></canvas>
-    <canvas id="battle-player-sprite" width="64" height="64" style="position:absolute;bottom:120px;left:16px;image-rendering:pixelated;width:80px;height:80px;z-index:2;"></canvas>
+    <canvas id="battle-player-sprite" width="64" height="64" style="position:absolute;bottom:100px;left:130px;image-rendering:pixelated;width:80px;height:80px;z-index:2;"></canvas>
     <div id="battle-player-hud" style="position:absolute;bottom:16px;right:16px;background:rgba(0,0,0,0.82);border:2px solid #60c060;border-radius:8px;padding:5px 10px;min-width:150px;z-index:5;">
       <div id="battle-player-name" style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.6vw,8px);color:#60c060;"></div>
       <div style="font-family:'Press Start 2P',cursive;font-size:6px;color:#aaa;margin-top:2px;">HP <span id="battle-player-hp-val"></span></div>
@@ -658,11 +701,162 @@ window.addEventListener('load', function() {
   setTimeout(function(){ document.getElementById('press-start').classList.add('visible'); }, 2300);
 });
 
+// ============================================================
+// SAVE / LOAD / LOGIN SYSTEM
+// ============================================================
+function saveKey(name) {
+  return 'pkcastle_' + name.toLowerCase().replace(/ /g, '_');
+}
+
+function saveGame() {
+  if (!username) return;
+  var data = {
+    v: 1,
+    username: username,
+    currentMap: currentMap,
+    playerX: player ? player.x : 5.5,
+    playerY: player ? player.y : 7.5,
+    starterChosen: starterChosen,
+    activePokemon: activePokemon,
+    caughtPokemon: caughtPokemon,
+    pokemonProgress: pokemonProgress,
+    inventory: inventory,
+    pokeballs_claimed: pokeballs_claimed,
+    nurseSeen: nurseSeen,
+    oakSecondCutsceneDone: oakSecondCutsceneDone,
+    wildAreaVisited: wildAreaVisited,
+    momCutsceneSeen: momCutsceneSeen,
+    dukeSeenFirst: dukeSeenFirst,
+    playerRank: playerRank,
+    playerCurrentHP: playerCurrentHP,
+    ts: Date.now()
+  };
+  try { localStorage.setItem(saveKey(username), JSON.stringify(data)); } catch(e) {}
+}
+
+function loadSaveData(name) {
+  try {
+    var raw = localStorage.getItem(saveKey(name));
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function deleteSave(name) {
+  try { localStorage.removeItem(saveKey(name)); } catch(e) {}
+}
+
+function applySaveToState(s) {
+  username            = s.username;
+  starterChosen       = s.starterChosen || false;
+  activePokemon       = s.activePokemon || null;
+  caughtPokemon       = s.caughtPokemon || [];
+  pokemonProgress     = s.pokemonProgress || {};
+  inventory           = s.inventory || { pokeballs: 0 };
+  pokeballs_claimed   = s.pokeballs_claimed || false;
+  nurseSeen           = s.nurseSeen || false;
+  oakSecondCutsceneDone = s.oakSecondCutsceneDone || false;
+  wildAreaVisited     = s.wildAreaVisited || false;
+  momCutsceneSeen     = s.momCutsceneSeen || false;
+  dukeSeenFirst       = s.dukeSeenFirst || false;
+  playerRank          = s.playerRank || 'Bronze';
+  playerCurrentHP     = (s.playerCurrentHP !== undefined) ? s.playerCurrentHP : -1;
+}
+
+// ── Login screen logic ──
+document.getElementById('login-name').addEventListener('input', function() {
+  var val = this.value.trim();
+  var el = document.getElementById('login-save-status');
+  document.getElementById('login-msg').textContent = '';
+  if (val.length >= 2) {
+    var sv = loadSaveData(val);
+    if (sv) {
+      var d = new Date(sv.ts);
+      var caught = (sv.caughtPokemon || []).length;
+      el.style.color = '#60ff90';
+      el.innerHTML = '&#10004; Save found!<br>' + d.toLocaleDateString() + ' &bull; ' + caught + ' caught';
+    } else {
+      el.style.color = '#aaa';
+      el.textContent = 'No save \u2014 will start new game';
+    }
+  } else {
+    el.textContent = '';
+  }
+});
+
+document.getElementById('login-name').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') loginPlay();
+});
+
+function loginPlay() {
+  var val = document.getElementById('login-name').value.trim();
+  if (!val || val.length < 2) {
+    document.getElementById('login-msg').textContent = 'Name must be 2+ chars!';
+    return;
+  }
+  document.getElementById('login-msg').textContent = '';
+  username = val;
+  var sv = loadSaveData(val);
+  document.getElementById('login-screen').classList.remove('active');
+  if (sv) {
+    // Returning player — load save, skip Oak intro
+    applySaveToState(sv);
+    document.getElementById('game-screen').classList.add('active');
+    gameCanvas = document.getElementById('game-canvas');
+    gctx = gameCanvas.getContext('2d');
+    gctx.imageSmoothingEnabled = false;
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    setupJoystick();
+    player.x = sv.playerX || 5.5;
+    player.y = sv.playerY || 7.5;
+    currentMap = sv.currentMap || 'home';
+    roomMap = maps[currentMap].data;
+    collisionBoxes = maps[currentMap].collision;
+    if (activePokemon) {
+      companion = { name: activePokemon, x: player.x - 1, y: player.y, dir: 0, frame: 0, frameTimer: 0 };
+    }
+    updateHUD();
+    requestAnimationFrame(gameLoop);
+  } else {
+    // New player — show Oak intro
+    document.getElementById('intro-screen').classList.add('active');
+    drawProfessor();
+    runDialogue();
+  }
+}
+
+function loginDelete() {
+  var val = document.getElementById('login-name').value.trim();
+  var el = document.getElementById('login-save-status');
+  var msg = document.getElementById('login-msg');
+  if (!val) { msg.textContent = 'Enter a name first!'; return; }
+  if (loadSaveData(val)) {
+    if (confirm('Delete save for "' + val + '"?\nThis cannot be undone!')) {
+      deleteSave(val);
+      el.style.color = '#f06060';
+      el.textContent = 'Save deleted.';
+      msg.textContent = '';
+    }
+  } else {
+    msg.textContent = 'No save for that name.';
+  }
+}
+
+// Auto-save every 30 seconds while playing
+setInterval(function() { if (username && typeof currentMap !== 'undefined') saveGame(); }, 30000);
+
+function manualSave() {
+  saveGame();
+  var toast = document.getElementById('save-toast');
+  if (!toast) return;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 2000);
+}
+
 function startIntro() {
   document.getElementById('title-screen').classList.remove('active');
-  document.getElementById('intro-screen').classList.add('active');
-  drawProfessor();
-  runDialogue();
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('login-name').focus();
 }
 
 // ============================================================
@@ -697,9 +891,8 @@ var typeTimeout = null;
 var waitingForInput = false;
 
 var dialogues = [
-  { text: "Hey Trainer, Welcome to the World of Pokemon Castle.", action: null },
-  { text: "First... what is your username?", action: 'username' },
   { text: "__HELLO__", action: null },
+  { text: "Welcome to the World of Pokemon Castle!", action: null },
   { text: "You will now discover this amazing world, and your legend is about to uncover!", action: null },
   { text: "You can catch Pokemon in the wild and complete the Pokedex.", action: null },
   { text: "With enough discipline and perseverance you will maybe become the King of the Fighting Castle!", action: null }
@@ -1270,6 +1463,7 @@ function changeMap(name, spawnX, spawnY) {
   player.y = spawnY;
   player.dir = 0;
   player.frame = 0;
+  saveGame();
 }
 
 // ============================================================
@@ -1435,43 +1629,20 @@ function drawBattleBG(mapType) {
   c.clearRect(0, 0, W, H);
 
   if (mapType === 'arena') {
-    // Stands at top (dark)
-    c.fillStyle = '#1a1008'; c.fillRect(0, 0, W, H*0.38);
-    // Stand rows gradient
-    c.fillStyle = '#2a1810'; c.fillRect(0, H*0.28, W, H*0.10);
-    // Crowd — small dots, 2 rows
-    var crowdColors = ['#c03030','#3060c0','#f0d020','#208040','#c060c0','#f06020','#20a0c0','#e08020'];
-    var dotW = 9, dotH = 9;
-    for (var row = 0; row < 2; row++) {
-      var rowY = row * 13 + 6;
-      for (var col = 0; col < Math.ceil(W / dotW); col++) {
-        // Body
-        c.fillStyle = crowdColors[(row * 11 + col * 3) % crowdColors.length];
-        c.fillRect(col * dotW, rowY + 4, dotW - 1, dotH - 2);
-        // Head
-        c.fillStyle = '#f0c890';
-        c.fillRect(col * dotW + 2, rowY, dotW - 4, 5);
-      }
-    }
-    // Stand wall separator
-    c.fillStyle = '#8a6030'; c.fillRect(0, H*0.36, W, 6);
-    c.fillStyle = '#c09050'; c.fillRect(0, H*0.36, W, 2);
-    // Arena sandy floor
-    var floorY = H * 0.38;
-    var floorGrad = c.createLinearGradient(0, floorY, 0, H);
-    floorGrad.addColorStop(0, '#d4b070');
-    floorGrad.addColorStop(1, '#c09860');
-    c.fillStyle = floorGrad; c.fillRect(0, floorY, W, H - floorY);
-    // Floor lines
-    c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 2;
-    c.beginPath(); c.moveTo(W*0.3, floorY); c.lineTo(W*0.3, H); c.stroke();
-    c.beginPath(); c.moveTo(W*0.7, floorY); c.lineTo(W*0.7, H); c.stroke();
-    // Center circle
-    c.beginPath(); c.arc(W/2, H*0.75, H*0.22, 0, Math.PI*2); c.stroke();
-    c.beginPath(); c.moveTo(W/2, floorY); c.lineTo(W/2, H); c.stroke();
-    // Pokeball divider line
-    c.strokeStyle = 'rgba(200,50,50,0.25)'; c.lineWidth = 3;
-    c.beginPath(); c.moveTo(0, H*0.6); c.lineTo(W, H*0.6); c.stroke();
+    // Full beige arena floor
+    var floorGrad = c.createLinearGradient(0, 0, 0, H);
+    floorGrad.addColorStop(0, '#e0c88a');
+    floorGrad.addColorStop(1, '#c8a860');
+    c.fillStyle = floorGrad; c.fillRect(0, 0, W, H);
+    // Subtle floor lines
+    c.strokeStyle = 'rgba(255,255,255,0.2)'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(W*0.3, 0); c.lineTo(W*0.3, H); c.stroke();
+    c.beginPath(); c.moveTo(W*0.7, 0); c.lineTo(W*0.7, H); c.stroke();
+    c.beginPath(); c.moveTo(0, H*0.5); c.lineTo(W, H*0.5); c.stroke();
+    c.beginPath(); c.arc(W/2, H*0.5, H*0.25, 0, Math.PI*2); c.stroke();
+    // Center pokeball dot
+    c.fillStyle = 'rgba(255,255,255,0.15)';
+    c.beginPath(); c.arc(W/2, H*0.5, 8, 0, Math.PI*2); c.fill();
 
   } else if (mapType === 'wild' || mapType === 'home') {
     // Wild grass background
@@ -1809,7 +1980,7 @@ function battleCatch() {
       // Only add to caught list if it's a base wild pokemon (not an evolution)
       var isWildBase = WILD_POKEMON.some(function(p){ return p.name === battle.enemyPokemon.name; });
       if (isWildBase && caughtPokemon.indexOf(battle.enemyPokemon.name) === -1) {
-        caughtPokemon.push(battle.enemyPokemon.name);
+        caughtPokemon.push(battle.enemyPokemon.name); saveGame();
       }
       var myProg = getPokemonProgress(battle.playerName);
       var xpGain = 50 + battle.enemyLevel * 15;
@@ -1876,6 +2047,7 @@ function startNurseCutscene() {
       'Your Pokemon\nhave been fully\nhealed! Good luck!'
     ];
     playerCurrentHP = -1;
+    saveGame();
   } else {
     nurseLines = [
       'Hello ' + username + '!\nYour Pokemon\nlook great!',
@@ -2589,6 +2761,7 @@ function selectStarter(name) {
   // Add starter to caught list
   if (caughtPokemon.indexOf(name) === -1) caughtPokemon.push(name);
   companion = { name: name, x: player.x - 0.8, y: player.y + 0.8, frame: 0, frameTimer: 0 };
+  saveGame();
   oakPhase = 'congrats';
   oakCongratsLines = [
     'Congratulations! You have chosen ' + name + '!\nTake good care of your partner!',
