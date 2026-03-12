@@ -1933,7 +1933,7 @@ function enemyAttack() {
 function endBattleWin() {
   battle.phase = 'end';
   var myProg = getPokemonProgress(battle.playerName);
-  var xpGain = 30 + battle.enemyLevel * 10;
+  var xpGain = battle.currentTrainer ? 10000 : (30 + battle.enemyLevel * 10);
   myProg.xp += xpGain;
   var levelled = false;
   while (myProg.xp >= myProg.level * 100) {
