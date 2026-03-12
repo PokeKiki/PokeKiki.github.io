@@ -1564,7 +1564,7 @@ function encounterFight() {
 }
 
 // ---- BATTLE SYSTEM ----
-function startBattle(wildPoke) {
+function startBattle(wildPoke, forcedEnemyLevel) {
   battleActive = true;
   battle.enemyPokemon = wildPoke;
   battle.enemyFainted = false;
@@ -1578,7 +1578,7 @@ function startBattle(wildPoke) {
   battle.playerHP = playerCurrentHP;
   battle.playerName = myName;
 
-  var enemyLevel = Math.floor(Math.random() * 5) + 1;
+  var enemyLevel = forcedEnemyLevel || (Math.floor(Math.random() * 5) + 1);
   battle.enemyMaxHP = 500 + (enemyLevel - 1) * 15;
   battle.enemyHP = battle.enemyMaxHP;
   battle.enemyLevel = enemyLevel;
@@ -1776,7 +1776,9 @@ function showBattleActions() {
     var isBlocked = (battle.lastMoveUsed === m.name);
     var btn = document.createElement('button');
     btn.style.cssText = 'font-family:"Press Start 2P",cursive;font-size:clamp(6px,1.5vw,8px);background:' + (isBlocked ? '#2a2a2a' : '#1a3a1a') + ';color:' + (isBlocked ? '#666' : '#fff') + ';border:2px solid ' + (isBlocked ? '#444' : '#60a060') + ';border-radius:6px;padding:7px 5px;cursor:' + (isBlocked ? 'not-allowed' : 'pointer') + ';';
-    btn.textContent = m.name + (m.dmg > 0 ? ' (' + m.dmg + ')' : ' (Status)') + (isBlocked ? ' ✗' : '');
+    var myProg2 = getPokemonProgress(battle.playerName);
+    var actualDmg2 = m.dmg === 0 ? 0 : m.dmg + (myProg2.level - 1) * 5;
+    btn.textContent = m.name + (actualDmg2 > 0 ? ' (' + actualDmg2 + ')' : ' (Status)') + (isBlocked ? ' ✗' : '');
     if (!isBlocked) btn.onclick = function(){ playerAttack(m); };
     actDiv.appendChild(btn);
   });
@@ -2440,11 +2442,12 @@ function showPokedexDetail(p) {
   drawPokedexSpriteBig(cv.getContext('2d'), p.name, p.color);
 
   var movesHTML = data.moves.map(function(m) {
-    var barW = m.dmg === 0 ? 0 : Math.round(m.dmg / 150 * 100);
+    var actualDmg = m.dmg === 0 ? 0 : m.dmg + (prog.level - 1) * 5;
+    var barW = actualDmg === 0 ? 0 : Math.round(actualDmg / 250 * 100);
     return '<div class="poke-stat-row">'
       + '<span class="poke-move-name">' + m.name + '</span>'
-      + '<div class="poke-move-bar-wrap"><div class="poke-move-bar" style="width:' + barW + '%"></div></div>'
-      + '<span class="poke-move-dmg">' + (m.dmg === 0 ? 'Status' : m.dmg + ' dmg') + '</span>'
+      + '<div class="poke-move-bar-wrap"><div class="poke-move-bar" style="width:' + Math.min(barW,100) + '%"></div></div>'
+      + '<span class="poke-move-dmg">' + (actualDmg === 0 ? 'Status' : actualDmg + ' dmg') + '</span>'
       + '</div>';
   }).join('');
 
@@ -3261,10 +3264,8 @@ function refAcceptFight() {
   battle.currentTrainer = trainer;
   var tp = trainer.pokemon[Math.floor(Math.random() * trainer.pokemon.length)];
   var trainerPoke = { name: tp.name, color: tp.color, isTrainer: true };
-  startBattle(trainerPoke);
-  battle.enemyLevel = Math.floor(Math.random() * 10) + 5;
-  battle.enemyMaxHP = 500 + (battle.enemyLevel - 1) * 15;
-  battle.enemyHP = battle.enemyMaxHP;
+  var trainerLevel = Math.floor(Math.random() * 10) + 5;
+  startBattle(trainerPoke, trainerLevel);
   document.getElementById('battle-enemy-name').textContent = trainer.name + "'s " + tp.name + ' Lv.' + battle.enemyLevel;
   updateBattleHUD();
   drawOpponentTrainer(trainer);
