@@ -643,7 +643,7 @@
 
     <!-- ENEMY side: trainer top-left, pokemon top-right, HUD top-right corner -->
     <canvas id="battle-enemy-sprite" width="64" height="64" style="position:absolute;top:16px;right:130px;image-rendering:pixelated;width:90px;height:90px;z-index:2;"></canvas>
-    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:16px;right:224px;image-rendering:pixelated;width:110px;height:165px;z-index:1;display:none;"></canvas>
+    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:16px;right:16px;image-rendering:pixelated;width:110px;height:165px;z-index:1;display:none;"></canvas>
     <div id="battle-enemy-hud" style="position:absolute;top:16px;left:16px;background:rgba(0,0,0,0.82);border:2px solid #f8d030;border-radius:8px;padding:5px 10px;min-width:150px;z-index:5;">
       <div id="battle-enemy-name" style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.6vw,8px);color:#f8d030;"></div>
       <div style="font-family:'Press Start 2P',cursive;font-size:6px;color:#aaa;margin-top:2px;">HP <span id="battle-enemy-hp-val"></span></div>
@@ -1835,6 +1835,7 @@ function playerAttack(move) {
   setBattleLog(battle.playerName + ' used ' + move.name + '!');
 
   drawAttackFX(move.name, moveType, 'enemy', function() {
+    var myProg = getPokemonProgress(battle.playerName);
     var dmg = move.dmg === 0 ? 0 : Math.max(1, move.dmg + (myProg.level - 1) * 5 + Math.floor(Math.random()*10) - 5);
     battle.enemyHP = Math.max(0, battle.enemyHP - dmg);
     updateBattleHUD();
