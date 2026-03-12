@@ -2366,13 +2366,36 @@ function resolvePokedexEntry(entry) {
       var line = STARTER_LINES[baseName];
       if (!line) return { name:'???', color:'#888', locked:true, entry:entry };
       var s = line[slot];
-      // Caught if: in caughtPokemon, or it's the current active/chosen (handles base form after evo removes it)
-      var caught = caughtPokemon.indexOf(s.name) !== -1 || s.name === starterChosen || s.name === activePokemon;
-      return { name: s.name, color: s.color, locked: !caught, entry: entry };
+      // Determine if this slot's pokemon was ever obtained
+      // A slot is "seen" if it's in caughtPokemon, is the current active/chosen, OR a later slot in the line is obtained (meaning it evolved from this one)
+      var seen = caughtPokemon.indexOf(s.name) !== -1 || s.name === starterChosen || s.name === activePokemon;
+      // Check if a later evolution in the line is owned (means this base form was obtained and evolved away)
+      if (!seen) {
+        for (var j = slot + 1; j < line.length; j++) {
+          if (caughtPokemon.indexOf(line[j].name) !== -1 || line[j].name === starterChosen || line[j].name === activePokemon) {
+            seen = true; break;
+          }
+        }
+      }
+      // Clickable only if still in caughtPokemon / currently owned
+      var clickable = caughtPokemon.indexOf(s.name) !== -1 || s.name === starterChosen || s.name === activePokemon;
+      return { name: s.name, color: s.color, locked: !seen, evolved_away: seen && !clickable, entry: entry };
     }
   }
-  var caught = caughtPokemon.indexOf(entry.name) !== -1;
-  return { name: entry.name, color: entry.color || '#888', locked: !caught, entry: entry };
+  var directlyCaught = caughtPokemon.indexOf(entry.name) !== -1;
+  // Check if this pokemon evolved away — look for it in EVOLUTION_MAP chain
+  var evolvedAway = false;
+  if (!directlyCaught) {
+    // Check if any evolution of this pokemon is currently owned
+    var checkName = entry.name;
+    var evo = EVOLUTION_MAP[checkName];
+    while (evo) {
+      if (caughtPokemon.indexOf(evo.into) !== -1) { evolvedAway = true; break; }
+      evo = EVOLUTION_MAP[evo.into];
+    }
+  }
+  var seen = directlyCaught || evolvedAway;
+  return { name: entry.name, color: entry.color || '#888', locked: !seen, evolved_away: evolvedAway, entry: entry };
 }
 
 function togglePokedex() {
@@ -2423,12 +2446,18 @@ function renderPokedex() {
       + '<span class="pokedex-name">' + (caught ? resolved.name : '???') + '</span>'
       + (isActive ? '<span style="font-family:\'Press Start 2P\',cursive;font-size:9px;color:#f8d030;margin-left:auto;">★</span>' : '');
 
-    if (caught && resolved.name !== '???') {
+    if (caught && resolved.name !== '???' && !resolved.evolved_away) {
       (function(rn, rc, en){
         div.addEventListener('click', function(){
           showPokedexDetail({ name: rn, color: rc, num: en.num });
         });
       })(resolved.name, resolved.color, entry);
+    }
+    // Evolved away: show greyed out, no click
+    if (resolved.evolved_away) {
+      div.style.opacity = '0.5';
+      div.style.cursor = 'default';
+      div.title = resolved.name + ' has evolved';
     }
 
     list.appendChild(div);
