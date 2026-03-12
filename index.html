@@ -2355,10 +2355,19 @@ function resolvePokedexEntry(entry) {
     var slot = parseInt(entry.num.replace('#','')) - 1; // 0,1,2
     if (slot <= 2) {
       if (!starterChosen) return { name:'???', color:'#888', locked:true, entry:entry };
-      var line = STARTER_LINES[starterChosen];
+      // Find base starter even if starterChosen is now an evolved form
+      var baseName = starterChosen;
+      for (var base in STARTER_LINES) {
+        var ln = STARTER_LINES[base];
+        for (var i = 0; i < ln.length; i++) {
+          if (ln[i].name === starterChosen) { baseName = base; break; }
+        }
+      }
+      var line = STARTER_LINES[baseName];
       if (!line) return { name:'???', color:'#888', locked:true, entry:entry };
       var s = line[slot];
-      var caught = (slot === 0) || caughtPokemon.indexOf(s.name) !== -1;
+      // Caught if: in caughtPokemon, or it's the current active/chosen (handles base form after evo removes it)
+      var caught = caughtPokemon.indexOf(s.name) !== -1 || s.name === starterChosen || s.name === activePokemon;
       return { name: s.name, color: s.color, locked: !caught, entry: entry };
     }
   }
