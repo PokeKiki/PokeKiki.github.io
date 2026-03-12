@@ -1571,7 +1571,7 @@ function startBattle(wildPoke) {
 
   var myName = activePokemon || starterChosen;
   var myProg = getPokemonProgress(myName);
-  battle.playerMaxHP = 500 + (myProg.level - 1) * 50;
+  battle.playerMaxHP = 500 + (myProg.level - 1) * 15;
   if (playerCurrentHP < 0 || playerCurrentHP > battle.playerMaxHP) {
     playerCurrentHP = battle.playerMaxHP;
   }
@@ -1579,7 +1579,7 @@ function startBattle(wildPoke) {
   battle.playerName = myName;
 
   var enemyLevel = Math.floor(Math.random() * 5) + 1;
-  battle.enemyMaxHP = 500 + (enemyLevel - 1) * 50;
+  battle.enemyMaxHP = 500 + (enemyLevel - 1) * 15;
   battle.enemyHP = battle.enemyMaxHP;
   battle.enemyLevel = enemyLevel;
   battle.playerTurn = true;
@@ -1835,7 +1835,7 @@ function playerAttack(move) {
   setBattleLog(battle.playerName + ' used ' + move.name + '!');
 
   drawAttackFX(move.name, moveType, 'enemy', function() {
-    var dmg = move.dmg === 0 ? 0 : Math.max(1, move.dmg + Math.floor(Math.random()*10) - 5);
+    var dmg = move.dmg === 0 ? 0 : Math.max(1, move.dmg + (myProg.level - 1) * 5 + Math.floor(Math.random()*10) - 5);
     battle.enemyHP = Math.max(0, battle.enemyHP - dmg);
     updateBattleHUD();
     var es = document.getElementById('battle-enemy-sprite'); es.classList.remove('sprite-shake'); void es.offsetWidth; es.classList.add('sprite-shake');
@@ -1903,7 +1903,7 @@ function enemyAttack() {
   setBattleLog(battle.enemyPokemon.name + ' used ' + move.name + '!');
 
   drawAttackFX(move.name, enemyType, 'player', function() {
-    var dmg = move.dmg === 0 ? 0 : Math.max(1, Math.floor(move.dmg * 0.6) + Math.floor(Math.random()*6) - 3);
+    var dmg = move.dmg === 0 ? 0 : Math.max(1, Math.floor(move.dmg * 0.6) + (battle.enemyLevel - 1) * 5 + Math.floor(Math.random()*6) - 3);
     battle.playerHP = Math.max(0, battle.playerHP - dmg);
     updateBattleHUD();
     var ps = document.getElementById('battle-player-sprite'); ps.classList.remove('sprite-shake'); void ps.offsetWidth; ps.classList.add('sprite-shake');
@@ -3262,10 +3262,11 @@ function refAcceptFight() {
   var trainerPoke = { name: tp.name, color: tp.color, isTrainer: true };
   startBattle(trainerPoke);
   battle.enemyLevel = Math.floor(Math.random() * 10) + 5;
-  battle.enemyMaxHP = 500 + (battle.enemyLevel - 1) * 50;
+  battle.enemyMaxHP = 500 + (battle.enemyLevel - 1) * 15;
   battle.enemyHP = battle.enemyMaxHP;
   document.getElementById('battle-enemy-name').textContent = trainer.name + "'s " + tp.name + ' Lv.' + battle.enemyLevel;
   updateBattleHUD();
+  drawOpponentTrainer(trainer);
   drawOpponentPointing(trainer, false);
 }
 
