@@ -599,17 +599,17 @@
     <div id="battle-fx-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;background:transparent;"></div>
 
     <!-- ENEMY side: trainer top-left, pokemon top-right, HUD top-right corner -->
-    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:16px;left:16px;image-rendering:pixelated;width:110px;height:165px;z-index:2;display:none;"></canvas>
-    <canvas id="battle-enemy-sprite" width="64" height="64" style="position:absolute;top:16px;right:16px;image-rendering:pixelated;width:90px;height:90px;z-index:2;"></canvas>
-    <div id="battle-enemy-hud" style="position:absolute;top:112px;right:16px;background:rgba(0,0,0,0.82);border:2px solid #f8d030;border-radius:8px;padding:5px 10px;min-width:150px;z-index:5;">
+    <canvas id="battle-opponent-canvas" width="64" height="96" style="position:absolute;top:16px;right:16px;image-rendering:pixelated;width:110px;height:165px;z-index:2;display:none;"></canvas>
+    <canvas id="battle-enemy-sprite" width="64" height="64" style="position:absolute;top:120px;right:16px;image-rendering:pixelated;width:90px;height:90px;z-index:2;"></canvas>
+    <div id="battle-enemy-hud" style="position:absolute;top:16px;left:16px;background:rgba(0,0,0,0.82);border:2px solid #f8d030;border-radius:8px;padding:5px 10px;min-width:150px;z-index:5;">
       <div id="battle-enemy-name" style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.6vw,8px);color:#f8d030;"></div>
       <div style="font-family:'Press Start 2P',cursive;font-size:6px;color:#aaa;margin-top:2px;">HP <span id="battle-enemy-hp-val"></span></div>
       <div style="background:#333;border-radius:3px;height:6px;margin-top:3px;overflow:hidden;"><div id="battle-enemy-hp-bar" style="height:100%;background:#40d060;border-radius:3px;transition:width 0.4s;"></div></div>
     </div>
 
     <!-- PLAYER side: pokemon bottom-left, trainer bottom-right of pokemon, HUD bottom-left corner -->
-    <canvas id="battle-player-sprite" width="64" height="64" style="position:absolute;bottom:16px;left:16px;image-rendering:pixelated;width:80px;height:80px;z-index:2;"></canvas>
-    <canvas id="battle-trainer-canvas" width="64" height="96" style="position:absolute;bottom:16px;left:110px;image-rendering:pixelated;width:110px;height:165px;z-index:1;opacity:0.9;"></canvas>
+    <canvas id="battle-trainer-canvas" width="64" height="96" style="position:absolute;bottom:16px;left:16px;image-rendering:pixelated;width:110px;height:165px;z-index:1;opacity:0.9;"></canvas>
+    <canvas id="battle-player-sprite" width="64" height="64" style="position:absolute;bottom:120px;left:16px;image-rendering:pixelated;width:80px;height:80px;z-index:2;"></canvas>
     <div id="battle-player-hud" style="position:absolute;bottom:16px;right:16px;background:rgba(0,0,0,0.82);border:2px solid #60c060;border-radius:8px;padding:5px 10px;min-width:150px;z-index:5;">
       <div id="battle-player-name" style="font-family:'Press Start 2P',cursive;font-size:clamp(6px,1.6vw,8px);color:#60c060;"></div>
       <div style="font-family:'Press Start 2P',cursive;font-size:6px;color:#aaa;margin-top:2px;">HP <span id="battle-player-hp-val"></span></div>
