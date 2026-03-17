@@ -184,7 +184,23 @@ const isIPad   = isIOS && !(/iPhone|iPod/.test(navigator.userAgent));
 // On Safari/iOS, using allow-same-origin + allow-scripts together causes silent
 // iframe blocks for cross-origin content. We drop allow-same-origin on those platforms.
 // allow-top-navigation-by-user-activation also causes hangs on iPadOS Safari — removed.
-function getSandbox() {
+// Game/media domains that need WebGL — skip sandbox on Safari for these
+const GAME_SITES = [
+  'poxel.io','itch.io','crazygames.com','miniclip.com','poki.com',
+  'coolmathgames.com','newgrounds.com','kongregate.com','armorgames.com',
+  'gameflare.com','silvergames.com','y8.com','addictinggames.com',
+];
+
+function isGameSite(url) {
+  try {
+    const h = new URL(url).hostname.replace('www.','');
+    return GAME_SITES.some(d => h === d || h.endsWith('.'+d));
+  } catch { return false; }
+}
+
+function getSandbox(url='') {
+  // Safari + game site = no sandbox (WebGL requires it to be absent or have allow-same-origin)
+  if ((isSafari || isIOS) && isGameSite(url)) return null;
   if (isSafari || isIOS) {
     return 'allow-scripts allow-forms allow-popups allow-pointer-lock allow-modals';
   }
@@ -262,7 +278,10 @@ function newTab(url=null) {
   // iframe — apply platform-appropriate sandbox
   const fr = document.createElement('iframe');
   fr.className = 'frame'; fr.id = 'fr-'+id;
-  fr.allow = 'fullscreen; autoplay; gamepad';
+  fr.allow = 'fullscreen *; autoplay *; gamepad *; camera *; microphone *; accelerometer *; gyroscope *; payment *; clipboard-write *; web-share *';
+  fr.setAttribute('allowfullscreen', '');
+  fr.setAttribute('allowpaymentrequest', '');
+  // Sandbox applied later in navigate() once we know the URL
   fr.setAttribute('sandbox', getSandbox());
   fr.addEventListener('load', () => { onFrameLoad(id); });
   vp.appendChild(fr);
@@ -350,8 +369,13 @@ function navigate(id, rawUrl, forceProxy=false) {
   t.usingProxy = useProxy;
   const loadUrl = useProxy ? proxyUrl(rawUrl) : rawUrl;
 
-  vp.querySelectorAll('.ntp,.frame,.blocked').forEach(e=>e.classList.remove('active'));
+  // Update sandbox per URL — game sites on Safari get no sandbox for WebGL
   const fr = document.getElementById('fr-'+id);
+  const sb = getSandbox(rawUrl);
+  if (sb) fr.setAttribute('sandbox', sb);
+  else fr.removeAttribute('sandbox');
+
+  vp.querySelectorAll('.ntp,.frame,.blocked').forEach(e=>e.classList.remove('active'));
   fr.classList.add('active');
   startProg();
 
