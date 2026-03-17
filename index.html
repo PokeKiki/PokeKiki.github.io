@@ -3,239 +3,104 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-<title>Kyan Browser - Gaming Edition</title>
+<title>Kyan Browser - Ultra Edition</title>
 <style>
+:root{--bg:#0e0e12;--surface:#13131a;--border:#25252f;--accent:#00e5b0;--txt:#eeeef5;--muted:#4a4a62;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-:root{
-  --bg:#0e0e12;--surface:#13131a;--surface2:#1a1a24;
-  --border:#25252f;--accent:#00e5b0;--accent2:#ff5e7d;
-  --txt:#eeeef5;--muted:#4a4a62;--bar:#0a0a0e;
-}
-html,body{height:100dvh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--txt)}
+html,body{height:100dvh;overflow:hidden;font-family:sans-serif;background:var(--bg);color:var(--txt)}
 body{display:flex;flex-direction:column}
 
-/* ── TABS ── */
-#tabstrip{
-  display:flex;align-items:center;
-  background:var(--bar);border-bottom:1px solid var(--border);
-  padding:6px 10px 0;gap:4px;height:42px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;
-}
-#tabstrip::-webkit-scrollbar{display:none}
-.tab{
-  display:flex;align-items:center;gap:6px;
-  padding:6px 12px 7px;border-radius:8px 8px 0 0;
-  background:transparent;border:1px solid transparent;border-bottom:none;
-  cursor:pointer;font-size:12px;color:var(--muted);
-  white-space:nowrap;max-width:160px;min-width:80px;
-  transition:background .12s,color .12s;flex-shrink:0;
-}
-.tab.active{background:var(--surface);color:var(--txt);border-color:var(--border)}
-.tab-lbl{flex:1;overflow:hidden;text-overflow:ellipsis}
-.tab-x{font-size:11px;padding:1px 4px;border-radius:4px;}
+/* UI NAVIGATION */
+#navbar{display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface);border-bottom:1px solid var(--border);z-index:100;}
+#urlinput{flex:1;background:var(--bg);border:1px solid var(--border);padding:8px 15px;border-radius:20px;color:#fff;outline:none;}
+.btn{background:var(--accent);border:none;padding:8px 15px;border-radius:20px;font-weight:bold;cursor:pointer;}
 
-#add-tab{
-  width:28px;height:28px;border-radius:7px;border:none;
-  background:transparent;color:var(--muted);font-size:20px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+/* THE VIEWPORT */
+#vpwrap{flex:1;position:relative;background:#000;}
+iframe{
+    position:absolute;inset:0;width:100%;height:100%;border:none;
+    background:#000;display:none;
+    /* Hardware acceleration fix */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
 }
+iframe.active{display:block;}
 
-/* ── NAVBAR ── */
-#navbar{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 12px;background:var(--surface);
-  border-bottom:1px solid var(--border);flex-shrink:0;
-}
-.nbtn{
-  width:36px;height:36px;border-radius:8px;border:none;
-  background:transparent;color:var(--muted);font-size:18px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
-#urlbar{
-  flex:1;display:flex;align-items:center;gap:8px;
-  background:var(--surface2);border:1.5px solid var(--border);
-  border-radius:999px;padding:0 8px 0 14px;height:40px;
-}
-#urlinput{flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--txt);}
-#gobtn{
-  width:30px;height:30px;border-radius:50%;border:none;
-  background:var(--accent);color:#000;cursor:pointer;
-}
-
-/* ── VIEWPORT ── */
-#vpwrap{flex:1;position:relative;overflow:hidden;background:#000;}
-.frame{
-  position:absolute;inset:0;width:100%;height:100%;border:none;display:none;
-  /* FIX: Force GPU Acceleration */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  background: #000;
-}
-.frame.active{display:block;}
-
-/* ── NTP & GRID ── */
-.ntp{
-  position:absolute;inset:0;display:none;flex-direction:column;
-  align-items:center;gap:20px;background:var(--bg);padding:30px 20px;overflow-y:auto;
-}
-.ntp.active{display:flex}
-.ntp-logo{font-size:48px;font-weight:800;background:linear-gradient(120deg,var(--accent),#6ee7ff,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.ntp-search{display:flex;align-items:center;background:var(--surface);border:1.5px solid var(--border);border-radius:999px;width:min(540px,90vw);height:50px;padding:0 10px 0 20px;}
-.ntp-search input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:16px;}
-
-.gaming-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;width:min(600px,95vw);}
-.gaming-item{background:var(--surface2);padding:15px;border-radius:15px;text-align:center;cursor:pointer;border:1px solid var(--border);}
-.gaming-item .ico{font-size:28px;}
-.gaming-item .lbl{font-size:11px;margin-top:5px;font-weight:bold;}
-
-/* ── BLOCKED ── */
-.blocked{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:20px;text-align:center;}
-.blocked.active{display:flex}
-.mode-btn{background:var(--surface2);padding:12px;border-radius:10px;margin:5px;cursor:pointer;border:1px solid var(--border);width:200px;}
-
-#prog{height:2px;background:var(--accent);width:0%;transition:width .3s;opacity:0;}
-#prog.on{opacity:1}
+/* NEW TAB PAGE */
+#ntp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:10;}
+.ntp-logo{font-size:50px;font-weight:800;color:var(--accent);text-shadow:0 0 20px rgba(0,229,176,0.3);}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;width:90%;max-width:400px;}
+.g-item{background:var(--surface);padding:20px;border-radius:15px;text-align:center;border:1px solid var(--border);}
 </style>
 </head>
 <body>
 
-<div id="tabstrip"><div id="add-tab">+</div></div>
 <div id="navbar">
-  <button class="nbtn" id="btn-back">←</button>
-  <button class="nbtn" id="btn-reload">↻</button>
-  <button class="nbtn" id="btn-home">⌂</button>
-  <div id="urlbar">
-    <span id="lock">🔍</span>
-    <input id="urlinput" placeholder="Search or enter address..." autocomplete="off"/>
-    <button id="gobtn">→</button>
-  </div>
+    <button class="btn" onclick="goHome()">⌂</button>
+    <input id="urlinput" type="text" placeholder="Enter URL (e.g. poxel.io)"/>
+    <button class="btn" onclick="manualNav()">GO</button>
 </div>
-<div id="prog"></div>
-<div id="vpwrap"></div>
+
+<div id="vpwrap">
+    <div id="ntp">
+        <div class="ntp-logo">KYAN</div>
+        <div class="grid">
+            <div class="g-item" onclick="loadGame('https://poxel.io')">🎮 Poxel.io</div>
+            <div class="g-item" onclick="loadGame('https://poki.com')">⭐ Poki</div>
+            <div class="g-item" onclick="loadGame('https://slither.io')">🐍 Slither</div>
+            <div class="g-item" onclick="loadGame('https://google.com')">🔍 Google</div>
+        </div>
+    </div>
+    <iframe id="main-fr" allow="gamepad; fullscreen; accelerometer; gyroscope"></iframe>
+</div>
 
 <script>
-const RENDER_MODES = { DIRECT: 'direct', GAME_PROXY: 'game', MIRROR: 'mirror' };
-const PROXY_SERVERS = [
-  { name: '🎮 Game Mode', url: (t) => `https://corsproxy.io/?${encodeURIComponent(t)}` },
-  { name: '🔄 Mirror Mode', url: (t) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(t)}` }
-];
+const frame = document.getElementById('main-fr');
+const ntp = document.getElementById('ntp');
+const input = document.getElementById('urlinput');
 
-const GAMING_SITES = [
-  { name: 'Poxel.io', url: 'https://poxel.io', ico: '🎮' },
-  { name: 'Slither.io', url: 'http://slither.io', ico: '🐍' },
-  { name: 'Paper.io', url: 'http://paper.io', ico: '📄' },
-  { name: 'CrazyGames', url: 'https://www.crazygames.com', ico: '🎲' },
-  { name: 'Poki', url: 'https://poki.com', ico: '⭐' }
-];
-
-let tabs = [], activeId = null, counter = 0;
-
-function uid(){ return 't'+(++counter); }
-function norm(r) { 
-  r=r.trim(); if(!r)return null; 
-  if(/^https?:\/\//i.test(r)) return r;
-  if(/^[\w.-]+\.\w{2,}/.test(r) && !r.includes(' ')) return 'https://'+r;
-  return 'https://www.google.com/search?q='+encodeURIComponent(r);
-}
-
-function newTab(url=null) {
-  const id = uid();
-  tabs.push({ id, url: null, title: 'New Tab', mode: RENDER_MODES.DIRECT });
-
-  const ntp = document.createElement('div');
-  ntp.className = 'ntp'; ntp.id = 'ntp-'+id;
-  ntp.innerHTML = `<div class="ntp-logo">Kyan</div>
-    <div class="ntp-search"><input type="text" placeholder="Search..." data-id="${id}"/><button onclick="goToUrlFromNtp('${id}')">→</button></div>
-    <div class="gaming-grid">${GAMING_SITES.map(g=>`<div class="gaming-item" onclick="navigate('${id}','${g.url}','game')"><div class="ico">${g.ico}</div><div class="lbl">${g.name}</div></div>`).join('')}</div>`;
-  document.getElementById('vpwrap').appendChild(ntp);
-
-  const fr = document.createElement('iframe');
-  fr.className = 'frame'; fr.id = 'fr-'+id;
-  // Permissive Sandbox for WebGL
-  fr.setAttribute('sandbox', 'allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-scripts allow-same-origin allow-top-navigation-by-user-activation');
-  fr.setAttribute('allow', 'accelerometer; gamepad; gyroscope; hid; microphone; midi; clipboard-read; clipboard-write; fullscreen');
-  document.getElementById('vpwrap').appendChild(fr);
-
-  const bl = document.createElement('div');
-  bl.className = 'blocked'; bl.id = 'bl-'+id;
-  bl.innerHTML = `<h2>Black Screen?</h2><div class="mode-btn" onclick="navigate('${id}',tabs.find(t=>t.id==='${id}').url,'game')">Retry Game Mode</div><div class="mode-btn" onclick="navigate('${id}',tabs.find(t=>t.id==='${id}').url,'mirror')">Try Mirror Mode</div>`;
-  document.getElementById('vpwrap').appendChild(bl);
-
-  activate(id);
-  if(url) navigate(id, url);
-  return id;
-}
-
-function activate(id) {
-  activeId = id;
-  document.querySelectorAll('.ntp, .frame, .blocked').forEach(e=>e.classList.remove('active'));
-  const t = tabs.find(x=>x.id===id);
-  if(!t.url) document.getElementById('ntp-'+id).classList.add('active');
-  else document.getElementById('fr-'+id).classList.add('active');
-  renderTabs();
-}
-
-function renderTabs() {
-  document.querySelectorAll('.tab').forEach(e=>e.remove());
-  tabs.forEach(t=>{
-    const el = document.createElement('div');
-    el.className = 'tab' + (t.id===activeId?' active':'');
-    el.innerHTML = `<span class="tab-lbl">${t.title}</span><span onclick="closeTab('${t.id}')">✕</span>`;
-    el.onclick = () => activate(t.id);
-    document.getElementById('tabstrip').insertBefore(el, document.getElementById('add-tab'));
-  });
-}
-
-function navigate(id, raw, mode='direct') {
-  const t = tabs.find(x=>x.id===id);
-  const url = norm(raw);
-  t.url = url; t.title = url.split('/')[2] || 'Loading...';
-  
-  let finalUrl = url;
-  if(mode === 'game') finalUrl = PROXY_SERVERS[0].url(url);
-  if(mode === 'mirror') finalUrl = PROXY_SERVERS[1].url(url);
-
-  const fr = document.getElementById('fr-'+id);
-  fr.src = 'about:blank'; // Clear cache
-  
-  // Nudge the GPU
-  setTimeout(() => {
-    fr.src = finalUrl;
-    fr.classList.add('active');
-    document.getElementById('ntp-'+id).classList.remove('active');
+async function loadGame(targetUrl) {
+    if(!targetUrl.startsWith('http')) targetUrl = 'https://' + targetUrl;
     
-    // iOS Black Screen Fix: Toggle opacity to force paint
-    setTimeout(() => {
-        fr.style.opacity = '0.99';
-        setTimeout(() => fr.style.opacity = '1', 50);
-    }, 1000);
-  }, 100);
+    ntp.style.display = 'none';
+    frame.classList.add('active');
+    frame.src = 'about:blank'; // Reset
 
-  renderTabs();
+    // WE USE A DIFFERENT PROXY STRATEGY HERE
+    // Instead of just setting SRC, we fetch the site data
+    try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+        
+        // This tricks the browser into thinking the game is local
+        frame.src = proxyUrl; 
+
+        // Fix for iOS Black Screen
+        setTimeout(() => {
+            frame.style.display = 'none';
+            frame.offsetHeight; // force reflow
+            frame.style.display = 'block';
+        }, 500);
+
+    } catch (e) {
+        alert("Failed to load. Try a different URL.");
+        goHome();
+    }
 }
 
-function goToUrlFromNtp(id) {
-  const val = document.querySelector(`#ntp-${id} input`).value;
-  navigate(id, val, val.includes('.io') ? 'game' : 'direct');
+function manualNav() {
+    loadGame(input.value);
 }
 
-function closeTab(id) {
-  tabs = tabs.filter(t=>t.id!==id);
-  document.getElementById('fr-'+id).remove();
-  document.getElementById('ntp-'+id).remove();
-  document.getElementById('bl-'+id).remove();
-  if(tabs.length === 0) newTab();
-  else activate(tabs[0].id);
+function goHome() {
+    ntp.style.display = 'flex';
+    frame.classList.remove('active');
+    frame.src = 'about:blank';
 }
 
-document.getElementById('add-tab').onclick = () => newTab();
-document.getElementById('btn-home').onclick = () => {
-    const t = tabs.find(x=>x.id===activeId);
-    t.url = null; activate(activeId);
-};
-document.getElementById('gobtn').onclick = () => navigate(activeId, document.getElementById('urlinput').value);
-
-// Init
-newTab();
+// Handle Enter Key
+input.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') manualNav();
+});
 </script>
 </body>
 </html>
