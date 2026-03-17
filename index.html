@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=yes"/>
 <title>Kyan Browser</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
   --bg:#0e0e12;--surface:#13131a;--surface2:#1a1a24;
   --border:#25252f;--accent:#00e5b0;--accent2:#ff5e7d;
   --txt:#eeeef5;--muted:#4a4a62;--bar:#0a0a0e;
 }
-html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt)}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--txt)}
 body{display:flex;flex-direction:column}
 
 /* ── TABS ── */
@@ -19,6 +19,7 @@ body{display:flex;flex-direction:column}
   display:flex;align-items:center;
   background:var(--bar);border-bottom:1px solid var(--border);
   padding:6px 10px 0;gap:4px;height:42px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;
+  -webkit-overflow-scrolling:touch;
 }
 #tabstrip::-webkit-scrollbar{display:none}
 .tab{
@@ -28,6 +29,7 @@ body{display:flex;flex-direction:column}
   cursor:pointer;font-size:12px;color:var(--muted);
   white-space:nowrap;max-width:160px;min-width:80px;
   transition:background .12s,color .12s;flex-shrink:0;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 }
 .tab:hover{background:var(--surface);color:var(--txt)}
 .tab.active{background:var(--surface);color:var(--txt);border-color:var(--border)}
@@ -50,33 +52,36 @@ body{display:flex;flex-direction:column}
   border-bottom:1px solid var(--border);flex-shrink:0;
 }
 .nbtn{
-  width:32px;height:32px;border-radius:8px;border:none;
-  background:transparent;color:var(--muted);font-size:16px;cursor:pointer;
+  width:36px;height:36px;border-radius:8px;border:none;
+  background:transparent;color:var(--muted);font-size:18px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   transition:background .12s,color .12s;flex-shrink:0;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 }
 .nbtn:hover:not(:disabled){background:var(--surface2);color:var(--txt)}
 .nbtn:disabled{opacity:.25;cursor:default}
+.nbtn:active{background:var(--surface2);transform:scale(0.96);}
 #urlbar{
   flex:1;display:flex;align-items:center;gap:8px;
   background:var(--surface2);border:1.5px solid var(--border);
-  border-radius:999px;padding:0 8px 0 14px;height:36px;
+  border-radius:999px;padding:0 8px 0 14px;height:40px;
   transition:border-color .2s,box-shadow .2s;
 }
 #urlbar:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px #00e5b015}
-#lock{font-size:12px;flex-shrink:0}
+#lock{font-size:13px;flex-shrink:0}
 #urlinput{
   flex:1;background:none;border:none;outline:none;
-  font-size:13px;color:var(--txt);
+  font-size:14px;color:var(--txt);min-width:0;
 }
 #urlinput::placeholder{color:var(--muted)}
 #gobtn{
-  width:26px;height:26px;border-radius:50%;border:none;
-  background:var(--accent);color:#000;font-size:15px;cursor:pointer;
+  width:30px;height:30px;border-radius:50%;border:none;
+  background:var(--accent);color:#000;font-size:16px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
   transition:transform .12s,filter .12s;
 }
 #gobtn:hover{transform:scale(1.1);filter:brightness(1.1)}
+#gobtn:active{transform:scale(0.96);}
 
 /* ── PROGRESS ── */
 #prog{
@@ -86,7 +91,7 @@ body{display:flex;flex-direction:column}
 #prog.on{opacity:1}
 
 /* ── VIEWPORT ── */
-#vpwrap{flex:1;position:relative;overflow:hidden}
+#vpwrap{flex:1;position:relative;overflow:hidden;-webkit-overflow-scrolling:touch}
 .frame{position:absolute;inset:0;width:100%;height:100%;border:none;display:none}
 .frame.active{display:block}
 
@@ -95,6 +100,7 @@ body{display:flex;flex-direction:column}
   position:absolute;inset:0;display:none;
   flex-direction:column;align-items:center;justify-content:center;
   gap:26px;background:var(--bg);overflow-y:auto;padding:40px 20px;
+  -webkit-overflow-scrolling:touch;
 }
 .ntp.active{display:flex}
 .ntp-logo{
@@ -111,24 +117,27 @@ body{display:flex;flex-direction:column}
   transition:border-color .2s,box-shadow .2s;
 }
 .ntp-search:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px #00e5b012}
-.ntp-search input{flex:1;background:none;border:none;outline:none;font-size:15px;color:var(--txt)}
+.ntp-search input{flex:1;background:none;border:none;outline:none;font-size:16px;color:var(--txt);min-width:0}
 .ntp-search input::placeholder{color:var(--muted)}
 .ntp-search button{
   background:var(--accent);border:none;cursor:pointer;
-  width:34px;height:34px;border-radius:50%;
+  width:36px;height:36px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  color:#000;font-size:16px;font-weight:700;flex-shrink:0;
+  color:#000;font-size:18px;font-weight:700;flex-shrink:0;
   transition:transform .12s,filter .12s;
 }
 .ntp-search button:hover{transform:scale(1.08);filter:brightness(1.1)}
+.ntp-search button:active{transform:scale(0.96);}
 .ql{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;width:min(640px,95vw)}
 .ql-item{
   display:flex;flex-direction:column;align-items:center;gap:8px;
   padding:16px 10px 12px;background:var(--surface);border:1px solid var(--border);
   border-radius:14px;cursor:pointer;text-decoration:none;color:var(--txt);
   transition:border-color .15s,transform .15s,background .15s;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 }
 .ql-item:hover{border-color:var(--accent);background:#0f211e;transform:translateY(-3px)}
+.ql-item:active{background:#0f211e;transform:translateY(-1px);}
 .ql-item .ico{font-size:26px;line-height:1}
 .ql-item .lbl{font-size:11.5px;color:var(--muted);text-align:center}
 
@@ -137,6 +146,7 @@ body{display:flex;flex-direction:column}
   position:absolute;inset:0;display:none;
   flex-direction:column;align-items:center;justify-content:center;
   gap:16px;background:var(--bg);text-align:center;padding:30px;
+  -webkit-overflow-scrolling:touch;
 }
 .blocked.active{display:flex}
 .blocked .b-icon{font-size:52px}
@@ -144,11 +154,13 @@ body{display:flex;flex-direction:column}
 .blocked p{font-size:13px;color:var(--muted);max-width:380px;line-height:1.7}
 .retry-proxy{
   background:var(--accent);border:none;cursor:pointer;
-  padding:11px 24px;border-radius:999px;
-  color:#000;font-size:14px;font-weight:700;
+  padding:12px 26px;border-radius:999px;
+  color:#000;font-size:15px;font-weight:700;
   transition:transform .12s,filter .12s;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 }
 .retry-proxy:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.retry-proxy:active{transform:translateY(0px);}
 .blocked .note{font-size:11px;color:var(--muted);max-width:360px;line-height:1.6;
   background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
 </style>
@@ -160,13 +172,13 @@ body{display:flex;flex-direction:column}
 </div>
 
 <div id="navbar">
-  <button class="nbtn" id="btn-back">&#8592;</button>
-  <button class="nbtn" id="btn-fwd">&#8594;</button>
-  <button class="nbtn" id="btn-reload">&#8635;</button>
-  <button class="nbtn" id="btn-home">&#8962;</button>
+  <button class="nbtn" id="btn-back">←</button>
+  <button class="nbtn" id="btn-fwd">→</button>
+  <button class="nbtn" id="btn-reload">↻</button>
+  <button class="nbtn" id="btn-home">⌂</button>
   <div id="urlbar">
     <span id="lock">🔍</span>
-    <input id="urlinput" placeholder="Search or enter address… (try poxel.io)" autocomplete="off" spellcheck="false"/>
+    <input id="urlinput" placeholder="Search or enter address... (try poxel.io)" autocomplete="off" spellcheck="false"/>
     <button id="gobtn">→</button>
   </div>
 </div>
@@ -176,18 +188,9 @@ body{display:flex;flex-direction:column}
 
 <script>
 // ─── PROXY: strips X-Frame-Options so blocked sites can embed ───────────────
-// We use allorigins.win — a public CORS/frame proxy
-// For game sites like poxel.io we load the actual URL directly first,
-// and fall back to the proxy if blocked.
 const PROXIES = [
   url => `https://www.google.com/search?q=${encodeURIComponent(url)}`, // placeholder, not used
 ];
-
-// Actually for iframe embedding, the best approach is:
-// 1. Try direct load
-// 2. On block, use corsproxy / iframe-friendly URL rewriter
-// But since we can't truly detect X-Frame-Options client-side before load,
-// we'll use a smarter heuristic: known-blocked domains go straight to proxy.
 
 const KNOWN_BLOCKED = [
   'google.com','youtube.com','facebook.com','instagram.com',
@@ -196,10 +199,15 @@ const KNOWN_BLOCKED = [
   'discord.com','whatsapp.com','telegram.org','github.com',
 ];
 
-// Public iframe proxies (strip X-Frame-Options)
+// Alternative proxies for better iPad compatibility
 function proxyUrl(url) {
-  // Use corsproxy.io which works well for games
+  // Try multiple proxy options
   return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+}
+
+// Backup proxy if the main one fails
+function backupProxyUrl(url) {
+  return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
 }
 
 function isKnownBlocked(url) {
@@ -264,6 +272,7 @@ function newTab(url=null) {
   fr.allow = 'fullscreen; autoplay; gamepad';
   fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock allow-top-navigation-by-user-activation');
   fr.addEventListener('load', () => { onFrameLoad(id); });
+  fr.addEventListener('error', () => { showBlocked(id); });
   vp.appendChild(fr);
 
   // blocked notice
@@ -271,10 +280,11 @@ function newTab(url=null) {
   bl.className = 'blocked'; bl.id = 'bl-'+id;
   bl.innerHTML = `
     <div class="b-icon">🔒</div>
-    <h2>Site blocked embedding</h2>
-    <p>This site has security headers that prevent iframe embedding. Trying via proxy may help.</p>
-    <button class="retry-proxy" data-blid="${id}">⚡ Try via Proxy</button>
-    <div class="note">Proxy strips X-Frame-Options headers so the site can load inside Kyan. Works for most game sites.</div>`;
+    <h2>Site Blocked</h2>
+    <p>This site can't be embedded directly. Try using the proxy.</p>
+    <button class="retry-proxy" data-blid="${id}">⚡ Try Proxy</button>
+    <button class="retry-proxy" data-blid="${id}" data-backup="true">🔁 Try Backup Proxy</button>
+    <div class="note">Proxies strip X-Frame-Options headers so the site can load inside Kyan.</div>`;
   vp.appendChild(bl);
 
   activate(id);
@@ -286,14 +296,18 @@ function onFrameLoad(id) {
   endProg();
   const t = tabs.find(x=>x.id===id); if(!t) return;
   t.loading = false;
-  // Try to detect if it's a blank/error page
+  
+  // Try to get the actual URL from the iframe
   try {
     const fr = document.getElementById('fr-'+id);
     const href = fr.contentWindow?.location?.href;
-    if (href === 'about:blank') return; // initial empty load, ignore
+    if (href && href !== 'about:blank') {
+      t.url = href;
+    }
   } catch(e) {
-    // Cross-origin = loaded successfully (can't read, that's fine)
+    // Cross-origin - can't access, but that's fine
   }
+  
   renderTabs();
   updateUrlBar();
 }
@@ -312,7 +326,14 @@ function activate(id) {
 
 // ─── CLOSE TAB ──────────────────────────────────────────────────────────────
 function closeTab(id) {
-  if (tabs.length === 1) { tabs=[]; counter=0; newTab(); return; }
+  if (tabs.length === 1) { 
+    // Clear all and create new tab
+    tabs.forEach(t => {
+      ['ntp-','fr-','bl-'].forEach(p => document.getElementById(p+t.id)?.remove());
+    });
+    tabs=[]; counter=0; newTab(); 
+    return; 
+  }
   const idx = tabs.findIndex(t=>t.id===id);
   tabs.splice(idx,1);
   ['ntp-','fr-','bl-'].forEach(p => document.getElementById(p+id)?.remove());
@@ -321,7 +342,7 @@ function closeTab(id) {
 }
 
 // ─── NAVIGATE ───────────────────────────────────────────────────────────────
-function navigate(id, rawUrl, forceProxy=false) {
+function navigate(id, rawUrl, forceProxy=false, useBackupProxy=false) {
   const t = tabs.find(x=>x.id===id); if(!t) return;
 
   const url = rawUrl;
@@ -331,7 +352,10 @@ function navigate(id, rawUrl, forceProxy=false) {
   const useProxy = forceProxy || isKnownBlocked(url);
   t.usingProxy = useProxy;
 
-  const loadUrl = useProxy ? proxyUrl(url) : url;
+  let loadUrl = url;
+  if (useProxy) {
+    loadUrl = useBackupProxy ? backupProxyUrl(url) : proxyUrl(url);
+  }
 
   vp.querySelectorAll('.ntp,.frame,.blocked').forEach(e=>e.classList.remove('active'));
   const fr = document.getElementById('fr-'+id);
@@ -340,25 +364,14 @@ function navigate(id, rawUrl, forceProxy=false) {
 
   // Clear old src first to force reload
   fr.src = 'about:blank';
-  setTimeout(() => { fr.src = loadUrl; }, 50);
+  
+  // Use setTimeout to ensure clean reload
+  setTimeout(() => { 
+    fr.src = loadUrl; 
+  }, 50);
 
-  // If not using proxy, set a timeout to detect block
-  if (!useProxy) {
-    const checkTimer = setTimeout(() => {
-      try {
-        const href = fr.contentWindow?.location?.href;
-        // If we reach here and href is 'about:blank' still, it might be blocked
-        if (href === 'about:blank') showBlocked(id);
-      } catch(e) {
-        // Cross-origin means it loaded! Don't show blocked.
-      }
-    }, 5000);
-    fr._checkTimer = checkTimer;
-  }
-
-  fr.onerror = () => { showBlocked(id); };
-
-  renderTabs(); updateUrlBar();
+  renderTabs(); 
+  updateUrlBar();
 }
 
 function showBlocked(id) {
@@ -377,7 +390,8 @@ vp.addEventListener('click', e => {
   if (blBtn) {
     const id = blBtn.dataset.blid;
     const t = tabs.find(x=>x.id===id);
-    if (t?.url) navigate(id, t.url, true);
+    const useBackup = blBtn.dataset.backup === 'true';
+    if (t?.url) navigate(id, t.url, true, useBackup);
     return;
   }
   // quick link
@@ -411,9 +425,23 @@ urlinput.addEventListener('keydown', e=>{ if(e.key==='Enter') goToUrl(e.target.v
 urlinput.addEventListener('focus', ()=>urlinput.select());
 
 // ─── NAV BUTTONS ────────────────────────────────────────────────────────────
-document.getElementById('btn-back').onclick   = ()=>{ try{document.getElementById('fr-'+activeId)?.contentWindow.history.back()}catch(e){} };
-document.getElementById('btn-fwd').onclick    = ()=>{ try{document.getElementById('fr-'+activeId)?.contentWindow.history.forward()}catch(e){} };
-document.getElementById('btn-reload').onclick = ()=>{ const t=tabs.find(x=>x.id===activeId); if(t?.url) navigate(activeId,t.url,t.usingProxy); };
+document.getElementById('btn-back').onclick   = ()=>{ 
+  try{
+    document.getElementById('fr-'+activeId)?.contentWindow.history.back();
+  }catch(e){}
+};
+
+document.getElementById('btn-fwd').onclick    = ()=>{ 
+  try{
+    document.getElementById('fr-'+activeId)?.contentWindow.history.forward();
+  }catch(e){}
+};
+
+document.getElementById('btn-reload').onclick = ()=>{ 
+  const t=tabs.find(x=>x.id===activeId); 
+  if(t?.url) navigate(activeId,t.url,t.usingProxy); 
+};
+
 document.getElementById('btn-home').onclick   = ()=>{
   const t=tabs.find(x=>x.id===activeId); if(!t)return;
   t.url=null;t.blocked=false;
@@ -421,6 +449,7 @@ document.getElementById('btn-home').onclick   = ()=>{
   document.getElementById('ntp-'+activeId)?.classList.add('active');
   updateUrlBar();
 };
+
 addBtn.onclick = ()=>newTab();
 
 // ─── NTP ────────────────────────────────────────────────────────────────────
@@ -447,13 +476,47 @@ function buildNTP(id) {
     <div class="ntp-logo">Kyan</div>
     <div class="ntp-sub">Good ${tod} — where to?</div>
     <div class="ntp-search">
-      <input type="text" placeholder="Search or enter address…" autocomplete="off" spellcheck="false" data-ntpid="${id}"/>
+      <input type="text" placeholder="Search or enter address..." autocomplete="off" spellcheck="false" data-ntpid="${id}"/>
       <button data-ntpid="${id}">→</button>
     </div>
     <div class="ql">${ql}</div>`;
 }
 
+// ─── iPad specific fixes ────────────────────────────────────────────────────
+function fixForIPad() {
+  // Detect iPad
+  const isIPad = navigator.userAgent.includes('iPad') || 
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  if (isIPad) {
+    // Add iPad-specific class
+    document.body.classList.add('ipad');
+    
+    // Fix for iPad keyboard
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+      input.addEventListener('touchstart', (e) => {
+        // Small delay to ensure keyboard appears
+        setTimeout(() => {
+          input.focus();
+        }, 100);
+      });
+    });
+  }
+}
+
+// Handle touch events properly
+document.addEventListener('touchstart', (e) => {
+  // Prevent default only on buttons to avoid zoom
+  if (e.target.closest('button') || e.target.closest('.tab') || e.target.closest('.ql-item')) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
+// Fix encoding issues by ensuring all text is properly handled
+document.charset = 'UTF-8';
+fixForIPad();
 newTab();
 </script>
 </body>
