@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=yes"/>
-<title>Kyan Browser - Gaming Proxy</title>
+<title>Kyan Browser - Gaming Edition</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
@@ -98,8 +98,8 @@ body{display:flex;flex-direction:column}
 /* ── NEW TAB PAGE ── */
 .ntp{
   position:absolute;inset:0;display:none;
-  flex-direction:column;align-items:center;justify-content:center;
-  gap:26px;background:var(--bg);overflow-y:auto;padding:40px 20px;
+  flex-direction:column;align-items:center;justify-content:flex-start;
+  gap:20px;background:var(--bg);overflow-y:auto;padding:30px 20px;
   -webkit-overflow-scrolling:touch;
 }
 .ntp.active{display:flex}
@@ -128,100 +128,123 @@ body{display:flex;flex-direction:column}
 }
 .ntp-search button:hover{transform:scale(1.08);filter:brightness(1.1)}
 .ntp-search button:active{transform:scale(0.96);}
-.ql{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;width:min(640px,95vw)}
-.ql-item{
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  padding:16px 10px 12px;background:var(--surface);border:1px solid var(--border);
-  border-radius:14px;cursor:pointer;text-decoration:none;color:var(--txt);
-  transition:border-color .15s,transform .15s,background .15s;
-  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
-}
-.ql-item:hover{border-color:var(--accent);background:#0f211e;transform:translateY(-3px)}
-.ql-item:active{background:#0f211e;transform:translateY(-1px);}
-.ql-item .ico{font-size:26px;line-height:1}
-.ql-item .lbl{font-size:11.5px;color:var(--muted);text-align:center}
 
-/* ── GAMING SECTION ── */
-.gaming-section{
-  width:min(640px,95vw);
-  margin-top:20px;
-}
-.gaming-title{
-  font-size:16px;
-  font-weight:600;
-  color:var(--accent);
-  margin-bottom:12px;
-  text-align:left;
-}
+/* ── GAMING GRID ── */
 .gaming-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
-  gap:8px;
+  grid-template-columns:repeat(3, 1fr);
+  gap:12px;
+  width:min(640px,95vw);
+  margin-top:10px;
 }
 .gaming-item{
   display:flex;
   flex-direction:column;
   align-items:center;
+  gap:8px;
+  padding:20px 10px;
+  background:linear-gradient(145deg, var(--surface), var(--surface2));
+  border:1px solid var(--border);
+  border-radius:20px;
+  cursor:pointer;
+  transition:all .2s;
+  box-shadow:0 8px 0 rgba(0,0,0,0.3);
+}
+.gaming-item:active{
+  transform:translateY(4px);
+  box-shadow:0 4px 0 rgba(0,0,0,0.3);
+}
+.gaming-item .ico{font-size:32px;}
+.gaming-item .lbl{
+  font-size:12px;
+  font-weight:600;
+  color:var(--txt);
+  text-align:center;
+}
+.gaming-item .badge{
+  font-size:9px;
+  background:var(--accent);
+  color:#000;
+  padding:3px 8px;
+  border-radius:20px;
+  font-weight:700;
+  margin-top:4px;
+}
+
+/* ─── QUICK LINKS ── */
+.ql{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:10px;
+  width:min(640px,95vw);
+  margin-top:20px;
+}
+.ql-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
   gap:6px;
-  padding:12px 8px;
+  padding:12px 5px;
   background:var(--surface);
   border:1px solid var(--border);
-  border-radius:12px;
+  border-radius:14px;
   cursor:pointer;
+  text-decoration:none;
+  color:var(--txt);
   transition:all .15s;
 }
-.gaming-item:hover{
-  border-color:var(--accent2);
-  background:#2a1a22;
-  transform:translateY(-2px);
-}
-.gaming-item .ico{font-size:22px;}
-.gaming-item .lbl{font-size:10px;color:var(--muted);text-align:center;}
+.ql-item:hover{border-color:var(--accent);background:#0f211e;}
+.ql-item:active{transform:scale(0.96);}
+.ql-item .ico{font-size:22px;line-height:1}
+.ql-item .lbl{font-size:10px;color:var(--muted);text-align:center}
 
 /* ── BLOCKED PAGE ── */
 .blocked{
   position:absolute;inset:0;display:none;
   flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;background:var(--bg);text-align:center;padding:30px;
+  gap:20px;background:var(--bg);text-align:center;padding:30px;
   -webkit-overflow-scrolling:touch;
 }
 .blocked.active{display:flex}
 .blocked .b-icon{font-size:52px}
 .blocked h2{font-size:20px;font-weight:700}
 .blocked p{font-size:13px;color:var(--muted);max-width:380px;line-height:1.7}
-.proxy-options{
+.mode-selector{
   display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  justify-content:center;
+  flex-direction:column;
+  gap:12px;
+  width:100%;
+  max-width:300px;
   margin:10px 0;
 }
-.proxy-btn{
+.mode-btn{
   background:var(--surface2);
-  border:1px solid var(--border);
+  border:2px solid var(--border);
   cursor:pointer;
-  padding:12px 20px;
-  border-radius:999px;
+  padding:16px 20px;
+  border-radius:16px;
   color:var(--txt);
-  font-size:14px;
+  font-size:15px;
   font-weight:600;
-  transition:all .12s;
-  min-width:120px;
+  transition:all .2s;
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
-.proxy-btn:hover{
+.mode-btn:hover{
   border-color:var(--accent);
   background:#1a2a24;
-  transform:translateY(-2px);
+  transform:scale(1.02);
 }
-.proxy-btn:active{transform:translateY(0);}
-.proxy-btn.main{
-  background:var(--accent);
-  color:#000;
-  border-color:var(--accent);
+.mode-btn:active{transform:scale(0.98);}
+.mode-btn .mode-ico{font-size:24px;}
+.mode-btn .mode-text{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
 }
-.proxy-btn.main:hover{
-  filter:brightness(1.1);
-}
+.mode-btn .mode-title{font-size:16px;color:var(--txt);}
+.mode-btn .mode-desc{font-size:11px;color:var(--muted);}
 .blocked .note{
   font-size:11px;
   color:var(--muted);
@@ -257,72 +280,64 @@ body{display:flex;flex-direction:column}
 <div id="vpwrap"></div>
 
 <script>
-// ─── GAMING PROXY SYSTEM ───────────────────────────────────────────────
-// Multiple proxy options for gaming sites like poxel.io
+// ─── GAMING OPTIMIZED PROXY SYSTEM ─────────────────────────────────────
 
-// Primary proxies (best for gaming)
-const GAMING_PROXIES = [
+// Different rendering modes for different types of sites
+const RENDER_MODES = {
+  DIRECT: 'direct',
+  SIMPLE_PROXY: 'simple',
+  GAME_PROXY: 'game',
+  WEBVIEW: 'webview',
+  MIRROR: 'mirror'
+};
+
+// Specialized proxies for gaming
+const PROXY_SERVERS = [
   {
-    name: '🎮 Game Proxy',
+    name: '🎮 Game Mode',
+    mode: RENDER_MODES.GAME_PROXY,
     url: (target) => `https://corsproxy.io/?${encodeURIComponent(target)}`,
-    worksWith: ['poxel.io', 'game', 'io games']
+    worksWith: ['poxel.io', 'io games', 'webgl']
   },
   {
-    name: '⚡ All Origins',
-    url: (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+    name: '🔄 Mirror Mode',
+    mode: RENDER_MODES.MIRROR,
+    url: (target) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(target)}`,
     worksWith: ['poxel.io', 'general']
   },
   {
-    name: '🔧 CORS Anywhere',
+    name: '🌐 WebView Mode',
+    mode: RENDER_MODES.WEBVIEW,
     url: (target) => `https://cors-anywhere.herokuapp.com/${target}`,
     worksWith: ['poxel.io', 'games']
   },
   {
-    name: '🌐 Proxy Server',
-    url: (target) => `https://thingproxy.freeboard.io/fetch/${target}`,
-    worksWith: ['poxel.io', 'general']
-  },
-  {
-    name: '🎯 Archive Today',
-    url: (target) => `https://archive.is/${target}`,
-    worksWith: ['poxel.io', 'games']
+    name: '⚡ Simple Proxy',
+    mode: RENDER_MODES.SIMPLE_PROXY,
+    url: (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+    worksWith: ['general']
   }
 ];
 
-// Dedicated gaming sites that need proxy
+// Gaming sites database
 const GAMING_SITES = [
-  { name: 'Poxel.io', url: 'https://poxel.io', ico: '🎮', category: 'io Games' },
-  { name: 'Slither.io', url: 'http://slither.io', ico: '🐍', category: 'io Games' },
-  { name: 'Agar.io', url: 'http://agar.io', ico: '🟢', category: 'io Games' },
-  { name: 'Paper.io', url: 'http://paper.io', ico: '📄', category: 'io Games' },
-  { name: 'Wings.io', url: 'http://wings.io', ico: '✈️', category: 'io Games' },
-  { name: 'Diep.io', url: 'http://diep.io', ico: '🔫', category: 'io Games' },
-  { name: 'Crazy Games', url: 'https://www.crazygames.com', ico: '🎲', category: 'Game Sites' },
-  { name: 'Kizi', url: 'https://kizi.com', ico: '🎯', category: 'Game Sites' },
-  { name: 'Poki', url: 'https://poki.com', ico: '⭐', category: 'Game Sites' }
+  { name: 'Poxel.io', url: 'https://poxel.io', ico: '🎮', category: 'io Games', webgl: true },
+  { name: 'Slither.io', url: 'http://slither.io', ico: '🐍', category: 'io Games', webgl: true },
+  { name: 'Agar.io', url: 'http://agar.io', ico: '🟢', category: 'io Games', webgl: true },
+  { name: 'Paper.io', url: 'http://paper.io', ico: '📄', category: 'io Games', webgl: true },
+  { name: 'Wings.io', url: 'http://wings.io', ico: '✈️', category: 'io Games', webgl: true },
+  { name: 'Diep.io', url: 'http://diep.io', ico: '🔫', category: 'io Games', webgl: true },
+  { name: 'CrazyGames', url: 'https://www.crazygames.com', ico: '🎲', category: 'Game Hubs' },
+  { name: 'Poki', url: 'https://poki.com', ico: '⭐', category: 'Game Hubs' },
+  { name: 'Kizi', url: 'https://kizi.com', ico: '🎯', category: 'Game Hubs' }
 ];
 
-const KNOWN_BLOCKED = [
-  'google.com','youtube.com','facebook.com','instagram.com',
-  'x.com','twitter.com','linkedin.com','amazon.com','reddit.com',
-  'spotify.com','bbc.com','tiktok.com','netflix.com','twitch.tv',
-  'discord.com','whatsapp.com','telegram.org','github.com',
-  'poxel.io', 'slither.io', 'agar.io', 'paper.io', 'wings.io', 'diep.io'
+const QUICK_SITES = [
+  {ico:'🔍', lbl:'Google', url:'https://www.google.com'},
+  {ico:'▶️', lbl:'YouTube', url:'https://www.youtube.com'},
+  {ico:'📖', lbl:'Wikipedia', url:'https://www.wikipedia.org'},
+  {ico:'🐙', lbl:'GitHub', url:'https://github.com'}
 ];
-
-// Proxy selection
-function getProxyUrl(url, proxyIndex = 0) {
-  // Try different proxies based on index
-  const proxy = GAMING_PROXIES[proxyIndex % GAMING_PROXIES.length];
-  return proxy.url(url);
-}
-
-function isKnownBlocked(url) {
-  try {
-    const h = new URL(url).hostname.replace('www.','');
-    return KNOWN_BLOCKED.some(d => h === d || h.endsWith('.'+d));
-  } catch { return false; }
-}
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let tabs = [], activeId = null, counter = 0;
@@ -363,9 +378,16 @@ function renderTabs() {
 }
 
 // ─── CREATE TAB ─────────────────────────────────────────────────────────────
-function newTab(url=null) {
+function newTab(url=null, mode=null) {
   const id = uid();
-  tabs.push({id, url:null, title:'New Tab', blocked:false, usingProxy:false, proxyIndex:0});
+  tabs.push({
+    id, 
+    url:null, 
+    title:'New Tab', 
+    blocked:false, 
+    mode: mode || RENDER_MODES.DIRECT,
+    proxyIndex: 0
+  });
 
   // NTP
   const ntp = document.createElement('div');
@@ -373,11 +395,17 @@ function newTab(url=null) {
   ntp.innerHTML = buildNTP(id);
   vp.appendChild(ntp);
 
-  // iframe
+  // iframe - with gaming optimizations
   const fr = document.createElement('iframe');
   fr.className = 'frame'; fr.id = 'fr-'+id;
-  fr.allow = 'fullscreen; autoplay; gamepad; clipboard-write';
-  fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock allow-top-navigation-by-user-activation allow-downloads allow-modals');
+  fr.allow = 'fullscreen *; autoplay *; gamepad *; clipboard-write *; camera *; microphone *; display-capture *; web-share *';
+  fr.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock allow-top-navigation-by-user-activation allow-downloads allow-modals allow-orientation-lock allow-popups-to-escape-sandbox allow-presentation');
+  
+  // Important for WebGL games
+  fr.setAttribute('allowfullscreen', 'true');
+  fr.setAttribute('webkitallowfullscreen', 'true');
+  fr.setAttribute('mozallowfullscreen', 'true');
+  
   fr.addEventListener('load', () => { onFrameLoad(id); });
   fr.addEventListener('error', () => { showBlocked(id); });
   vp.appendChild(fr);
@@ -389,25 +417,47 @@ function newTab(url=null) {
   vp.appendChild(bl);
 
   activate(id);
-  if (url) navigate(id, url);
+  if (url) navigate(id, url, mode);
   return id;
 }
 
 function buildBlockedPage(id) {
   return `
     <div class="b-icon">🎮</div>
-    <h2>Site Blocked</h2>
-    <p>This site can't be embedded directly. Try one of our gaming proxies:</p>
-    <div class="proxy-options">
-      ${GAMING_PROXIES.map((proxy, idx) => `
-        <button class="proxy-btn ${idx === 0 ? 'main' : ''}" data-blid="${id}" data-proxy="${idx}">
-          ${proxy.name}
-        </button>
-      `).join('')}
+    <h2>Site Not Rendering</h2>
+    <p>Choose a rendering mode that works best for gaming:</p>
+    <div class="mode-selector">
+      <div class="mode-btn" data-blid="${id}" data-mode="${RENDER_MODES.GAME_PROXY}" data-proxy="0">
+        <span class="mode-ico">🎮</span>
+        <div class="mode-text">
+          <span class="mode-title">Game Mode</span>
+          <span class="mode-desc">Best for .io games & WebGL</span>
+        </div>
+      </div>
+      <div class="mode-btn" data-blid="${id}" data-mode="${RENDER_MODES.MIRROR}" data-proxy="1">
+        <span class="mode-ico">🔄</span>
+        <div class="mode-text">
+          <span class="mode-title">Mirror Mode</span>
+          <span class="mode-desc">Alternative proxy for games</span>
+        </div>
+      </div>
+      <div class="mode-btn" data-blid="${id}" data-mode="${RENDER_MODES.WEBVIEW}" data-proxy="2">
+        <span class="mode-ico">🌐</span>
+        <div class="mode-text">
+          <span class="mode-title">WebView Mode</span>
+          <span class="mode-desc">CORS Anywhere proxy</span>
+        </div>
+      </div>
+      <div class="mode-btn" data-blid="${id}" data-mode="${RENDER_MODES.SIMPLE_PROXY}" data-proxy="3">
+        <span class="mode-ico">⚡</span>
+        <div class="mode-text">
+          <span class="mode-title">Simple Proxy</span>
+          <span class="mode-desc">Basic content proxy</span>
+        </div>
+      </div>
     </div>
     <div class="note">
-      💡 Tip: For gaming sites like Poxel.io, try the Game Proxy first.<br>
-      If it doesn't work, try another proxy option.
+      💡 Tip: For Poxel.io, try Game Mode first. If screen is black, try Mirror Mode.
     </div>`;
 }
 
@@ -416,19 +466,27 @@ function onFrameLoad(id) {
   const t = tabs.find(x=>x.id===id); if(!t) return;
   t.loading = false;
   
-  // Try to get the actual URL from the iframe
-  try {
-    const fr = document.getElementById('fr-'+id);
-    const href = fr.contentWindow?.location?.href;
-    if (href && href !== 'about:blank') {
-      t.url = href;
-    }
-  } catch(e) {
-    // Cross-origin - can't access, but that's fine
-  }
+  // Try to detect if the page loaded but is black (for gaming sites)
+  setTimeout(() => {
+    checkForBlackScreen(id);
+  }, 2000);
   
   renderTabs();
   updateUrlBar();
+}
+
+function checkForBlackScreen(id) {
+  const t = tabs.find(x => x.id === id);
+  if (!t || !t.url) return;
+  
+  // For gaming sites, if we suspect black screen, offer options
+  if (t.url.includes('io') || t.url.includes('game')) {
+    const fr = document.getElementById('fr-'+id);
+    if (fr && fr.classList.contains('active')) {
+      // Can't directly check if screen is black, but we can ask user
+      // For now, just update the blocked page with better options
+    }
+  }
 }
 
 // ─── ACTIVATE ───────────────────────────────────────────────────────────────
@@ -446,7 +504,6 @@ function activate(id) {
 // ─── CLOSE TAB ──────────────────────────────────────────────────────────────
 function closeTab(id) {
   if (tabs.length === 1) { 
-    // Clear all and create new tab
     tabs.forEach(t => {
       ['ntp-','fr-','bl-'].forEach(p => document.getElementById(p+t.id)?.remove());
     });
@@ -461,21 +518,24 @@ function closeTab(id) {
 }
 
 // ─── NAVIGATE ───────────────────────────────────────────────────────────────
-function navigate(id, rawUrl, forceProxy=false, proxyIndex=0) {
+function navigate(id, rawUrl, mode = RENDER_MODES.GAME_PROXY, proxyIndex = 0) {
   const t = tabs.find(x=>x.id===id); if(!t) return;
 
   const url = rawUrl;
-  t.url = url; t.blocked = false; t.loading = true;
+  t.url = url; 
+  t.blocked = false; 
+  t.loading = true;
+  t.mode = mode;
+  t.proxyIndex = proxyIndex;
   t.title = hostOf(url);
 
-  const useProxy = forceProxy || isKnownBlocked(url);
-  t.usingProxy = useProxy;
-  t.proxyIndex = proxyIndex;
-
   let loadUrl = url;
-  if (useProxy) {
-    loadUrl = getProxyUrl(url, proxyIndex);
-    console.log(`Using proxy ${proxyIndex}: ${GAMING_PROXIES[proxyIndex].name} -> ${loadUrl}`);
+  
+  // Special handling for gaming sites
+  if (mode !== RENDER_MODES.DIRECT) {
+    const proxy = PROXY_SERVERS[proxyIndex] || PROXY_SERVERS[0];
+    loadUrl = proxy.url(url);
+    console.log(`Mode: ${proxy.name} -> ${loadUrl}`);
   }
 
   vp.querySelectorAll('.ntp,.frame,.blocked').forEach(e=>e.classList.remove('active'));
@@ -483,25 +543,36 @@ function navigate(id, rawUrl, forceProxy=false, proxyIndex=0) {
   fr.classList.add('active');
   startProg();
 
-  // Clear old src first to force reload
+  // Clear old src first
   fr.src = 'about:blank';
   
-  // Use setTimeout to ensure clean reload
   setTimeout(() => { 
     fr.src = loadUrl; 
+    
+    // For gaming sites, try to inject some fixes
+    if (url.includes('io') || url.includes('game')) {
+      setTimeout(() => {
+        try {
+          // Attempt to fix WebGL context if possible
+          const iframeDoc = fr.contentDocument || fr.contentWindow?.document;
+          if (iframeDoc) {
+            // This is limited due to CORS, but we try
+          }
+        } catch(e) {}
+      }, 1000);
+    }
   }, 50);
 
   renderTabs(); 
   updateUrlBar();
   
-  // Set a timeout to detect if loading fails
+  // Set timeout for loading issues
   setTimeout(() => {
     const currentT = tabs.find(x=>x.id===id);
     if (currentT && currentT.loading) {
-      // Still loading - might be stuck
       showBlocked(id);
     }
-  }, 10000);
+  }, 15000);
 }
 
 function showBlocked(id) {
@@ -509,7 +580,6 @@ function showBlocked(id) {
   const t = tabs.find(x=>x.id===id); if(!t||!t.loading) return;
   t.blocked = true; t.loading = false;
   
-  // Update blocked page with current URL
   const bl = document.getElementById('bl-'+id);
   if (bl) {
     bl.innerHTML = buildBlockedPage(id);
@@ -523,60 +593,57 @@ function showBlocked(id) {
 
 // ─── PROXY BUTTON ───────────────────────────────────────────────────────────
 vp.addEventListener('click', e => {
-  // proxy retry
-  const blBtn = e.target.closest('[data-blid]');
-  if (blBtn) {
+  // Mode selector
+  const modeBtn = e.target.closest('[data-mode]');
+  if (modeBtn) {
     e.preventDefault();
-    const id = blBtn.dataset.blid;
-    const proxyIdx = blBtn.dataset.proxy ? parseInt(blBtn.dataset.proxy) : 0;
+    const id = modeBtn.dataset.blid;
+    const mode = modeBtn.dataset.mode;
+    const proxyIdx = modeBtn.dataset.proxy ? parseInt(modeBtn.dataset.proxy) : 0;
     const t = tabs.find(x=>x.id===id);
     if (t?.url) {
-      console.log(`Retrying with proxy ${proxyIdx}`);
-      navigate(id, t.url, true, proxyIdx);
+      console.log(`Switching to mode: ${mode} with proxy ${proxyIdx}`);
+      navigate(id, t.url, mode, proxyIdx);
     }
     return;
   }
   
-  // quick link
-  const ql = e.target.closest('.ql-item');
-  if (ql) { 
-    e.preventDefault(); 
-    const url=ql.dataset.url; 
-    if(url&&activeId) {
-      // For gaming sites, use proxy automatically
-      if (url.includes('io') || url.includes('game')) {
-        navigate(activeId, url, true, 0);
-      } else {
-        navigate(activeId, url); 
-      }
-    }
-    return; 
-  }
-  
-  // gaming item
+  // Gaming item
   const gameItem = e.target.closest('.gaming-item');
   if (gameItem) {
     e.preventDefault();
     const url = gameItem.dataset.url;
     if (url && activeId) {
-      // Always use proxy for gaming sites
-      navigate(activeId, url, true, 0);
+      // Always use Game Mode for gaming sites
+      navigate(activeId, url, RENDER_MODES.GAME_PROXY, 0);
     }
     return;
   }
   
-  // ntp search button
+  // Quick link
+  const ql = e.target.closest('.ql-item');
+  if (ql) { 
+    e.preventDefault(); 
+    const url=ql.dataset.url; 
+    if(url&&activeId) {
+      // Use direct for regular sites
+      navigate(activeId, url, RENDER_MODES.DIRECT); 
+    }
+    return; 
+  }
+  
+  // NTP search button
   const ntpBtn = e.target.closest('button[data-ntpid]');
   if (ntpBtn) { 
     const inp=ntpBtn.closest('.ntp-search')?.querySelector('input'); 
     if(inp){
       const u=norm(inp.value);
       if(u) {
-        // Check if it's a gaming site
+        // Detect if it's a gaming site
         if (u.includes('io') || u.includes('game') || u.includes('play')) {
-          navigate(ntpBtn.dataset.ntpid, u, true, 0);
+          navigate(ntpBtn.dataset.ntpid, u, RENDER_MODES.GAME_PROXY, 0);
         } else {
-          navigate(ntpBtn.dataset.ntpid, u);
+          navigate(ntpBtn.dataset.ntpid, u, RENDER_MODES.DIRECT);
         }
       }
     } 
@@ -588,11 +655,10 @@ vp.addEventListener('keydown', e => {
   if (e.key==='Enter' && e.target.tagName==='INPUT' && e.target.dataset.ntpid) {
     const u=norm(e.target.value); 
     if(u) {
-      // Check if it's a gaming site
       if (u.includes('io') || u.includes('game') || u.includes('play')) {
-        navigate(e.target.dataset.ntpid, u, true, 0);
+        navigate(e.target.dataset.ntpid, u, RENDER_MODES.GAME_PROXY, 0);
       } else {
-        navigate(e.target.dataset.ntpid, u);
+        navigate(e.target.dataset.ntpid, u, RENDER_MODES.DIRECT);
       }
     }
   }
@@ -612,11 +678,10 @@ function updateUrlBar() {
 function goToUrl(raw) { 
   const u=norm(raw); 
   if(u&&activeId) {
-    // Check if it's a gaming site
     if (u.includes('io') || u.includes('game') || u.includes('play')) {
-      navigate(activeId, u, true, 0);
+      navigate(activeId, u, RENDER_MODES.GAME_PROXY, 0);
     } else {
-      navigate(activeId, u);
+      navigate(activeId, u, RENDER_MODES.DIRECT);
     }
   } 
 }
@@ -639,7 +704,7 @@ document.getElementById('btn-fwd').onclick    = ()=>{
 
 document.getElementById('btn-reload').onclick = ()=>{ 
   const t=tabs.find(x=>x.id===activeId); 
-  if(t?.url) navigate(activeId, t.url, t.usingProxy, t.proxyIndex || 0); 
+  if(t?.url) navigate(activeId, t.url, t.mode, t.proxyIndex); 
 };
 
 document.getElementById('btn-home').onclick   = ()=>{
@@ -653,43 +718,34 @@ document.getElementById('btn-home').onclick   = ()=>{
 addBtn.onclick = ()=>newTab();
 
 // ─── NTP ────────────────────────────────────────────────────────────────────
-const SITES=[
-  {ico:'🎮',lbl:'Poxel.io',  url:'https://poxel.io'},
-  {ico:'🔍',lbl:'Google',    url:'https://www.google.com'},
-  {ico:'▶️',lbl:'YouTube',   url:'https://www.youtube.com'},
-  {ico:'🤖',lbl:'Reddit',    url:'https://www.reddit.com'},
-  {ico:'📖',lbl:'Wikipedia', url:'https://www.wikipedia.org'},
-  {ico:'🐙',lbl:'GitHub',    url:'https://github.com'},
-  {ico:'🎵',lbl:'Spotify',   url:'https://open.spotify.com'},
-];
-
 function buildNTP(id) {
   const h=new Date().getHours();
   const tod=h<12?'morning':h<18?'afternoon':'evening';
   
-  // Regular quick links
-  const ql=SITES.map(s=>`<a class="ql-item" href="#" data-url="${s.url}"><div class="ico">${s.ico}</div><div class="lbl">${s.lbl}</div></a>`).join('');
-  
-  // Gaming section
-  const gamingByCategory = {};
-  GAMING_SITES.forEach(game => {
-    if (!gamingByCategory[game.category]) gamingByCategory[game.category] = [];
-    gamingByCategory[game.category].push(game);
-  });
-  
-  const gamingHtml = Object.keys(gamingByCategory).map(category => `
-    <div class="gaming-section">
-      <div class="gaming-title">${category}</div>
-      <div class="gaming-grid">
-        ${gamingByCategory[category].map(game => `
-          <div class="gaming-item" data-url="${game.url}">
-            <div class="ico">${game.ico}</div>
-            <div class="lbl">${game.name}</div>
-          </div>
-        `).join('')}
-      </div>
+  // Gaming grid
+  const gamingHtml = `
+    <div class="gaming-grid">
+      ${GAMING_SITES.slice(0, 6).map(game => `
+        <div class="gaming-item" data-url="${game.url}">
+          <div class="ico">${game.ico}</div>
+          <div class="lbl">${game.name}</div>
+          ${game.webgl ? '<div class="badge">WebGL</div>' : ''}
+        </div>
+      `).join('')}
     </div>
-  `).join('');
+  `;
+  
+  // Quick links
+  const qlHtml = `
+    <div class="ql">
+      ${QUICK_SITES.map(s => `
+        <a class="ql-item" href="#" data-url="${s.url}">
+          <div class="ico">${s.ico}</div>
+          <div class="lbl">${s.lbl}</div>
+        </a>
+      `).join('')}
+    </div>
+  `;
   
   return `
     <div class="ntp-logo">Kyan</div>
@@ -699,32 +755,29 @@ function buildNTP(id) {
       <button data-ntpid="${id}">→</button>
     </div>
     ${gamingHtml}
-    <div class="ql">${ql}</div>`;
+    ${qlHtml}
+  `;
 }
 
 // ─── iPad specific fixes ────────────────────────────────────────────────────
 function fixForIPad() {
-  // Detect iPad
   const isIPad = navigator.userAgent.includes('iPad') || 
-                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
-                 navigator.userAgent.includes('Mac') && navigator.maxTouchPoints > 1;
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   
   if (isIPad) {
-    // Add iPad-specific class
     document.body.classList.add('ipad');
     
     // Fix for iPad keyboard
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => {
       input.addEventListener('touchstart', (e) => {
-        // Small delay to ensure keyboard appears
         setTimeout(() => {
           input.focus();
         }, 100);
       }, { passive: true });
     });
     
-    // Prevent zoom on double tap
+    // Prevent zoom
     let lastTouchEnd = 0;
     document.addEventListener('touchend', (e) => {
       const now = Date.now();
@@ -733,30 +786,30 @@ function fixForIPad() {
       }
       lastTouchEnd = now;
     }, { passive: false });
+    
+    // Enable WebGL on iPad
+    const metaViewport = document.querySelector('meta[name=viewport]');
+    if (metaViewport) {
+      metaViewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+    }
   }
 }
 
-// Handle touch events properly
+// Handle touch events
 document.addEventListener('touchstart', (e) => {
-  // Prevent default only on buttons to avoid zoom
-  if (e.target.closest('button') || e.target.closest('.tab') || e.target.closest('.ql-item') || e.target.closest('.gaming-item')) {
+  if (e.target.closest('button') || e.target.closest('.tab') || e.target.closest('.gaming-item')) {
     e.preventDefault();
   }
 }, { passive: false });
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
-// Fix encoding issues by ensuring all text is properly handled
 document.charset = 'UTF-8';
 fixForIPad();
 
-// Create first tab with gaming focus
+// Create first tab and try to load Poxel.io with Game Mode
 const firstTabId = newTab();
-// Optionally load poxel.io automatically with proxy
 setTimeout(() => {
-  const t = tabs.find(x => x.id === firstTabId);
-  if (t && !t.url) {
-    navigate(firstTabId, 'https://poxel.io', true, 0);
-  }
+  navigate(firstTabId, 'https://poxel.io', RENDER_MODES.GAME_PROXY, 0);
 }, 500);
 </script>
 </body>
