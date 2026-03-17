@@ -2,105 +2,482 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-<title>Kyan Browser - Ultra Edition</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kyan Browser</title>
 <style>
-:root{--bg:#0e0e12;--surface:#13131a;--border:#25252f;--accent:#00e5b0;--txt:#eeeef5;--muted:#4a4a62;}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100dvh;overflow:hidden;font-family:sans-serif;background:var(--bg);color:var(--txt)}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0e12;--surface:#13131a;--surface2:#1a1a24;
+  --border:#25252f;--accent:#00e5b0;--accent2:#ff5e7d;
+  --txt:#eeeef5;--muted:#4a4a62;--bar:#0a0a0e;
+}
+html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt)}
 body{display:flex;flex-direction:column}
 
-/* UI NAVIGATION */
-#navbar{display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface);border-bottom:1px solid var(--border);z-index:100;}
-#urlinput{flex:1;background:var(--bg);border:1px solid var(--border);padding:8px 15px;border-radius:20px;color:#fff;outline:none;}
-.btn{background:var(--accent);border:none;padding:8px 15px;border-radius:20px;font-weight:bold;cursor:pointer;}
-
-/* THE VIEWPORT */
-#vpwrap{flex:1;position:relative;background:#000;}
-iframe{
-    position:absolute;inset:0;width:100%;height:100%;border:none;
-    background:#000;display:none;
-    /* Hardware acceleration fix */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+/* ── TABS ── */
+#tabstrip{
+  display:flex;align-items:center;
+  background:var(--bar);border-bottom:1px solid var(--border);
+  padding:6px 10px 0;gap:4px;height:42px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;
 }
-iframe.active{display:block;}
+#tabstrip::-webkit-scrollbar{display:none}
+.tab{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 12px 7px;border-radius:8px 8px 0 0;
+  background:transparent;border:1px solid transparent;border-bottom:none;
+  cursor:pointer;font-size:12px;color:var(--muted);
+  white-space:nowrap;max-width:160px;min-width:80px;
+  transition:background .12s,color .12s;flex-shrink:0;
+}
+.tab:hover{background:var(--surface);color:var(--txt)}
+.tab.active{background:var(--surface);color:var(--txt);border-color:var(--border)}
+.tab img{width:13px;height:13px;border-radius:3px;flex-shrink:0}
+.tab-lbl{flex:1;overflow:hidden;text-overflow:ellipsis}
+.tab-x{font-size:11px;color:var(--muted);flex-shrink:0;padding:1px 4px;border-radius:4px;transition:background .1s,color .1s}
+.tab-x:hover{background:#ff5e7d22;color:var(--accent2)}
+#add-tab{
+  width:28px;height:28px;border-radius:7px;border:none;
+  background:transparent;color:var(--muted);font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:center;
+  transition:background .12s,color .12s;
+}
+#add-tab:hover{background:var(--surface2);color:var(--txt)}
 
-/* NEW TAB PAGE */
-#ntp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:10;}
-.ntp-logo{font-size:50px;font-weight:800;color:var(--accent);text-shadow:0 0 20px rgba(0,229,176,0.3);}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;width:90%;max-width:400px;}
-.g-item{background:var(--surface);padding:20px;border-radius:15px;text-align:center;border:1px solid var(--border);}
+/* ── NAVBAR ── */
+#navbar{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.nbtn{
+  width:32px;height:32px;border-radius:8px;border:none;
+  background:transparent;color:var(--muted);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s,color .12s;flex-shrink:0;
+}
+.nbtn:hover:not(:disabled){background:var(--surface2);color:var(--txt)}
+.nbtn:disabled{opacity:.25;cursor:default}
+#urlbar{
+  flex:1;display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:999px;padding:0 8px 0 14px;height:36px;
+  transition:border-color .2s,box-shadow .2s;
+}
+#urlbar:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px #00e5b015}
+#lock{font-size:12px;flex-shrink:0}
+#urlinput{
+  flex:1;background:none;border:none;outline:none;
+  font-size:13px;color:var(--txt);
+}
+#urlinput::placeholder{color:var(--muted)}
+#gobtn{
+  width:26px;height:26px;border-radius:50%;border:none;
+  background:var(--accent);color:#000;font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform .12s,filter .12s;
+}
+#gobtn:hover{transform:scale(1.1);filter:brightness(1.1)}
+
+/* ── PROGRESS ── */
+#prog{
+  height:2px;background:linear-gradient(90deg,var(--accent),#6ee7ff);
+  width:0%;opacity:0;transition:width .25s,opacity .2s;flex-shrink:0;
+}
+#prog.on{opacity:1}
+
+/* ── VIEWPORT ── */
+#vpwrap{flex:1;position:relative;overflow:hidden}
+.frame{position:absolute;inset:0;width:100%;height:100%;border:none;display:none}
+.frame.active{display:block}
+
+/* ── NEW TAB PAGE ── */
+.ntp{
+  position:absolute;inset:0;display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:26px;background:var(--bg);overflow-y:auto;padding:40px 20px;
+}
+.ntp.active{display:flex}
+.ntp-logo{
+  font-size:48px;font-weight:800;letter-spacing:-2px;
+  background:linear-gradient(120deg,var(--accent),#6ee7ff,var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;
+}
+.ntp-sub{font-size:13px;color:var(--muted);margin-top:-16px}
+.ntp-search{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:999px;padding:0 8px 0 20px;
+  width:min(540px,95vw);height:50px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.ntp-search:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px #00e5b012}
+.ntp-search input{flex:1;background:none;border:none;outline:none;font-size:15px;color:var(--txt)}
+.ntp-search input::placeholder{color:var(--muted)}
+.ntp-search button{
+  background:var(--accent);border:none;cursor:pointer;
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:#000;font-size:16px;font-weight:700;flex-shrink:0;
+  transition:transform .12s,filter .12s;
+}
+.ntp-search button:hover{transform:scale(1.08);filter:brightness(1.1)}
+.ql{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;width:min(640px,95vw)}
+.ql-item{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:16px 10px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;cursor:pointer;text-decoration:none;color:var(--txt);
+  transition:border-color .15s,transform .15s,background .15s;
+}
+.ql-item:hover{border-color:var(--accent);background:#0f211e;transform:translateY(-3px)}
+.ql-item .ico{font-size:26px;line-height:1}
+.ql-item .lbl{font-size:11.5px;color:var(--muted);text-align:center}
+
+/* ── BLOCKED PAGE ── */
+.blocked{
+  position:absolute;inset:0;display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;background:var(--bg);text-align:center;padding:30px;
+}
+.blocked.active{display:flex}
+.blocked .b-icon{font-size:52px}
+.blocked h2{font-size:20px;font-weight:700}
+.blocked p{font-size:13px;color:var(--muted);max-width:380px;line-height:1.7}
+.retry-proxy{
+  background:var(--accent);border:none;cursor:pointer;
+  padding:11px 24px;border-radius:999px;
+  color:#000;font-size:14px;font-weight:700;
+  transition:transform .12s,filter .12s;
+}
+.retry-proxy:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.blocked .note{font-size:11px;color:var(--muted);max-width:360px;line-height:1.6;
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
 </style>
 </head>
 <body>
 
-<div id="navbar">
-    <button class="btn" onclick="goHome()">⌂</button>
-    <input id="urlinput" type="text" placeholder="Enter URL (e.g. poxel.io)"/>
-    <button class="btn" onclick="manualNav()">GO</button>
+<div id="tabstrip">
+  <div id="add-tab" title="New Tab">+</div>
 </div>
 
-<div id="vpwrap">
-    <div id="ntp">
-        <div class="ntp-logo">KYAN</div>
-        <div class="grid">
-            <div class="g-item" onclick="loadGame('https://poxel.io')">🎮 Poxel.io</div>
-            <div class="g-item" onclick="loadGame('https://poki.com')">⭐ Poki</div>
-            <div class="g-item" onclick="loadGame('https://slither.io')">🐍 Slither</div>
-            <div class="g-item" onclick="loadGame('https://google.com')">🔍 Google</div>
-        </div>
-    </div>
-    <iframe id="main-fr" allow="gamepad; fullscreen; accelerometer; gyroscope"></iframe>
+<div id="navbar">
+  <button class="nbtn" id="btn-back">&#8592;</button>
+  <button class="nbtn" id="btn-fwd">&#8594;</button>
+  <button class="nbtn" id="btn-reload">&#8635;</button>
+  <button class="nbtn" id="btn-home">&#8962;</button>
+  <div id="urlbar">
+    <span id="lock">🔍</span>
+    <input id="urlinput" placeholder="Search or enter address… (try poxel.io)" autocomplete="off" spellcheck="false"/>
+    <button id="gobtn">→</button>
+  </div>
 </div>
+
+<div id="prog"></div>
+<div id="vpwrap"></div>
 
 <script>
-const frame = document.getElementById('main-fr');
-const ntp = document.getElementById('ntp');
-const input = document.getElementById('urlinput');
+// ─── SAFARI / iPADOS DETECTION ───────────────────────────────────────────────
+const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isIPad   = isIOS && !(/iPhone|iPod/.test(navigator.userAgent));
 
-async function loadGame(targetUrl) {
-    if(!targetUrl.startsWith('http')) targetUrl = 'https://' + targetUrl;
-    
-    ntp.style.display = 'none';
-    frame.classList.add('active');
-    frame.src = 'about:blank'; // Reset
+// On Safari/iOS, using allow-same-origin + allow-scripts together causes silent
+// iframe blocks for cross-origin content. We drop allow-same-origin on those platforms.
+// allow-top-navigation-by-user-activation also causes hangs on iPadOS Safari — removed.
+function getSandbox() {
+  if (isSafari || isIOS) {
+    return 'allow-scripts allow-forms allow-popups allow-pointer-lock allow-modals';
+  }
+  return 'allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock allow-top-navigation-by-user-activation allow-modals';
+}
 
-    // WE USE A DIFFERENT PROXY STRATEGY HERE
-    // Instead of just setting SRC, we fetch the site data
-    try {
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-        
-        // This tricks the browser into thinking the game is local
-        frame.src = proxyUrl; 
+// ─── PROXY ───────────────────────────────────────────────────────────────────
+const KNOWN_BLOCKED = [
+  'google.com','youtube.com','facebook.com','instagram.com',
+  'x.com','twitter.com','linkedin.com','amazon.com','reddit.com',
+  'spotify.com','bbc.com','tiktok.com','netflix.com','twitch.tv',
+  'discord.com','whatsapp.com','telegram.org','github.com',
+];
 
-        // Fix for iOS Black Screen
-        setTimeout(() => {
-            frame.style.display = 'none';
-            frame.offsetHeight; // force reflow
-            frame.style.display = 'block';
-        }, 500);
+function proxyUrl(url) {
+  return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+}
 
-    } catch (e) {
-        alert("Failed to load. Try a different URL.");
-        goHome();
+function isKnownBlocked(url) {
+  try {
+    const h = new URL(url).hostname.replace('www.','');
+    return KNOWN_BLOCKED.some(d => h === d || h.endsWith('.'+d));
+  } catch { return false; }
+}
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let tabs = [], activeId = null, counter = 0;
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function uid(){ return 't'+(++counter); }
+function norm(raw) {
+  raw = raw.trim(); if (!raw) return null;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[\w.-]+\.\w{2,}/.test(raw) && !raw.includes(' ')) return 'https://'+raw;
+  return 'https://www.google.com/search?q='+encodeURIComponent(raw);
+}
+function hostOf(url){ try{ return new URL(url).hostname.replace('www.','') } catch{ return url } }
+function faviconOf(url){ try{ return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32` } catch{ return '' } }
+
+// ─── PROGRESS ────────────────────────────────────────────────────────────────
+const prog = document.getElementById('prog');
+let pt = null;
+function startProg(){ prog.style.width='0%'; prog.classList.add('on'); let w=0; clearInterval(pt); pt=setInterval(()=>{w+=Math.random()*14;if(w>88)w=88;prog.style.width=w+'%'},180); }
+function endProg(){ clearInterval(pt); prog.style.width='100%'; setTimeout(()=>{prog.classList.remove('on');prog.style.width='0%'},350); }
+
+// ─── DOM REFS ────────────────────────────────────────────────────────────────
+const strip  = document.getElementById('tabstrip');
+const addBtn = document.getElementById('add-tab');
+const vp     = document.getElementById('vpwrap');
+
+// ─── TAB STRIP ───────────────────────────────────────────────────────────────
+function renderTabs() {
+  document.querySelectorAll('.tab').forEach(e=>e.remove());
+  tabs.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'tab' + (t.id===activeId?' active':'');
+    el.innerHTML = `<img src="${t.url?faviconOf(t.url):''}" onerror="this.style.display='none'" style="${t.url?'':'display:none'}"/><span class="tab-lbl">${t.title||'New Tab'}</span><span class="tab-x" data-close="${t.id}">✕</span>`;
+    el.addEventListener('click', e => { if(e.target.dataset.close) return; activate(t.id); });
+    strip.insertBefore(el, addBtn);
+  });
+  strip.querySelectorAll('[data-close]').forEach(x => x.addEventListener('click', e => { e.stopPropagation(); closeTab(x.dataset.close); }));
+}
+
+// ─── CREATE TAB ──────────────────────────────────────────────────────────────
+function newTab(url=null) {
+  const id = uid();
+  tabs.push({id, url:null, title:'New Tab', blocked:false, usingProxy:false});
+
+  // NTP
+  const ntp = document.createElement('div');
+  ntp.className = 'ntp'; ntp.id = 'ntp-'+id;
+  ntp.innerHTML = buildNTP(id);
+  vp.appendChild(ntp);
+
+  // iframe — apply platform-appropriate sandbox
+  const fr = document.createElement('iframe');
+  fr.className = 'frame'; fr.id = 'fr-'+id;
+  fr.allow = 'fullscreen; autoplay; gamepad';
+  fr.setAttribute('sandbox', getSandbox());
+  fr.addEventListener('load', () => { onFrameLoad(id); });
+  vp.appendChild(fr);
+
+  // blocked notice
+  const bl = document.createElement('div');
+  bl.className = 'blocked'; bl.id = 'bl-'+id;
+  bl.innerHTML = `
+    <div class="b-icon">🔒</div>
+    <h2>Site blocked embedding</h2>
+    <p>This site has security headers that prevent iframe embedding. Try loading it via the proxy.</p>
+    <button class="retry-proxy" data-blid="${id}">⚡ Try via Proxy</button>
+    <div class="note">Proxy strips X-Frame-Options so the site can load inside Kyan. Works for most game and content sites.</div>`;
+  vp.appendChild(bl);
+
+  activate(id);
+  if (url) navigate(id, url);
+  return id;
+}
+
+function onFrameLoad(id) {
+  const t = tabs.find(x=>x.id===id); if(!t) return;
+
+  // Clear any pending black-screen detection timer
+  if (t._blackTimer) { clearTimeout(t._blackTimer); t._blackTimer = null; }
+
+  let href = null;
+  try { href = document.getElementById('fr-'+id)?.contentWindow?.location?.href; } catch(e) { /* cross-origin = good */ }
+
+  // If still about:blank after load event, the frame silently failed (common on Safari)
+  if (href === 'about:blank') {
+    // Don't flag as blocked yet — could be the initial empty load
+    if (t.loading && t.url) {
+      // Give it one more tick; if it's still blank, show blocked
+      setTimeout(() => {
+        let h2 = null;
+        try { h2 = document.getElementById('fr-'+id)?.contentWindow?.location?.href; } catch(e) { return; /* cross-origin = loaded fine */ }
+        if (h2 === 'about:blank') showBlocked(id);
+        else { t.loading = false; endProg(); renderTabs(); updateUrlBar(); }
+      }, 200);
+      return;
     }
+    return;
+  }
+
+  t.loading = false;
+  endProg();
+  renderTabs();
+  updateUrlBar();
 }
 
-function manualNav() {
-    loadGame(input.value);
+// ─── ACTIVATE ────────────────────────────────────────────────────────────────
+function activate(id) {
+  activeId = id;
+  vp.querySelectorAll('.ntp,.frame,.blocked').forEach(e=>e.classList.remove('active'));
+  const t = tabs.find(x=>x.id===id); if(!t) return;
+  if (t.blocked)     document.getElementById('bl-'+id)?.classList.add('active');
+  else if (!t.url)   document.getElementById('ntp-'+id)?.classList.add('active');
+  else               document.getElementById('fr-'+id)?.classList.add('active');
+  renderTabs();
+  updateUrlBar();
 }
 
-function goHome() {
-    ntp.style.display = 'flex';
-    frame.classList.remove('active');
-    frame.src = 'about:blank';
+// ─── CLOSE TAB ───────────────────────────────────────────────────────────────
+function closeTab(id) {
+  if (tabs.length === 1) { tabs=[]; counter=0; newTab(); return; }
+  const idx = tabs.findIndex(t=>t.id===id);
+  const t = tabs[idx];
+  if (t._blackTimer) clearTimeout(t._blackTimer);
+  tabs.splice(idx,1);
+  ['ntp-','fr-','bl-'].forEach(p => document.getElementById(p+id)?.remove());
+  if (activeId===id) activate(tabs[Math.min(idx,tabs.length-1)].id);
+  else renderTabs();
 }
 
-// Handle Enter Key
-input.addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') manualNav();
+// ─── NAVIGATE ────────────────────────────────────────────────────────────────
+function navigate(id, rawUrl, forceProxy=false) {
+  const t = tabs.find(x=>x.id===id); if(!t) return;
+
+  t.url = rawUrl; t.blocked = false; t.loading = true;
+  t.title = hostOf(rawUrl);
+  if (t._blackTimer) { clearTimeout(t._blackTimer); t._blackTimer = null; }
+
+  const useProxy = forceProxy || isKnownBlocked(rawUrl);
+  t.usingProxy = useProxy;
+  const loadUrl = useProxy ? proxyUrl(rawUrl) : rawUrl;
+
+  vp.querySelectorAll('.ntp,.frame,.blocked').forEach(e=>e.classList.remove('active'));
+  const fr = document.getElementById('fr-'+id);
+  fr.classList.add('active');
+  startProg();
+
+  // Reset iframe — remove src entirely first (helps Safari reset state)
+  fr.removeAttribute('src');
+  requestAnimationFrame(() => {
+    fr.src = loadUrl;
+  });
+
+  // Black screen guard: on Safari/iOS the load event sometimes fires fine
+  // but the frame stays visually blank. Give it 6 s then offer proxy.
+  if (!useProxy) {
+    t._blackTimer = setTimeout(() => {
+      // Try to read href; if cross-origin we're fine, if about:blank — blocked
+      let href = null;
+      try { href = fr.contentWindow?.location?.href; } catch(e) {
+        // Cross-origin access denied = page actually loaded
+        endProg();
+        t.loading = false;
+        t._blackTimer = null;
+        renderTabs(); updateUrlBar();
+        return;
+      }
+      if (!href || href === 'about:blank') showBlocked(id);
+      else { endProg(); t.loading = false; t._blackTimer = null; renderTabs(); updateUrlBar(); }
+    }, 6000);
+  }
+
+  fr.onerror = () => { showBlocked(id); };
+
+  renderTabs(); updateUrlBar();
+}
+
+function showBlocked(id) {
+  endProg();
+  const t = tabs.find(x=>x.id===id); if(!t) return;
+  if (t._blackTimer) { clearTimeout(t._blackTimer); t._blackTimer = null; }
+  t.blocked = true; t.loading = false;
+  vp.querySelectorAll('.ntp,.frame,.blocked').forEach(e=>e.classList.remove('active'));
+  document.getElementById('bl-'+id)?.classList.add('active');
+  renderTabs(); updateUrlBar();
+}
+
+// ─── PROXY BUTTON ────────────────────────────────────────────────────────────
+vp.addEventListener('click', e => {
+  const blBtn = e.target.closest('[data-blid]');
+  if (blBtn) {
+    const id = blBtn.dataset.blid;
+    const t = tabs.find(x=>x.id===id);
+    if (t?.url) navigate(id, t.url, true);
+    return;
+  }
+  const ql = e.target.closest('.ql-item');
+  if (ql) { e.preventDefault(); const url=ql.dataset.url; if(url&&activeId) navigate(activeId, url); return; }
+  const ntpBtn = e.target.closest('button[data-ntpid]');
+  if (ntpBtn) { const inp=ntpBtn.closest('.ntp-search')?.querySelector('input'); if(inp){const u=norm(inp.value);if(u)navigate(ntpBtn.dataset.ntpid,u);} return; }
 });
+
+vp.addEventListener('keydown', e => {
+  if (e.key==='Enter' && e.target.tagName==='INPUT' && e.target.dataset.ntpid) {
+    const u=norm(e.target.value); if(u) navigate(e.target.dataset.ntpid, u);
+  }
+});
+
+// ─── URL BAR ─────────────────────────────────────────────────────────────────
+const urlinput = document.getElementById('urlinput');
+const lockEl   = document.getElementById('lock');
+function updateUrlBar() {
+  const t = tabs.find(x=>x.id===activeId);
+  const url = t?.url||'';
+  urlinput.value = url;
+  if (url.startsWith('https://')){lockEl.textContent='🔒';lockEl.style.color='var(--accent)'}
+  else if (url.startsWith('http://')){lockEl.textContent='⚠️';lockEl.style.color='var(--accent2)'}
+  else {lockEl.textContent='🔍';lockEl.style.color='var(--muted)'}
+}
+function goToUrl(raw) { const u=norm(raw); if(u&&activeId) navigate(activeId,u); }
+document.getElementById('gobtn').onclick = () => goToUrl(urlinput.value);
+urlinput.addEventListener('keydown', e=>{ if(e.key==='Enter') goToUrl(e.target.value); });
+urlinput.addEventListener('focus', ()=>urlinput.select());
+
+// ─── NAV BUTTONS ─────────────────────────────────────────────────────────────
+document.getElementById('btn-back').onclick   = ()=>{ try{document.getElementById('fr-'+activeId)?.contentWindow.history.back()}catch(e){} };
+document.getElementById('btn-fwd').onclick    = ()=>{ try{document.getElementById('fr-'+activeId)?.contentWindow.history.forward()}catch(e){} };
+document.getElementById('btn-reload').onclick = ()=>{ const t=tabs.find(x=>x.id===activeId); if(t?.url) navigate(activeId,t.url,t.usingProxy); };
+document.getElementById('btn-home').onclick   = ()=>{
+  const t=tabs.find(x=>x.id===activeId); if(!t)return;
+  if(t._blackTimer){clearTimeout(t._blackTimer);t._blackTimer=null;}
+  t.url=null;t.blocked=false;
+  vp.querySelectorAll('.ntp,.frame,.blocked').forEach(e=>e.classList.remove('active'));
+  document.getElementById('ntp-'+activeId)?.classList.add('active');
+  updateUrlBar();
+};
+addBtn.onclick = ()=>newTab();
+
+// ─── NTP ─────────────────────────────────────────────────────────────────────
+const SITES=[
+  {ico:'🎮',lbl:'Poxel.io',  url:'https://poxel.io'},
+  {ico:'🔍',lbl:'Google',    url:'https://www.google.com'},
+  {ico:'▶️',lbl:'YouTube',   url:'https://www.youtube.com'},
+  {ico:'🤖',lbl:'Reddit',    url:'https://www.reddit.com'},
+  {ico:'📖',lbl:'Wikipedia', url:'https://www.wikipedia.org'},
+  {ico:'🐙',lbl:'GitHub',    url:'https://github.com'},
+  {ico:'📰',lbl:'BBC News',  url:'https://www.bbc.com/news'},
+  {ico:'🛒',lbl:'Amazon',    url:'https://www.amazon.com'},
+  {ico:'🎵',lbl:'Spotify',   url:'https://open.spotify.com'},
+  {ico:'📘',lbl:'Facebook',  url:'https://www.facebook.com'},
+  {ico:'🐦',lbl:'X/Twitter', url:'https://x.com'},
+  {ico:'💼',lbl:'LinkedIn',  url:'https://www.linkedin.com'},
+];
+
+function buildNTP(id) {
+  const h=new Date().getHours();
+  const tod=h<12?'morning':h<18?'afternoon':'evening';
+  const ql=SITES.map(s=>`<a class="ql-item" href="#" data-url="${s.url}"><div class="ico">${s.ico}</div><div class="lbl">${s.lbl}</div></a>`).join('');
+  return `
+    <div class="ntp-logo">Kyan</div>
+    <div class="ntp-sub">Good ${tod} — where to?</div>
+    <div class="ntp-search">
+      <input type="text" placeholder="Search or enter address…" autocomplete="off" spellcheck="false" data-ntpid="${id}"/>
+      <button data-ntpid="${id}">→</button>
+    </div>
+    <div class="ql">${ql}</div>`;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+newTab();
 </script>
 </body>
 </html>
