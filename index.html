@@ -3,57 +3,129 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-<title>Kyan - Poxel & Netflix Edition</title>
+<title>KYAN ULTRA PROXY</title>
 <style>
-    body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; font-family: sans-serif; }
-    #ui { position: absolute; top: 0; width: 100%; background: rgba(20,20,20,0.9); display: flex; padding: 10px; gap: 10px; z-index: 10; border-bottom: 1px solid #333; }
-    button { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; }
-    .n-btn { background: #e50914; } /* Netflix Red */
-    .p-btn { background: #00e5b0; color: #000; } /* Poxel Teal */
-    #view-container { width: 100vw; height: 100vh; position: relative; }
-    iframe { width: 100%; height: 100%; border: none; display: none; }
-    iframe.active { display: block; }
-    #msg { position: absolute; top: 50%; width: 100%; text-align: center; color: #555; pointer-events: none; }
+    :root { --red: #e50914; --teal: #00e5b0; --bg: #000; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { height: 100dvh; background: var(--bg); color: white; font-family: 'Arial', sans-serif; overflow: hidden; }
+    
+    /* THE HUD */
+    #hud {
+        position: absolute; top: 0; width: 100%; height: 60px;
+        background: rgba(10,10,10,0.95); display: flex; align-items: center;
+        padding: 0 15px; gap: 15px; z-index: 1000; border-bottom: 1px solid #222;
+    }
+    .btn {
+        padding: 10px 20px; border: none; border-radius: 5px; 
+        font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+    }
+    #n-btn { background: var(--red); box-shadow: 0 0 15px rgba(229,9,20,0.4); }
+    #p-btn { background: var(--teal); color: #000; box-shadow: 0 0 15px rgba(0,229,176,0.4); }
+    
+    /* THE ENGINE */
+    #viewport-master {
+        width: 100vw; height: calc(100dvh - 60px);
+        margin-top: 60px; position: relative; background: #000;
+    }
+    iframe {
+        width: 100%; height: 100%; border: none;
+        background: #000; visibility: hidden;
+        transform: translate3d(0,0,0); /* Force Hardware Acceleration */
+    }
+    iframe.active { visibility: visible; }
+
+    /* LOADING ANIMATION */
+    #loader {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        text-align: center; display: none;
+    }
+    .spinner {
+        width: 40px; height: 40px; border: 4px solid #333;
+        border-top: 4px solid var(--teal); border-radius: 50%;
+        animation: spin 1s linear infinite; margin-bottom: 10px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<div id="ui">
-    <button class="n-btn" onclick="load('https://www.netflix.com')">NETFLIX</button>
-    <button class="p-btn" onclick="load('https://poxel.io')">POXEL.IO</button>
-    <button style="background:#333" onclick="location.reload()">RELOAD</button>
+<div id="hud">
+    <button class="btn" id="n-btn" onclick="inject('https://www.netflix.com')">Netflix</button>
+    <button class="btn" id="p-btn" onclick="inject('https://poxel.io')">Poxel.io</button>
+    <div style="flex:1"></div>
+    <button style="background:#222; color:#fff;" class="btn" onclick="location.reload()">Reset</button>
 </div>
 
-<div id="view-container">
-    <div id="msg">Select a service above...</div>
-    <iframe id="ifr" allow="autoplay; fullscreen; gamepad; encrypted-media; gyroscope; accelerometer"></iframe>
+<div id="viewport-master">
+    <div id="loader"><div class="spinner"></div><p id="load-txt">Bypassing Security...</p></div>
+    <iframe id="main-view" allow="autoplay; fullscreen; gamepad; encrypted-media; gyroscope; accelerometer"></iframe>
 </div>
 
 <script>
-    const ifr = document.getElementById('ifr');
-    const msg = document.getElementById('msg');
+    const view = document.getElementById('main-view');
+    const loader = document.getElementById('loader');
+    const loadTxt = document.getElementById('load-txt');
 
-    function load(url) {
-        msg.innerText = "Connecting to Proxy...";
-        
-        // We are using a different service: 'Cloudflare Worker' style proxy
-        // This is the most stable way to bypass the "Black Screen" on mobile
-        const finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-        
-        ifr.src = 'about:blank';
-        
-        setTimeout(() => {
-            ifr.src = finalUrl;
-            ifr.classList.add('active');
-            msg.style.display = 'none';
-        }, 200);
+    async function inject(target) {
+        loader.style.display = 'block';
+        view.classList.remove('active');
+        view.src = 'about:blank';
 
-        // Mobile Refresh Hack:
-        // Many mobile browsers (iOS) need a "touch" to start the GPU
-        document.addEventListener('touchstart', function() {
-            if(ifr.contentWindow) ifr.contentWindow.focus();
-        }, {once: true});
+        // We use the 'AllOrigins' fetcher to grab the site as a data-stream
+        // This is the ONLY way to bypass the "X-Frame-Options: DENY" header
+        const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`;
+
+        try {
+            const resp = await fetch(proxy);
+            if (!resp.ok) throw new Error();
+            const html = await resp.text();
+
+            // RECONSTRUCTING THE DOM
+            // We inject a <base> tag so the site thinks it's on its own domain
+            const doc = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <base href="${target}">
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width,initial-scale=1">
+                    <style>
+                        body { background: #000 !important; color: white !important; }
+                        /* Kill frame-busting scripts */
+                        script[src*="analytics"], script[src*="tracking"] { display: none !important; }
+                    </style>
+                </head>
+                <body>
+                    ${html}
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([doc], { type: 'text/html' });
+            const blobUrl = URL.createObjectURL(blob);
+
+            view.src = blobUrl;
+
+            // GPU WAKE-UP CALL
+            setTimeout(() => {
+                view.classList.add('active');
+                loader.style.display = 'none';
+                
+                // Force mobile browser to repaint the screen (Fixes the Black Screen)
+                window.dispatchEvent(new Event('resize'));
+            }, 1500);
+
+        } catch (e) {
+            loadTxt.innerText = "Error: Use a browser that allows CORS.";
+            loadTxt.style.color = "red";
+        }
     }
+
+    // Fix for iOS touch-to-play
+    document.addEventListener('touchstart', () => {
+        const frame = document.getElementById('main-view');
+        if(frame.contentWindow) frame.contentWindow.focus();
+    }, {once: true});
 </script>
 </body>
 </html>
