@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Moto GP Championship</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; }
+        body { margin: 0; overflow: hidden; background: #2d3e2d; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; }
         
         /* Overlays */
         #overlay, #end-screen {
@@ -39,12 +39,12 @@
 <body>
 
     <div id="overlay">
-        <h1>MOTO GP</h1>
+        <h1>MOTO CHAMPIONSHIP</h1>
         <button class="btn" onclick="startRace()">START RACE</button>
     </div>
 
     <div id="end-screen">
-        <h1 id="final-status">FINISH!</h1>
+        <h1 id="final-status">RACE FINISHED!</h1>
         <h2 id="final-rank">RANK: 1st</h2>
         <button class="btn" onclick="location.reload()">REPLAY</button>
     </div>
@@ -72,8 +72,9 @@
     <script type="module">
         import * as THREE from 'three';
 
+        // --- SCENE ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb);
+        scene.background = new THREE.Color(0x87ceeb); // Sky
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -84,32 +85,49 @@
         sun.position.set(50, 50, 50);
         scene.add(sun);
 
-        // --- TRACK & SIDES ---
+        // --- ENVIRONMENT & TRACK ---
         const innerR = 45, outerR = 75, centerR = 60;
+        
+        // Dark Green Ground
+        const grass = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshStandardMaterial({color: 0x2d3e2d}));
+        grass.rotation.x = -Math.PI / 2;
+        grass.position.y = -0.1;
+        scene.add(grass);
+
+        // Asphalt Road
         const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x333333 }));
         road.rotation.x = -Math.PI / 2;
+        road.position.y = 0.01;
         scene.add(road);
 
-        // Checkered Sides (Curbs)
+        // White Finish Line
+        const finishLine = new THREE.Mesh(new THREE.PlaneGeometry(outerR - innerR, 2), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+        finishLine.position.set(centerR, 0.05, 0);
+        finishLine.rotation.x = -Math.PI / 2;
+        scene.add(finishLine);
+
+        // Checkered Sides (Red/White Curbs)
         const curbSegs = 100;
         for(let i=0; i<curbSegs; i++) {
             const angle = (i/curbSegs) * Math.PI * 2;
             const mat = new THREE.MeshStandardMaterial({ color: i%2===0 ? 0xcc0000 : 0xffffff });
-            const box = new THREE.BoxGeometry(5, 0.3, 2);
+            const box = new THREE.BoxGeometry(5, 0.4, 2);
+            
             const curbIn = new THREE.Mesh(box, mat);
-            curbIn.position.set(Math.cos(angle)*innerR, 0.15, Math.sin(angle)*innerR);
+            curbIn.position.set(Math.cos(angle)*innerR, 0.1, Math.sin(angle)*innerR);
             curbIn.rotation.y = -angle;
             scene.add(curbIn);
+            
             const curbOut = new THREE.Mesh(box, mat);
-            curbOut.position.set(Math.cos(angle)*outerR, 0.15, Math.sin(angle)*outerR);
+            curbOut.position.set(Math.cos(angle)*outerR, 0.1, Math.sin(angle)*outerR);
             curbOut.rotation.y = -angle;
             scene.add(curbOut);
         }
 
-        // --- BIKES ---
+        // --- MOTORCYCLES ---
         function createBike(color) {
             const g = new THREE.Group();
-            const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 1.5), new THREE.MeshStandardMaterial({color: 0x222222}));
+            const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 1.5), new THREE.MeshStandardMaterial({color: 0x111111}));
             b.position.y = 0.5; g.add(b);
             const t = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.4, 0.7), new THREE.MeshStandardMaterial({color}));
             t.position.set(0, 0.8, 0.1); g.add(t);
@@ -120,20 +138,24 @@
         }
 
         const player = createBike(0xff0000);
-        player.position.set(centerR, 0, -2);
+        player.position.set(centerR, 0, -3); // Behind the line
         scene.add(player);
 
         const bots = [];
         const botColors = [0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
         botColors.forEach((c, i) => {
             const bot = createBike(c);
-            bot.userData = { angle: -0.1 - (i*0.08), speed: 0.005 + Math.random()*0.003, lane: centerR + (i-2)*3.5 };
+            bot.userData = { 
+                angle: -0.15 - (i*0.1), 
+                speed: 0.006 + Math.random()*0.003, // Slower bots
+                lane: centerR + (i-2)*3.5 
+            };
             bot.position.set(Math.cos(bot.userData.angle)*bot.userData.lane, 0, Math.sin(bot.userData.angle)*bot.userData.lane);
             scene.add(bot);
             bots.push(bot);
         });
 
-        // --- RACE LOGIC ---
+        // --- RACE SYSTEM ---
         let raceStarted = false, isFinished = false;
         let velocity = 0, lap = 1, checkpoint = false, time = 0;
 
@@ -151,7 +173,7 @@
             }, 3000);
         };
 
-        // Controls
+        // Joystick
         const base = document.getElementById('joy-base'), stick = document.getElementById('joy-stick');
         let inX = 0, inY = 0, touching = false;
         base.addEventListener('touchstart', () => touching = true);
@@ -168,40 +190,46 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            
             if(raceStarted && !isFinished) {
-                // Player Physics
+                // Movement
                 if (Math.abs(inY) > 0.1) velocity += inY * 0.025;
                 velocity *= 0.97;
-                player.rotation.y -= inX * 0.05 * (velocity/1.4);
-                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.7, 0.1);
+                player.rotation.y -= inX * 0.05 * (Math.abs(velocity)/1.4);
+                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.7 * (Math.abs(velocity)/1.4), 0.1);
                 player.translateZ(velocity);
 
-                // Bot AI (Slower and more natural)
+                // Bot AI
                 bots.forEach(b => {
                     b.userData.angle += b.userData.speed;
                     b.position.set(Math.cos(b.userData.angle)*b.userData.lane, 0, Math.sin(b.userData.angle)*b.userData.lane);
                     b.rotation.y = -b.userData.angle + Math.PI;
                 });
 
-                // Lap & Ranking
+                // Lap & Ranking Logic
                 const pA = Math.atan2(player.position.z, player.position.x);
                 if(pA > 3 || pA < -3) checkpoint = true;
+                
+                // Crossing Finish Line
                 if(checkpoint && pA > -0.1 && pA < 0.1 && player.position.x > 0) {
-                    lap++; checkpoint = false;
-                    if(lap > 3) {
+                    checkpoint = false;
+                    if(lap === 3) {
                         isFinished = true;
                         document.getElementById('end-screen').style.display = 'flex';
                         document.getElementById('final-rank').innerText = "RANK: " + document.getElementById('rank-display').innerText;
                     } else {
+                        lap++;
                         document.getElementById('lap-display').innerText = lap + "/3";
                     }
                 }
 
-                // Calculate Rank
+                // Ranking Calculation
                 let rank = 1;
                 bots.forEach(b => { 
-                    // Simple angle comparison to see who is ahead
-                    if(b.userData.angle > (lap-1)*Math.PI*2 + pA + (pA < 0 ? Math.PI*2 : 0)) rank++; 
+                    const botTotalAngle = b.userData.angle;
+                    const playerRelativeAngle = pA < 0 ? pA + Math.PI * 2 : pA;
+                    const playerTotalAngle = (lap - 1) * Math.PI * 2 + playerRelativeAngle;
+                    if(botTotalAngle > playerTotalAngle) rank++; 
                 });
                 const suffix = ["st", "nd", "rd", "th", "th"][rank-1];
                 document.getElementById('rank-display').innerText = rank + suffix;
@@ -210,9 +238,11 @@
                 document.getElementById('timer').innerText = time.toFixed(2) + "S";
             }
 
-            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity) * 190);
-            const cO = new THREE.Vector3(0, 4, -8).applyMatrix4(player.matrixWorld);
-            camera.position.lerp(cO, 0.1);
+            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity) * 195);
+            
+            // Camera follow
+            const cO = new THREE.Vector3(0, 4, -9).applyMatrix4(player.matrixWorld);
+            camera.position.lerp(cO, 0.15);
             camera.lookAt(player.position);
             renderer.render(scene, camera);
         }
