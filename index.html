@@ -3,29 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto GP: Rivalry</title>
+    <title>Moto GP: Pro Start</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #2d3e2d; font-family: 'Arial Black', sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; touch-action: none; }
+        
+        /* Start Overlay */
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 200; color: white;
+        }
+        #start-btn {
+            padding: 20px 40px; font-size: 2rem; background: #ff0000;
+            color: white; border: none; border-radius: 10px; cursor: pointer;
+        }
+
+        /* Countdown Lights */
+        #light-system {
+            position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 20px; z-index: 150; pointer-events: none; display: none;
+        }
+        .light { width: 60px; height: 60px; border-radius: 50%; background: #222; border: 4px solid #444; }
+        .red { background: #ff0000; box-shadow: 0 0 20px #ff0000; }
+        .yellow { background: #ffaa00; box-shadow: 0 0 20px #ffaa00; }
+        .green { background: #00ff00; box-shadow: 0 0 20px #00ff00; }
+
         #hud { position: absolute; top: 20px; left: 20px; color: white; z-index: 10; text-shadow: 2px 2px #000; }
         #speedometer { position: absolute; bottom: 30px; right: 30px; width: 160px; height: 80px; background: rgba(0,0,0,0.8); border: 3px solid #444; border-radius: 80px 80px 0 0; text-align: center; z-index: 10; }
         #speed-text { font-size: 2.2rem; color: #fff; margin-top: 15px; display: block; }
-        #tacho-container { width: 100px; height: 5px; background: #333; margin: 0 auto; overflow: hidden; }
-        #tacho-fill { width: 0%; height: 100%; background: #ff0000; transition: width 0.1s; }
-        #joy-base { position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 4px solid rgba(255, 255, 255, 0.5); border-radius: 50%; z-index: 100; }
-        #joy-stick { position: absolute; top: 30px; left: 30px; width: 60px; height: 60px; background: linear-gradient(#eee, #999); border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        #container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #tacho-fill { width: 0%; height: 5px; background: #ff0000; position: absolute; bottom: 0; left: 0; transition: width 0.1s; }
+        #joy-base { position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 4px solid rgba(255, 255, 255, 0.5); border-radius: 50%; z-index: 100; visibility: hidden; }
+        #joy-stick { position: absolute; top: 30px; left: 30px; width: 60px; height: 60px; background: #eee; border-radius: 50%; }
     </style>
 </head>
 <body>
 
+    <div id="overlay">
+        <h1>MOTO CHAMPIONSHIP</h1>
+        <button id="start-btn">PRESS TO START RACE</button>
+    </div>
+
+    <div id="light-system">
+        <div id="l1" class="light"></div>
+        <div id="l2" class="light"></div>
+        <div id="l3" class="light"></div>
+    </div>
+
     <div id="hud">
         <div style="font-size: 1.5rem;">LAP <span id="lap-display" style="color: yellow;">1/3</span></div>
-        <div id="timer" style="font-size: 1rem;">TIME: 00:00:00</div>
+        <div id="timer">TIME: 00:00:00</div>
     </div>
 
     <div id="speedometer">
         <span id="speed-text">0</span>
-        <div id="tacho-container"><div id="tacho-fill"></div></div>
+        <div id="tacho-fill"></div>
         <span style="font-size: 0.6rem; color: #aaa;">KM/H</span>
     </div>
     
@@ -39,86 +70,95 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // --- 1. ENGINE & SCENE ---
+        // --- 1. SETUP ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
-        scene.fog = new THREE.Fog(0x87ceeb, 50, 200);
-        
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('container').appendChild(renderer.domElement);
+        document.body.appendChild(renderer.domElement);
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambient);
-        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const sun = new THREE.DirectionalLight(0xffffff, 1);
         sun.position.set(50, 50, 50);
         scene.add(sun);
 
-        // --- 2. TRACK CONFIG ---
-        const innerR = 45;
-        const outerR = 75;
-        const centerR = (innerR + outerR) / 2;
-
-        const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 1 }));
+        // --- 2. TRACK ---
+        const innerR = 45, outerR = 75, centerR = 60;
+        const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x333333 }));
         road.rotation.x = -Math.PI / 2;
         scene.add(road);
 
-        // Finish Line
-        const finishLine = new THREE.Mesh(new THREE.PlaneGeometry(outerR - innerR, 2), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-        finishLine.position.set(centerR, 0.05, 0);
-        finishLine.rotation.x = -Math.PI / 2;
-        scene.add(finishLine);
-
         const grass = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({color: 0x3d523d}));
-        grass.rotation.x = -Math.PI / 2;
-        grass.position.y = -0.05;
+        grass.rotation.x = -Math.PI / 2; grass.position.y = -0.1;
         scene.add(grass);
 
-        // Decorative Curbs
-        for(let i=0; i < 80; i++) {
-            const angle = (i / 80) * Math.PI * 2;
-            const curb = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, 2), new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xcc0000 : 0xffffff }));
-            curb.position.set(Math.cos(angle) * outerR, 0.15, Math.sin(angle) * outerR);
-            curb.rotation.y = -angle;
-            scene.add(curb);
+        // Grid Lines
+        for(let i=0; i<5; i++) {
+            const line = new THREE.Mesh(new THREE.PlaneGeometry(outerR - innerR, 0.5), new THREE.MeshBasicMaterial({color: 0xffffff}));
+            line.position.set(centerR, 0.05, -i * 3);
+            line.rotation.x = -Math.PI / 2;
+            scene.add(line);
         }
 
-        // --- 3. MOTORCYCLE FACTORY ---
+        // --- 3. BIKES ---
         function createMoto(color) {
-            const group = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.7, 1.6), new THREE.MeshStandardMaterial({color: 0x222222}));
-            body.position.y = 0.6;
-            group.add(body);
-            const tank = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.4, 0.7), new THREE.MeshStandardMaterial({color: color}));
-            tank.position.set(0, 0.9, 0.1);
-            group.add(tank);
-            const wheelGeo = new THREE.TorusGeometry(0.38, 0.12, 12, 24);
-            const wheelMat = new THREE.MeshStandardMaterial({color: 0x111111});
-            const fw = new THREE.Mesh(wheelGeo, wheelMat); fw.position.set(0, 0.38, 0.8); group.add(fw);
-            const bw = fw.clone(); bw.position.z = -0.8; group.add(bw);
-            return group;
+            const g = new THREE.Group();
+            const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 1.5), new THREE.MeshStandardMaterial({color: 0x222222}));
+            b.position.y = 0.5; g.add(b);
+            const t = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.4, 0.7), new THREE.MeshStandardMaterial({color}));
+            t.position.set(0, 0.8, 0); g.add(t);
+            const w = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.1, 12, 24), new THREE.MeshStandardMaterial({color: 0x111111}));
+            const fw = w.clone(); fw.position.set(0, 0.35, 0.7); g.add(fw);
+            const bw = w.clone(); bw.position.set(0, 0.35, -0.7); g.add(bw);
+            return g;
         }
 
         const player = createMoto(0xff0000);
-        player.position.set(centerR, 0, -5); // Start slightly behind the line
+        player.position.set(centerR, 0, -2);
         scene.add(player);
 
-        // --- BOTS ---
         const bots = [];
-        const botColors = [0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
+        const botColors = [0x00ff00, 0x0000ff, 0xffff00];
         botColors.forEach((color, i) => {
             const bot = createMoto(color);
-            bot.userData = {
-                angle: (i + 1) * 0.2, // Offset starting positions
-                speed: 0.015 + Math.random() * 0.01,
-                laneOffset: (Math.random() - 0.5) * 15 // Spread them across the track
+            bot.userData = { 
+                angle: -0.1 - (i * 0.05), 
+                speed: 0.008 + Math.random() * 0.004, // Balanced speed
+                lane: centerR + (i - 1) * 4,
+                active: false
             };
+            bot.position.set(Math.cos(bot.userData.angle)*bot.userData.lane, 0, Math.sin(bot.userData.angle)*bot.userData.lane);
             scene.add(bot);
             bots.push(bot);
         });
 
-        // --- 4. JOYSTICK ---
+        // --- 4. RACE STATE ---
+        let raceStarted = false;
+        let countdownActive = false;
+        let velocity = 0, currentLap = 1, checkpoint = false, time = 0;
+
+        document.getElementById('start-btn').onclick = () => {
+            document.getElementById('overlay').style.display = 'none';
+            startCountdown();
+        };
+
+        function startCountdown() {
+            const lights = document.getElementById('light-system');
+            lights.style.display = 'flex';
+            const l1 = document.getElementById('l1'), l2 = document.getElementById('l2'), l3 = document.getElementById('l3');
+            
+            setTimeout(() => l1.classList.add('red'), 1000);
+            setTimeout(() => l2.classList.add('yellow'), 2000);
+            setTimeout(() => {
+                l3.classList.add('green');
+                raceStarted = true;
+                document.getElementById('joy-base').style.visibility = 'visible';
+                setTimeout(() => lights.style.display = 'none', 1000);
+            }, 3000);
+        }
+
+        // --- 5. CONTROLS ---
         const base = document.getElementById('joy-base'), stick = document.getElementById('joy-stick');
         let inputX = 0, inputY = 0, isTouching = false;
         base.addEventListener('touchstart', () => isTouching = true);
@@ -133,65 +173,46 @@
         }, {passive: false});
         window.addEventListener('touchend', () => { isTouching = false; stick.style.transform = 'translate(0,0)'; inputX = 0; inputY = 0; });
 
-        // --- 5. GAME LOGIC ---
-        let velocity = 0, currentLap = 1, checkpointReached = false;
-        let time = 0;
-
+        // --- 6. ANIMATION ---
         function animate() {
             requestAnimationFrame(animate);
+            if(raceStarted) {
+                // Player
+                if (Math.abs(inputY) > 0.1) velocity += inputY * 0.02;
+                velocity *= 0.97;
+                player.rotation.y -= inputX * 0.05 * (velocity/1.4);
+                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inputX * 0.6, 0.1);
+                player.translateZ(velocity);
 
-            // Player Physics
-            if (Math.abs(inputY) > 0.1) velocity += inputY * 0.025;
-            velocity *= 0.97;
-            velocity = Math.max(Math.min(velocity, 1.4), -0.4);
-            if (Math.abs(velocity) > 0.05) {
-                player.rotation.y -= inputX * 0.05;
-                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inputX * 0.8 * velocity, 0.1);
-            }
-            player.translateZ(velocity);
+                // Check Bounds
+                const d = Math.sqrt(player.position.x**2 + player.position.z**2);
+                if (d < innerR + 1 || d > outerR - 1) velocity *= 0.9;
 
-            // Track Bounds
-            const d = Math.sqrt(player.position.x**2 + player.position.z**2);
-            if (d < innerR + 2 || d > outerR - 2) {
-                velocity *= 0.8;
+                // Bots
+                bots.forEach(bot => {
+                    bot.userData.angle += bot.userData.speed;
+                    bot.position.set(Math.cos(bot.userData.angle)*bot.userData.lane, 0, Math.sin(bot.userData.angle)*bot.userData.lane);
+                    bot.rotation.y = -bot.userData.angle + Math.PI;
+                });
+
+                // Lap Logic
                 const angle = Math.atan2(player.position.z, player.position.x);
-                player.position.x = Math.cos(angle) * Math.max(innerR + 2, Math.min(d, outerR - 2));
-                player.position.z = Math.sin(angle) * Math.max(innerR + 2, Math.min(d, outerR - 2));
+                if(angle > 3 || angle < -3) checkpoint = true;
+                if(checkpoint && angle > -0.1 && angle < 0.1 && player.position.x > 0) {
+                    currentLap++; checkpoint = false;
+                    document.getElementById('lap-display').innerText = `${currentLap}/3`;
+                }
+                
+                time += 1/60;
+                document.getElementById('timer').innerText = `TIME: ${time.toFixed(2)}S`;
             }
 
-            // --- LAP LOGIC ---
-            // A simple checkpoint at the opposite side of the track (angle ~ PI)
-            const playerAngle = Math.atan2(player.position.z, player.position.x);
-            if (playerAngle > 3 || playerAngle < -3) checkpointReached = true; 
-            
-            // If we cross the start line (angle ~ 0) after hitting the checkpoint
-            if (checkpointReached && playerAngle > -0.1 && playerAngle < 0.1 && player.position.x > 0) {
-                currentLap++;
-                checkpointReached = false;
-                document.getElementById('lap-display').innerText = `${currentLap}/3`;
-            }
-
-            // --- BOT AI ---
-            bots.forEach(bot => {
-                bot.userData.angle += bot.userData.speed;
-                const r = centerR + bot.userData.laneOffset;
-                bot.position.set(Math.cos(bot.userData.angle) * r, 0, Math.sin(bot.userData.angle) * r);
-                bot.rotation.y = -bot.userData.angle + Math.PI;
-                // Subtle lean for bots
-                bot.rotation.z = Math.sin(Date.now() * 0.001) * 0.1; 
-            });
-
-            // UI & Camera
-            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity) * 220);
+            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity) * 180);
             document.getElementById('tacho-fill').style.width = (Math.abs(velocity)/1.4 * 100) + "%";
-            time += 1/60;
-            const s = Math.floor(time%60), ms = Math.floor((time%1)*100);
-            document.getElementById('timer').innerText = `TIME: 00:${s<10?'0':''}${s}:${ms<10?'0':''}${ms}`;
 
-            const camOffset = new THREE.Vector3(0, 4, -9).applyMatrix4(player.matrixWorld);
-            camera.position.lerp(camOffset, 0.15);
-            camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
-
+            const camPos = new THREE.Vector3(0, 4, -8).applyMatrix4(player.matrixWorld);
+            camera.position.lerp(camPos, 0.1);
+            camera.lookAt(player.position);
             renderer.render(scene, camera);
         }
         animate();
