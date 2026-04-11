@@ -3,74 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto GP: Multiplayer Lobby</title>
+    <title>Moto GP: Pro Multiplayer</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #1a2a1a; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; user-select: none; }
         
-        /* Lobby Menu */
-        #lobby-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 500;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        #room-input { padding: 15px; font-size: 1.2rem; border-radius: 10px; border: none; margin: 10px; text-align: center; width: 200px; }
+        /* Menu Container */
+        #menu-container { position: absolute; top: 20px; left: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; }
         
-        #start-race-btn {
-            position: absolute; top: 20px; left: 20px; z-index: 300;
-            padding: 15px 25px; font-size: 1.2rem; background: #ff0000;
-            color: white; border: 3px solid #fff; border-radius: 10px;
-            cursor: pointer; display: none;
+        .menu-btn { 
+            padding: 12px 20px; font-size: 1rem; border-radius: 8px; border: 2px solid white; 
+            cursor: pointer; color: white; transition: 0.2s; text-align: center;
         }
+        #race-btn { background: #ff0000; font-size: 1.2rem; border: 3px solid white; }
+        #create-btn { background: #0088ff; }
+        #join-btn { background: #00aa44; }
+        .menu-btn:active { transform: scale(0.95); }
 
         #room-tag {
-            position: absolute; top: 20px; left: 220px; z-index: 300;
-            font-size: 0.9rem; color: #00ffcc; background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 20px;
+            position: absolute; top: 20px; left: 240px; z-index: 300;
+            font-size: 0.9rem; color: #00ffcc; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; display: none;
         }
 
+        /* Overlays */
         #end-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 400; }
-        .btn { padding: 20px 40px; font-size: 1.5rem; background: #ff0000; color: white; border: none; border-radius: 10px; cursor: pointer; }
-
-        #hud { position: absolute; top: 80px; left: 20px; z-index: 10; visibility: hidden; }
-        #rank-display { position: absolute; top: 20px; right: 20px; font-size: 3rem; color: #ff0000; visibility: hidden; }
-        #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; }
+        #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; pointer-events: none; }
         
+        /* HUD & Speed */
+        #hud { position: absolute; top: 180px; left: 20px; z-index: 10; visibility: hidden; }
+        #rank-display { position: absolute; top: 20px; right: 20px; font-size: 3rem; color: #ff0000; font-style: italic; visibility: hidden; }
         #speedometer { position: absolute; bottom: 30px; right: 30px; width: 180px; height: 90px; background: rgba(0,0,0,0.9); border: 4px solid #555; border-radius: 90px 90px 0 0; text-align: center; }
         #speed-text { font-size: 2.5rem; display: block; margin-top: 15px; color: #00ffcc; }
         
+        /* Starting Lights */
         #light-system { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: none; gap: 20px; z-index: 100; }
         .light { width: 60px; height: 60px; border-radius: 50%; background: #222; border: 4px solid #444; }
         .red { background: #ff0000; box-shadow: 0 0 30px #ff0000; }
         .yellow { background: #ffaa00; box-shadow: 0 0 30px #ffaa00; }
         .green { background: #00ff00; box-shadow: 0 0 30px #00ff00; }
 
+        /* Joystick */
         #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255, 255, 255, 0.1); border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 100; }
         #joy-stick { position: absolute; top: 35px; left: 35px; width: 70px; height: 70px; background: radial-gradient(circle, #fff, #888); border-radius: 50%; }
     </style>
 </head>
 <body>
 
-    <div id="lobby-overlay">
-        <h1 style="color: #ff0000; font-size: 3rem;">MOTO LOBBY</h1>
-        <input type="text" id="room-input" placeholder="Enter Room Code" maxlength="6">
-        <button class="btn" onclick="joinRoom()">JOIN / CREATE ROOM</button>
-        <p style="font-size: 0.8rem; margin-top: 20px; color: #888;">Enter same code as friends to see them.</p>
+    <div id="menu-container">
+        <div id="race-btn" class="menu-btn" onclick="startRaceSequence()">PRESS TO START</div>
+        <div id="create-btn" class="menu-btn" onclick="handleMultiplayer('create')">CREATE A ROOM</div>
+        <div id="join-btn" class="menu-btn" onclick="handleMultiplayer('join')">JOIN A ROOM</div>
     </div>
 
-    <button id="start-race-btn" onclick="startRaceSequence()">PRESS TO RACE</button>
-    <div id="room-tag" style="display:none">ROOM: <span id="current-room">NONE</span></div>
+    <div id="room-tag">ROOM: <span id="current-room">NONE</span></div>
 
     <div id="end-screen">
-        <h1 style="font-size: 4rem;">RACE OVER</h1>
+        <h1 style="font-size: 4rem;">FINISH!</h1>
         <h2 id="final-rank" style="color: yellow; font-size: 2.5rem;">RANK: 1st</h2>
-        <button class="btn" onclick="location.reload()">BACK TO LOBBY</button>
+        <button style="padding: 15px 30px; font-size: 1.5rem;" onclick="location.reload()">REPLAY</button>
     </div>
 
     <div id="crash-alert">CRASHED!</div>
     <div id="light-system"><div id="l1" class="light"></div><div id="l2" class="light"></div><div id="l3" class="light"></div></div>
-    <div id="hud"><div>LAP <span id="lap-display" style="color: yellow;">1/3</span></div><div id="timer">00:00:00</div></div>
+    
+    <div id="hud">
+        <div style="font-size: 1.8rem;">LAP <span id="lap-display" style="color: yellow;">1/3</span></div>
+        <div id="timer" style="font-family: monospace;">00:00:00</div>
+    </div>
+
     <div id="rank-display">1st</div>
     <div id="speedometer"><span id="speed-text">0</span><span style="font-size: 0.7rem; color: #888;">KM/H</span></div>
+    
     <div id="joy-base"><div id="joy-stick"></div></div>
     <div id="container"></div>
 
@@ -84,24 +87,26 @@
         const remotePlayers = {};
         let currentRoomID = "";
 
-        window.joinRoom = () => {
-            const code = document.getElementById('room-input').value.trim();
-            if(!code) return alert("Enter a code!");
+        window.handleMultiplayer = (type) => {
+            const code = prompt(type === 'create' ? "Set a Room Code (e.g. 1234):" : "Enter Room Code to Join:");
+            if (!code) return;
+            
             currentRoomID = code;
             document.getElementById('current-room').innerText = code;
-            document.getElementById('lobby-overlay').style.display = 'none';
-            document.getElementById('start-race-btn').style.display = 'block';
             document.getElementById('room-tag').style.display = 'block';
+            document.getElementById('create-btn').style.display = 'none';
+            document.getElementById('join-btn').style.display = 'none';
             
             socket.connect();
             socket.emit("joinRoom", currentRoomID);
+            console.log("Joined room:", currentRoomID);
         };
 
-        // --- 1. ENGINE ---
+        // --- 1. ENGINE & TRACK ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 3000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('container').appendChild(renderer.domElement);
 
@@ -110,13 +115,12 @@
         sun.position.set(150, 200, 100);
         scene.add(sun);
 
-        // --- 2. THE TRACK ---
         const innerR = 130, outerR = 190, centerR = 160;
         const grass = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({color: 0x2d4d2d}));
         grass.rotation.x = -Math.PI / 2; grass.position.y = -0.1;
         scene.add(grass);
 
-        const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+        const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 }));
         road.rotation.x = -Math.PI / 2; road.position.y = 0.02;
         scene.add(road);
 
@@ -133,17 +137,17 @@
         for(let i=0; i<35; i++) {
             const angle = (i/35) * Math.PI * 2 + Math.random();
             const lane = centerR + (Math.random()-0.5)*50;
-            const block = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 6), new THREE.MeshStandardMaterial({color: 0xff1100}));
+            const block = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 6), new THREE.MeshStandardMaterial({color: 0xff1100, emissive: 0x220000}));
             block.position.set(Math.cos(angle)*lane, 2.5, Math.sin(angle)*lane);
             scene.add(block); obstacles.push(block);
         }
 
-        // --- 3. THE BIKES ---
+        // --- 2. THE BIKES ---
         function createMoto(color, isPlayer = false) {
             const g = new THREE.Group();
-            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 1.8), new THREE.MeshStandardMaterial({color: 0x050505}));
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 1.8), new THREE.MeshStandardMaterial({color: 0x050505, metalness: 1}));
             frame.position.y = 0.6; g.add(frame);
-            const shell = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 1.2), new THREE.MeshStandardMaterial({color}));
+            const shell = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 1.2), new THREE.MeshStandardMaterial({color, metalness: 0.8}));
             shell.position.set(0, 1.0, 0.1); g.add(shell);
             const wGeo = new THREE.TorusGeometry(0.42, 0.16, 16, 32);
             const fw = new THREE.Mesh(wGeo, new THREE.MeshStandardMaterial({color: 0x000})); fw.position.set(0, 0.42, 0.9); g.add(fw);
@@ -163,7 +167,7 @@
             bot.visible = false; scene.add(bot); bots.push(bot);
         });
 
-        // Socket listeners
+        // Socket Listeners
         socket.on("playerUpdate", (data) => {
             if (data.room !== currentRoomID) return;
             if (!remotePlayers[data.id]) {
@@ -175,19 +179,21 @@
             p.rotation.y = data.ry; p.rotation.z = data.rz;
         });
 
-        // --- 4. ENGINE LOGIC ---
+        // --- 3. GAME LOOP ---
         let raceActive = false, isFinished = false, velocity = 0, lap = 1, checkpoint = false, time = 0;
 
         window.startRaceSequence = () => {
-            document.getElementById('start-race-btn').style.display = 'none';
+            document.getElementById('race-btn').style.display = 'none';
             player.position.set(centerR, 0, -15); player.rotation.set(0, 0, 0); velocity = 0;
             bots.forEach((b, i) => { b.visible = true; b.userData.angle = -0.15 - (i*0.1); });
+            
             const lights = document.getElementById('light-system');
             lights.style.display = 'flex';
             setTimeout(() => document.getElementById('l1').classList.add('red'), 800);
             setTimeout(() => document.getElementById('l2').classList.add('yellow'), 1600);
             setTimeout(() => {
-                document.getElementById('l3').classList.add('green'); raceActive = true;
+                document.getElementById('l3').classList.add('green');
+                raceActive = true;
                 document.getElementById('hud').style.visibility = 'visible';
                 document.getElementById('rank-display').style.visibility = 'visible';
                 setTimeout(() => lights.style.display = 'none', 1000);
@@ -209,7 +215,7 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            if(!isFinished && currentRoomID !== "") {
+            if(!isFinished) {
                 let crash = false;
                 player.collisionSphere.center.copy(player.position);
                 obstacles.forEach(ob => { if(new THREE.Box3().setFromObject(ob).intersectsSphere(player.collisionSphere)) crash = true; });
@@ -228,16 +234,12 @@
 
                 if (socket.connected) {
                     socket.emit("move", {
-                        room: currentRoomID,
-                        x: player.position.x, y: player.position.y, z: player.position.z,
+                        room: currentRoomID, x: player.position.x, y: player.position.y, z: player.position.z,
                         ry: player.rotation.y, rz: player.rotation.z
                     });
                 }
 
-                const dist = Math.sqrt(player.position.x**2 + player.position.z**2);
-                if (dist < innerR + 1.5 || dist > outerR - 1.5) velocity *= 0.92;
-
-                if(raceActive) {
+                if (raceActive) {
                     bots.forEach(b => {
                         b.userData.angle += b.userData.speed;
                         b.position.set(Math.cos(b.userData.angle)*b.userData.lane, 0, Math.sin(b.userData.angle)*b.userData.lane);
