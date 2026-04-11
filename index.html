@@ -2,553 +2,192 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Motorcycle Race - Track & Joystick</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Moto Drift</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', 'Poppins', 'Arial', sans-serif;
+        body { margin: 0; overflow: hidden; background: #111; font-family: sans-serif; }
+        #joystick-zone {
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 150px;
+            height: 150px;
+            z-index: 10;
         }
-        /* HUD overlay */
-        #hud {
+        #ui {
             position: absolute;
             top: 20px;
             left: 20px;
             color: white;
-            background: rgba(0,0,0,0.6);
-            padding: 8px 16px;
-            border-radius: 20px;
-            backdrop-filter: blur(5px);
             pointer-events: none;
-            z-index: 10;
-            font-weight: bold;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-        }
-        #speed {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #ffaa33;
-        }
-        /* Joystick Container */
-        #joystick-container {
-            position: absolute;
-            bottom: 80px;
-            right: 80px;
-            width: 130px;
-            height: 130px;
-            background: rgba(30,30,40,0.65);
-            border-radius: 50%;
-            backdrop-filter: blur(8px);
-            border: 2px solid rgba(255,200,100,0.8);
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            touch-action: none;
-            z-index: 20;
-        }
-        #joystick-base {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 60px;
-            height: 60px;
-            background: radial-gradient(circle, #ffcc66, #ffaa33);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            cursor: grab;
-            transition: transform 0.02s linear;
-            border: 2px solid white;
-        }
-        /* instructions */
-        #instructions {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: rgba(255,255,255,0.7);
-            background: rgba(0,0,0,0.5);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            pointer-events: none;
-            font-family: monospace;
-        }
-        @media (max-width: 700px) {
-            #joystick-container { bottom: 40px; right: 40px; width: 110px; height: 110px; }
-            #joystick-base { width: 50px; height: 50px; }
-            #hud { font-size: 0.9rem; top: 12px; left: 12px; }
-            #speed { font-size: 1.4rem; }
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
-    <div id="hud">
-        🏍️ SPEED: <span id="speed">0</span> km/h
-        <div style="font-size:0.8rem;">🏁 LAP 1/3</div>
-    </div>
-    <div id="joystick-container">
-        <div id="joystick-base"></div>
-    </div>
-    <div id="instructions">
-        🕹️ Drag joystick → Steer & Throttle | ⬆️ Forward | ⬅️➡️ Turn
-    </div>
 
-    <!-- Import Three.js core and add-ons -->
+    <div id="ui">
+        <h1>MOTO 3D</h1>
+        <p>Use the Joystick to Drive & Drift</p>
+    </div>
+    <div id="joystick-zone"></div>
+
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
             }
         }
     </script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+
     <script type="module">
         import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-        // --- setup scene, camera, renderers ---
+        // --- SETUP ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x071a3b);
-        scene.fog = new THREE.FogExp2(0x071a3b, 0.008);
-        
-        // camera: third-person chase style but with angle
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 3.5, 8);
-        camera.lookAt(0, 0, 0);
-        
+        scene.background = new THREE.Color(0x87ceeb); // Sky blue
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true; // shadows for depth
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
-        
-        // CSS2 renderer for simple lap text (or bike label)
-        const labelRenderer = new CSS2DRenderer();
-        labelRenderer.setSize(window.innerWidth, window.innerHeight);
-        labelRenderer.domElement.style.position = 'absolute';
-        labelRenderer.domElement.style.top = '0px';
-        labelRenderer.domElement.style.left = '0px';
-        labelRenderer.domElement.style.pointerEvents = 'none';
-        document.body.appendChild(labelRenderer.domElement);
-        
-        // --- Lighting ---
-        // ambient
-        const ambientLight = new THREE.AmbientLight(0x404060);
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
-        // main directional light
-        const sunLight = new THREE.DirectionalLight(0xfff5e0, 1.2);
-        sunLight.position.set(10, 20, 5);
-        sunLight.castShadow = true;
-        sunLight.receiveShadow = true;
-        sunLight.shadow.mapSize.width = 1024;
-        sunLight.shadow.mapSize.height = 1024;
-        sunLight.shadow.camera.near = 0.5;
-        sunLight.shadow.camera.far = 30;
-        sunLight.shadow.camera.left = -10;
-        sunLight.shadow.camera.right = 10;
-        sunLight.shadow.camera.top = 10;
-        sunLight.shadow.camera.bottom = -10;
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+        sunLight.position.set(10, 20, 10);
         scene.add(sunLight);
-        // fill light from below & back
-        const fillLight = new THREE.PointLight(0x4466cc, 0.4);
-        fillLight.position.set(0, -2, 2);
-        scene.add(fillLight);
-        // rim light
-        const rimLight = new THREE.PointLight(0xffaa66, 0.5);
-        rimLight.position.set(-2, 3, -4);
-        scene.add(rimLight);
+
+        // --- THE TRACK (Circular with Walls) ---
+        const trackGroup = new THREE.Group();
+        const innerRadius = 40;
+        const outerRadius = 60;
         
-        // ground helper: a glossy reflective track floor? better to make track visibly distinct.
-        const groundPlane = new THREE.Mesh(
-            new THREE.PlaneGeometry(30, 60),
-            new THREE.ShadowMaterial({ opacity: 0.4, color: 0x000000, transparent: true, side: THREE.DoubleSide })
-        );
-        groundPlane.rotation.x = -Math.PI / 2;
-        groundPlane.position.y = -0.2;
-        groundPlane.receiveShadow = true;
-        scene.add(groundPlane);
+        // Road surface
+        const trackGeo = new THREE.RingGeometry(innerRadius, outerRadius, 64);
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0x333333, side: THREE.DoubleSide });
+        const track = new THREE.Mesh(trackGeo, trackMat);
+        track.rotation.x = Math.PI / 2;
+        trackGroup.add(track);
+
+        // Walls (To keep you in)
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0xff4444, transparent: true, opacity: 0.3 });
         
-        // --- Create the Racetrack: a nice curved oval with elevation? Let's do a stylized circuit using a extruded path or simple torus knot? But we need solid ground with visual lines.
-        // Approach: create a custom track mesh using a CurvePath and extruded geometry, but simpler: a series of curved road sections.
-        // For simplicity & visual appeal: create a large ring + banking? Let's make an oval-like track with texture using a ribbon.
-        // Better: Build a track from a custom shape: a closed spline curve + extruded geometry.
-        // I'll generate a track mesh with lanes using a TubeGeometry along a closed racetrack curve, and make it wide.
+        const innerWallGeo = new THREE.CylinderGeometry(innerRadius, innerRadius, 2, 64, 1, true);
+        const innerWall = new THREE.Mesh(innerWallGeo, wallMat);
+        trackGroup.add(innerWall);
+
+        const outerWallGeo = new THREE.CylinderGeometry(outerRadius, outerRadius, 2, 64, 1, true);
+        const outerWall = new THREE.Mesh(outerWallGeo, wallMat);
+        trackGroup.add(outerWall);
+
+        scene.add(trackGroup);
+
+        // --- THE MOTORCYCLE ---
+        const bike = new THREE.Group();
         
-        // Define a racetrack curve (smooth loop with variations)
-        const trackPoints = [];
-        const radiusX = 7.5;
-        const radiusZ = 12;
-        // add some asymmetry for fun
-        for (let t = 0; t <= 1; t += 0.02) {
-            const angle = t * Math.PI * 2;
-            let x = Math.cos(angle) * radiusX;
-            let z = Math.sin(angle) * radiusZ;
-            // slight banking effect in Y
-            let y = Math.sin(angle * 2) * 0.2 + Math.cos(angle * 3) * 0.1;
-            trackPoints.push(new THREE.Vector3(x, y, z));
-        }
-        const curve = new THREE.CatmullRomCurve3(trackPoints);
-        curve.curveType = 'centripetal';
-        curve.closed = true;
-        
-        // Create track mesh (wide tube shape)
-        const tubeGeometry = new THREE.TubeGeometry(curve, 180, 0.85, 20, true);
-        const trackMaterial = new THREE.MeshStandardMaterial({ color: 0x2c2e3a, roughness: 0.4, metalness: 0.7, side: THREE.DoubleSide });
-        const trackMesh = new THREE.Mesh(tubeGeometry, trackMaterial);
-        trackMesh.castShadow = true;
-        trackMesh.receiveShadow = true;
-        scene.add(trackMesh);
-        
-        // Add racing stripes / markings: add a thinner tube on top with different color
-        const stripeMaterial = new THREE.MeshStandardMaterial({ color: 0xdd9922, emissive: 0x331c00 });
-        const stripeGeometry = new THREE.TubeGeometry(curve, 180, 0.12, 12, true);
-        const stripeMesh = new THREE.Mesh(stripeGeometry, stripeMaterial);
-        stripeMesh.position.y = 0.05;
-        scene.add(stripeMesh);
-        
-        // add edge guard rails: two side lines (thin cylinders along curve)
-        const railMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8 });
-        const leftOffset = new THREE.Vector3();
-        const rightOffset = new THREE.Vector3();
-        const upVec = new THREE.Vector3(0, 1, 0);
-        // We'll generate simple points and place small cylinders or line segments - but for performance: use line loops? Simpler: add a few light strips.
-        // Add edge lines (decorative)
-        const edgePoints = curve.getPoints(200);
-        const edgeLeftPoints = [];
-        const edgeRightPoints = [];
-        for (let i = 0; i < edgePoints.length; i++) {
-            const p = edgePoints[i];
-            const tangent = curve.getTangent(i / edgePoints.length).normalize();
-            const right = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-            const left = right.clone().negate();
-            edgeLeftPoints.push(p.clone().add(left.multiplyScalar(0.9)));
-            edgeRightPoints.push(p.clone().add(right.multiplyScalar(0.9)));
-        }
-        const leftLineGeo = new THREE.BufferGeometry().setFromPoints(edgeLeftPoints);
-        const rightLineGeo = new THREE.BufferGeometry().setFromPoints(edgeRightPoints);
-        const lineMat = new THREE.LineBasicMaterial({ color: 0xffaa55 });
-        const leftLine = new THREE.Line(leftLineGeo, lineMat);
-        const rightLine = new THREE.Line(rightLineGeo, lineMat);
-        scene.add(leftLine);
-        scene.add(rightLine);
-        
-        // add some track-side markers (small cones or cubes)
-        const markerMat = new THREE.MeshStandardMaterial({ color: 0xff5533 });
-        for (let i = 0; i <= 40; i++) {
-            const t = i / 40;
-            const pos = curve.getPoint(t);
-            const tangent = curve.getTangent(t);
-            const rightDir = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-            const sidePos = pos.clone().add(rightDir.multiplyScalar(1.2));
-            sidePos.y += 0.2;
-            const cone = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 6), markerMat);
-            cone.position.copy(sidePos);
-            cone.castShadow = true;
-            scene.add(cone);
-            
-            const leftSide = pos.clone().add(rightDir.clone().negate().multiplyScalar(1.2));
-            leftSide.y += 0.2;
-            const coneL = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 6), markerMat);
-            coneL.position.copy(leftSide);
-            coneL.castShadow = true;
-            scene.add(coneL);
-        }
-        
-        // --- Motorcycle Model (group) ---
-        const bikeGroup = new THREE.Group();
-        // body
-        const bodyGeo = new THREE.BoxGeometry(0.45, 0.35, 1.2);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xdd2222, metalness: 0.7, roughness: 0.3 });
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.position.y = 0.2;
-        body.castShadow = true;
-        body.receiveShadow = true;
-        bikeGroup.add(body);
-        // front wheel
-        const wheelGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.2, 24);
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.4 });
+        // Body
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 1.5), new THREE.MeshStandardMaterial({color: 0x0077ff}));
+        body.position.y = 0.6;
+        bike.add(body);
+
+        // Wheels
+        const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+        const wheelMat = new THREE.MeshStandardMaterial({color: 0x111111});
         const frontWheel = new THREE.Mesh(wheelGeo, wheelMat);
-        frontWheel.position.set(0, 0.15, 0.55);
         frontWheel.rotation.z = Math.PI / 2;
-        frontWheel.castShadow = true;
-        bikeGroup.add(frontWheel);
-        // rear wheel
-        const rearWheel = new THREE.Mesh(wheelGeo, wheelMat);
-        rearWheel.position.set(0, 0.15, -0.55);
-        rearWheel.rotation.z = Math.PI / 2;
-        rearWheel.castShadow = true;
-        bikeGroup.add(rearWheel);
-        // handlebar
-        const barGeo = new THREE.BoxGeometry(0.5, 0.1, 0.1);
-        const barMat = new THREE.MeshStandardMaterial({ color: 0xccccaa });
-        const handlebar = new THREE.Mesh(barGeo, barMat);
-        handlebar.position.set(0, 0.45, 0.4);
-        bikeGroup.add(handlebar);
-        // rider (simple)
-        const riderGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.5, 8);
-        const riderMat = new THREE.MeshStandardMaterial({ color: 0x3c8c40 });
-        const rider = new THREE.Mesh(riderGeo, riderMat);
-        rider.position.set(0, 0.55, 0.05);
-        bikeGroup.add(rider);
-        const helmetGeo = new THREE.SphereGeometry(0.18, 16, 16);
-        const helmetMat = new THREE.MeshStandardMaterial({ color: 0xffaa55 });
-        const helmet = new THREE.Mesh(helmetGeo, helmetMat);
-        helmet.position.set(0, 0.85, 0.1);
-        bikeGroup.add(helmet);
-        
-        scene.add(bikeGroup);
-        
-        // add a glowing headlight
-        const headlight = new THREE.PointLight(0xffaa66, 0.8, 12);
-        headlight.position.set(0, 0.3, 0.7);
-        bikeGroup.add(headlight);
-        
-        // --- Environment: Trees, stands, lights around track for atmosphere ---
-        const treeMat = new THREE.MeshStandardMaterial({ color: 0x5c9e5e });
-        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
-        for (let i = 0; i < 120; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const rad = 10 + Math.random() * 4;
-            const x = Math.cos(angle) * rad * (Math.random() > 0.5 ? 1.2 : 0.9);
-            const z = Math.sin(angle) * rad * 1.4;
-            if (Math.hypot(x, z) < 5.5) continue;
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 0.8, 5), trunkMat);
-            trunk.position.set(x, -0.2, z);
-            trunk.castShadow = true;
-            const foliage = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.7, 6), treeMat);
-            foliage.position.set(x, 0.35, z);
-            foliage.castShadow = true;
-            scene.add(trunk);
-            scene.add(foliage);
-        }
-        
-        // floating particles (dust)
-        const particleCount = 400;
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlePositions = new Float32Array(particleCount * 3);
-        for (let i = 0; i < particleCount; i++) {
-            particlePositions[i*3] = (Math.random() - 0.5) * 40;
-            particlePositions[i*3+1] = Math.random() * 2;
-            particlePositions[i*3+2] = (Math.random() - 0.5) * 30;
-        }
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-        const particleMatGlow = new THREE.PointsMaterial({ color: 0x88aaff, size: 0.05, transparent: true, opacity: 0.5 });
-        const particleSystem = new THREE.Points(particlesGeometry, particleMatGlow);
-        scene.add(particleSystem);
-        
-        // --- GAMEPLAY & JOYSTICK LOGIC ---
-        let bikeProgress = 0; // 0 to 1 along curve
+        frontWheel.position.set(0, 0.4, 0.7);
+        bike.add(frontWheel);
+
+        const backWheel = frontWheel.clone();
+        backWheel.position.z = -0.7;
+        bike.add(backWheel);
+
+        bike.position.set(50, 0, 0); // Start on the track
+        scene.add(bike);
+
+        // --- CONTROLS STATE ---
+        let input = { x: 0, y: 0 };
         let speed = 0;
-        const maxSpeed = 14.5;
-        const acceleration = 0.38;
-        const brakeDecel = 0.65;
-        const turnStrength = 1.8; // how much joystick x affects lateral movement / direction delta
-        let currentSteer = 0; // -1..1
-        
-        // Joystick handling
-        const joystickContainer = document.getElementById('joystick-container');
-        const joystickBase = document.getElementById('joystick-base');
-        let active = false;
-        let joystickCenter = { x: 0, y: 0 };
-        let joystickVector = { x: 0, y: 0 }; // x: left/right steer, y: throttle/brake (forward/back)
-        
-        function updateJoystickPos(clientX, clientY) {
-            const rect = joystickContainer.getBoundingClientRect();
-            const centerX = rect.left + rect.width/2;
-            const centerY = rect.top + rect.height/2;
-            let dx = clientX - centerX;
-            let dy = clientY - centerY;
-            const maxRadius = rect.width/2 - 12;
-            const distance = Math.hypot(dx, dy);
-            if (distance > maxRadius) {
-                dx = dx / distance * maxRadius;
-                dy = dy / distance * maxRadius;
-            }
-            joystickBase.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-            // normalize values -1..1
-            joystickVector.x = dx / maxRadius;
-            joystickVector.y = -dy / maxRadius; // up = positive throttle
-        }
-        
-        function startDrag(e) {
-            active = true;
-            const point = e.touches ? e.touches[0] : e;
-            joystickCenter = { x: point.clientX, y: point.clientY };
-            updateJoystickPos(point.clientX, point.clientY);
-        }
-        
-        function onDrag(e) {
-            if (!active) return;
-            e.preventDefault();
-            const point = e.touches ? e.touches[0] : e;
-            updateJoystickPos(point.clientX, point.clientY);
-        }
-        
-        function endDrag() {
-            active = false;
-            joystickBase.style.transform = `translate(-50%, -50%)`;
-            joystickVector = { x: 0, y: 0 };
-        }
-        
-        joystickContainer.addEventListener('mousedown', startDrag);
-        window.addEventListener('mousemove', onDrag);
-        window.addEventListener('mouseup', endDrag);
-        joystickContainer.addEventListener('touchstart', startDrag);
-        window.addEventListener('touchmove', onDrag, { passive: false });
-        window.addEventListener('touchend', endDrag);
-        
-        // also keyboard fallback (optional)
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp') joystickVector.y = 1;
-            if (e.key === 'ArrowDown') joystickVector.y = -0.6;
-            if (e.key === 'ArrowLeft') joystickVector.x = -0.8;
-            if (e.key === 'ArrowRight') joystickVector.x = 0.8;
+        const maxSpeed = 0.5;
+        const friction = 0.98;
+        const turnSpeed = 0.04;
+
+        // --- JOYSTICK INITIALIZATION ---
+        const manager = nipplejs.create({
+            zone: document.getElementById('joystick-zone'),
+            mode: 'static',
+            position: { left: '75px', bottom: '75px' },
+            color: 'white'
         });
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') joystickVector.y = 0;
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') joystickVector.x = 0;
+
+        manager.on('move', (evt, data) => {
+            // Normalize joystick data
+            const dist = data.distance / 75;
+            const angle = data.angle.radians;
+            input.x = Math.cos(angle) * dist;
+            input.y = Math.sin(angle) * dist;
         });
-        
-        // track length parameter
-        let lapCount = 0;
-        let prevProgress = 0;
-        
-        // Update speed based on joystick Y
-        function updatePhysics(deltaTime) {
-            let throttle = joystickVector.y; // forward 1, backward -1
-            if (throttle > 0) {
-                speed += acceleration * throttle * deltaTime * 2.2;
-            } else if (throttle < 0) {
-                speed += brakeDecel * throttle * deltaTime * 2.5;
-            } else {
-                // drag
-                speed *= (1 - deltaTime * 1.2);
-            }
-            speed = Math.min(maxSpeed, Math.max(-3.5, speed));
-            // move along curve
-            let deltaProgress = speed * deltaTime * 0.028; // factor to map speed to curve distance
-            bikeProgress += deltaProgress;
-            if (bikeProgress > 1) {
-                bikeProgress -= 1;
-                lapCount++;
-                document.getElementById('speed').style.color = '#ffaa33';
-                setTimeout(() => { document.getElementById('speed').style.color = '#ffaa33'; }, 300);
-                // update HUD lap (simple)
-                const lapDiv = document.querySelector('#hud div');
-                if (lapDiv) lapDiv.innerHTML = `🏁 LAP ${Math.min(lapCount+1,3)}/3`;
-                if (lapCount >= 2) {
-                    // just celebratory, no end
-                }
-            } else if (bikeProgress < 0) {
-                bikeProgress += 1;
-                lapCount--;
-                if (lapCount < 0) lapCount = 0;
-            }
-            // steering influence: modify trajectory slight offset? We'll compute position + tangent offset to simulate drifting?
-            currentSteer = joystickVector.x;
-            // apply steering effect on movement: lateral displacement based on speed and steer
-            // Instead of modifying curve progress, we compute a "track offset" that visually shifts bike left/right on track
-            // For simplicity, we will compute target position from curve then offset laterally using right vector.
-        }
-        
-        // get bike world position + orientation
-        function updateBikeTransform() {
-            const t = bikeProgress;
-            const basePos = curve.getPoint(t);
-            const tangent = curve.getTangent(t).normalize();
-            // compute right vector (local X axis) for lateral offset
-            const right = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-            // steering offset: max offset 0.85 units, but constrained to track width
-            let lateralOffset = currentSteer * 0.65;
-            // also speed influence: higher speed reduces max offset slightly (realism)
-            lateralOffset *= Math.max(0.5, 1 - Math.abs(speed)/maxSpeed * 0.3);
-            const offsetPos = basePos.clone().add(right.clone().multiplyScalar(lateralOffset));
-            // slight tilt based on steering and speed
-            const tiltRoll = currentSteer * -0.35 * (Math.min(1, speed / 8));
-            // final position
-            offsetPos.y += 0.05; // slight elevation
-            bikeGroup.position.copy(offsetPos);
-            
-            // orientation: face along tangent, plus roll
-            const quaternion = new THREE.Quaternion().setFromUnitVectors(
-                new THREE.Vector3(0, 0, 1),
-                tangent
-            );
-            bikeGroup.quaternion.copy(quaternion);
-            // apply roll (rotate around forward axis)
-            const forwardAxis = tangent.clone();
-            const rollQuat = new THREE.Quaternion().setFromAxisAngle(forwardAxis, tiltRoll);
-            bikeGroup.quaternion.premultiply(rollQuat);
-            
-            // update camera: third-person follow with lag for smoothness
-            const idealOffset = new THREE.Vector3(-2.2, 2.2, 4.5);
-            const targetCamPos = offsetPos.clone().add(idealOffset);
-            camera.position.lerp(targetCamPos, 0.1);
-            camera.lookAt(offsetPos.clone().add(tangent.clone().multiplyScalar(1.5)));
-        }
-        
-        // add lap counter element CSS2D for extra flair (floating above bike)
-        const lapLabelDiv = document.createElement('div');
-        lapLabelDiv.textContent = '🏍️ RACER';
-        lapLabelDiv.style.backgroundColor = 'rgba(0,0,0,0.6)';
-        lapLabelDiv.style.color = 'orange';
-        lapLabelDiv.style.padding = '2px 6px';
-        lapLabelDiv.style.borderRadius = '12px';
-        lapLabelDiv.style.fontSize = '12px';
-        lapLabelDiv.style.fontWeight = 'bold';
-        const labelObj = new CSS2DObject(lapLabelDiv);
-        bikeGroup.add(labelObj);
-        labelObj.position.set(0, 1.1, 0);
-        
-        // dynamic speed display update
-        function updateHUD() {
-            const speedKPH = Math.floor(Math.abs(speed) * 18);
-            document.getElementById('speed').innerText = speedKPH;
-        }
-        
-        // Simple animation loop
-        let lastTime = performance.now();
+
+        manager.on('end', () => {
+            input.x = 0;
+            input.y = 0;
+        });
+
+        // --- GAME LOOP ---
         function animate() {
-            const now = performance.now();
-            let delta = Math.min(0.033, (now - lastTime) / 1000);
-            lastTime = now;
-            if (delta < 0.005) delta = 0.016;
-            
-            updatePhysics(delta);
-            updateBikeTransform();
-            updateHUD();
-            
-            // animate particles for motion blur effect
-            particleSystem.rotation.y += 0.008;
-            // headlight intensity based on speed
-            headlight.intensity = 0.6 + Math.min(1.2, Math.abs(speed) / 12);
-            
-            renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
             requestAnimationFrame(animate);
+
+            // 1. Movement Logic
+            if (Math.abs(input.y) > 0.1) {
+                speed += input.y * 0.02;
+            }
+            speed *= friction;
+            speed = Math.max(Math.min(speed, maxSpeed), -maxSpeed);
+
+            // 2. Steering & Drifting
+            if (Math.abs(speed) > 0.01) {
+                bike.rotation.y -= input.x * turnSpeed;
+                
+                // Visual Lean (Drift Effect)
+                const targetLean = -input.x * 0.6;
+                bike.rotation.z = THREE.MathUtils.lerp(bike.rotation.z, targetLean, 0.1);
+            }
+
+            bike.translateZ(speed);
+
+            // 3. Boundary Constraint (Keep on track)
+            const distFromCenter = Math.sqrt(bike.position.x**2 + bike.position.z**2);
+            if (distFromCenter < innerRadius + 0.5) {
+                const angle = Math.atan2(bike.position.z, bike.position.x);
+                bike.position.x = Math.cos(angle) * (innerRadius + 0.5);
+                bike.position.z = Math.sin(angle) * (innerRadius + 0.5);
+            }
+            if (distFromCenter > outerRadius - 0.5) {
+                const angle = Math.atan2(bike.position.z, bike.position.x);
+                bike.position.x = Math.cos(angle) * (outerRadius - 0.5);
+                bike.position.z = Math.sin(angle) * (outerRadius - 0.5);
+            }
+
+            // 4. Camera Follow
+            const relativeCameraOffset = new THREE.Vector3(0, 3, -7);
+            const cameraOffset = relativeCameraOffset.applyMatrix4(bike.matrixWorld);
+            camera.position.lerp(cameraOffset, 0.1);
+            camera.lookAt(bike.position);
+
+            renderer.render(scene, camera);
         }
-        
-        // small start-up reset
-        bikeProgress = 0.12; // start at a nice straight
-        speed = 2;
-        lapCount = 0;
-        animate();
-        
-        // handle resize
-        window.addEventListener('resize', onWindowResize, false);
-        function onWindowResize() {
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
-        }
-        
-        // optional simple performance: add grid or stars? skybox simple gradient via scene bg
-        // add a few floating arrows or not needed. everything ready.
-        
-        console.log('Race started! Use joystick to throttle and steer!');
+        });
+
+        animate();
     </script>
 </body>
 </html>
