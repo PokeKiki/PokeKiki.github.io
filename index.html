@@ -3,36 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kart Racer Fix</title>
+    <title>Pro Moto Racer</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #1a1a24; font-family: sans-serif; touch-action: none; }
-        #container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        body { margin: 0; overflow: hidden; background: #1a1a24; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         
-        /* Custom Visible Joystick */
+        /* Speedometer UI */
+        #ui-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 140px;
+            height: 140px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 50%;
+            border: 4px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        #speed-num { font-size: 2rem; font-weight: bold; color: #fff; margin: 0; }
+        #speed-unit { font-size: 0.7rem; color: #ff0000; letter-spacing: 1px; }
+
+        /* Joystick UI */
         #joy-base { 
-            position: absolute; bottom: 50px; left: 50px; 
-            width: 120px; height: 120px; 
-            background: rgba(0, 242, 255, 0.2); 
-            border: 3px solid #00f2ff; border-radius: 50%; 
-            z-index: 100; touch-action: none;
+            position: absolute; bottom: 40px; left: 40px; 
+            width: 130px; height: 130px; 
+            background: rgba(255, 255, 255, 0.1); 
+            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; 
+            z-index: 100;
         }
         #joy-stick { 
             position: absolute; top: 35px; left: 35px; 
-            width: 50px; height: 50px; 
-            background: #00f2ff; border-radius: 50%; 
-            box-shadow: 0 0 15px #00f2ff;
+            width: 60px; height: 60px; 
+            background: #fff; border-radius: 50%; 
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
         }
 
-        /* UI Overlays */
-        .overlay { position: absolute; color: white; pointer-events: none; z-index: 10; font-weight: bold; }
-        #speed { top: 20px; width: 100%; text-align: center; font-size: 2rem; color: #00f2ff; }
-        #lap-box { top: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 10px; border: 1px solid #444; }
+        #container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
-    <div id="speed">0 KM/H</div>
-    <div id="lap-box" class="overlay">LAP <span style="color:red">1</span></div>
+    <div id="ui-container">
+        <div id="speed-num">0</div>
+        <div id="speed-unit">KM/H</div>
+    </div>
     
     <div id="joy-base">
         <div id="joy-stick"></div>
@@ -49,126 +66,158 @@
 
         // --- 1. ENGINE SETUP ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a24);
+        scene.background = new THREE.Color(0x222233);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.getElementById('container').appendChild(renderer.domElement);
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+        const ambient = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambient);
+        const sun = new THREE.DirectionalLight(0xffffff, 1);
+        sun.position.set(10, 20, 10);
+        scene.add(sun);
 
-        // --- 2. THE TRACK (Visible & Direct) ---
-        // Green Grass
-        const grass = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({color: 0x2d3e2d}));
-        grass.rotation.x = -Math.PI / 2;
-        scene.add(grass);
+        // --- 2. TRACK & SIDES ---
+        const innerR = 45;
+        const outerR = 75;
 
-        // Grey Road
-        const trackGeo = new THREE.RingGeometry(40, 70, 64);
-        const trackMat = new THREE.MeshStandardMaterial({color: 0x333333, side: THREE.DoubleSide});
-        const road = new THREE.Mesh(trackGeo, trackMat);
+        // Dark Asphalt
+        const roadGeo = new THREE.RingGeometry(innerR, outerR, 128);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+        const road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
-        road.position.y = 0.01;
         scene.add(road);
 
-        // Red/White Walls
-        for(let i=0; i<40; i++) {
-            const angle = (i/40) * Math.PI * 2;
-            const mat = (i % 2 === 0) ? 0xaa2222 : 0xffffff;
-            const wall = new THREE.Mesh(new THREE.BoxGeometry(8, 1, 0.5), new THREE.MeshStandardMaterial({color: mat}));
-            wall.position.set(Math.cos(angle)*70.5, 0.5, Math.sin(angle)*70.5);
-            wall.rotation.y = -angle;
-            scene.add(wall);
+        // Red & White Curbing (The sides)
+        const curbCount = 100;
+        for(let i=0; i < curbCount; i++) {
+            const angle = (i / curbCount) * Math.PI * 2;
+            const isRed = i % 2 === 0;
+            const mat = new THREE.MeshStandardMaterial({ color: isRed ? 0xcc0000 : 0xffffff });
+            
+            // Outer Curb
+            const curbOut = new THREE.Mesh(new THREE.BoxGeometry(5, 0.3, 2), mat);
+            curbOut.position.set(Math.cos(angle) * (outerR + 0.5), 0.15, Math.sin(angle) * (outerR + 0.5));
+            curbOut.rotation.y = -angle;
+            scene.add(curbOut);
+
+            // Inner Curb
+            const curbIn = new THREE.Mesh(new THREE.BoxGeometry(4, 0.3, 1.5), mat);
+            curbIn.position.set(Math.cos(angle) * (innerR - 0.5), 0.15, Math.sin(angle) * (innerR - 0.5));
+            curbIn.rotation.y = -angle;
+            scene.add(curbIn);
         }
 
-        // --- 3. THE MOTORCYCLE/KART ---
-        const player = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 1.5), new THREE.MeshStandardMaterial({color: 0xaa2222}));
-        body.position.y = 0.4;
-        player.add(body);
+        // Grass Background
+        const grass = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({color: 0x1a2e1a}));
+        grass.rotation.x = -Math.PI / 2;
+        grass.position.y = -0.1;
+        scene.add(grass);
+
+        // --- 3. THE MOTORCYCLE ---
+        const moto = new THREE.Group();
         
-        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2), new THREE.MeshStandardMaterial({color: 0x000000}));
-        wheel.rotation.z = Math.PI/2;
-        const w1 = wheel.clone(); w1.position.set(0.4, 0.3, 0.6); player.add(w1);
-        const w2 = wheel.clone(); w2.position.set(-0.4, 0.3, 0.6); player.add(w2);
-        const w3 = wheel.clone(); w3.position.set(0.4, 0.3, -0.6); player.add(w3);
-        const w4 = wheel.clone(); w4.position.set(-0.4, 0.3, -0.6); player.add(w4);
+        // Main Body (Frame)
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.6, 1.4), new THREE.MeshStandardMaterial({color: 0x111111}));
+        frame.position.y = 0.6;
+        moto.add(frame);
 
-        player.position.set(55, 0, 0);
-        scene.add(player);
+        // Fairing (The colorful part)
+        const fairing = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.5, 0.8), new THREE.MeshStandardMaterial({color: 0xff0000}));
+        fairing.position.set(0, 0.8, 0.2);
+        moto.add(fairing);
 
-        // --- 4. CUSTOM JOYSTICK LOGIC ---
+        // Wheels
+        const wheelGeo = new THREE.TorusGeometry(0.35, 0.12, 12, 24);
+        const wheelMat = new THREE.MeshStandardMaterial({color: 0x050505});
+        const frontW = new THREE.Mesh(wheelGeo, wheelMat);
+        frontW.position.set(0, 0.35, 0.7);
+        moto.add(frontW);
+        const backW = frontW.clone();
+        backW.position.z = -0.7;
+        moto.add(backW);
+
+        // Handlebars
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8), new THREE.MeshStandardMaterial({color: 0x333333}));
+        bar.rotation.z = Math.PI / 2;
+        bar.position.set(0, 0.9, 0.5);
+        moto.add(bar);
+
+        moto.position.set(60, 0, 0);
+        scene.add(moto);
+
+        // --- 4. JOYSTICK LOGIC ---
         const base = document.getElementById('joy-base');
         const stick = document.getElementById('joy-stick');
-        let inputX = 0, inputY = 0;
-        let isTouching = false;
+        let inputX = 0, inputY = 0, isTouching = false;
 
-        const handleMove = (e) => {
+        const handleInput = (e) => {
             if(!isTouching) return;
             const touch = e.touches ? e.touches[0] : e;
             const rect = base.getBoundingClientRect();
-            const centerX = rect.left + rect.width/2;
-            const centerY = rect.top + rect.height/2;
-            
-            let dx = touch.clientX - centerX;
-            let dy = touch.clientY - centerY;
+            const cx = rect.left + rect.width/2;
+            const cy = rect.top + rect.height/2;
+            let dx = touch.clientX - cx;
+            let dy = touch.clientY - cy;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            const max = 50;
-
-            if(dist > max) {
-                dx *= max/dist;
-                dy *= max/dist;
-            }
-
+            const limit = 50;
+            if(dist > limit) { dx *= limit/dist; dy *= limit/dist; }
             stick.style.transform = `translate(${dx}px, ${dy}px)`;
-            inputX = dx / max; // Horizontal (Steering)
-            inputY = -dy / max; // Vertical (Speed) - Negative because Y is down in browsers
+            inputX = dx / limit;
+            inputY = -dy / limit; 
         };
 
-        base.addEventListener('touchstart', (e) => { isTouching = true; handleMove(e); });
-        window.addEventListener('touchmove', handleMove);
+        base.addEventListener('touchstart', (e) => { isTouching = true; handleInput(e); });
+        window.addEventListener('touchmove', handleInput, { passive: false });
         window.addEventListener('touchend', () => {
             isTouching = false;
             stick.style.transform = `translate(0px, 0px)`;
             inputX = 0; inputY = 0;
         });
 
-        // --- 5. PHYSICS LOOP ---
+        // --- 5. GAME LOOP ---
         let velocity = 0;
+        const maxV = 1.3;
+
         function animate() {
             requestAnimationFrame(animate);
 
-            // Forward movement
-            if (Math.abs(inputY) > 0.1) {
-                velocity += inputY * 0.02;
-            }
-            velocity *= 0.95; // Friction
-            
-            // Steering
+            // Speed Logic
+            if (Math.abs(inputY) > 0.1) velocity += inputY * 0.025;
+            velocity *= 0.96; // Friction
+            velocity = Math.max(Math.min(velocity, maxV), -maxV/2);
+
+            // Steering & Lean Logic
             if (Math.abs(velocity) > 0.05) {
-                player.rotation.y += inputX * -0.05;
-                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, inputX * -0.4, 0.1);
+                moto.rotation.y -= inputX * 0.045;
+                // Lean is based on steering speed and intensity
+                const targetLean = -inputX * 0.8 * (Math.abs(velocity)/maxV);
+                moto.rotation.z = THREE.MathUtils.lerp(moto.rotation.z, targetLean, 0.1);
+            } else {
+                moto.rotation.z = THREE.MathUtils.lerp(moto.rotation.z, 0, 0.1);
             }
 
-            player.translateZ(velocity);
+            moto.translateZ(velocity);
 
-            // Boundary Logic (Keep on track)
-            const d = Math.sqrt(player.position.x**2 + player.position.z**2);
-            if (d < 41 || d > 69) {
-                velocity *= 0.5;
-                const angle = Math.atan2(player.position.z, player.position.x);
-                const clamp = Math.max(41, Math.min(d, 69));
-                player.position.x = Math.cos(angle) * clamp;
-                player.position.z = Math.sin(angle) * clamp;
+            // Keep in Track Bounds
+            const d = Math.sqrt(moto.position.x**2 + moto.position.z**2);
+            if (d < innerR + 1 || d > outerR - 1) {
+                velocity *= 0.7; // Wall friction
+                const angle = Math.atan2(moto.position.z, moto.position.x);
+                const clamp = Math.max(innerR + 1, Math.min(d, outerR - 1));
+                moto.position.x = Math.cos(angle) * clamp;
+                moto.position.z = Math.sin(angle) * clamp;
             }
 
-            document.getElementById('speed').innerText = Math.round(Math.abs(velocity) * 180) + " KM/H";
+            // UI Speed Update
+            document.getElementById('speed-num').innerText = Math.round(Math.abs(velocity) * 210);
 
-            // Camera follow
-            const camOffset = new THREE.Vector3(0, 4, -8).applyMatrix4(player.matrixWorld);
+            // Camera Chase
+            const camOffset = new THREE.Vector3(0, 3.5, -8).applyMatrix4(moto.matrixWorld);
             camera.position.lerp(camOffset, 0.1);
-            camera.lookAt(player.position);
+            camera.lookAt(moto.position.x, moto.position.y + 1, moto.position.z);
 
             renderer.render(scene, camera);
         }
