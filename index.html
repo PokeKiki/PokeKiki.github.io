@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto GP: Pro Drift Free-Roam</title>
+    <title>Moto GP: Multiplayer Pro</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #1a2a1a; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; user-select: none; }
         
-        /* Persistent Start Button */
         #start-race-btn {
             position: absolute; top: 20px; left: 20px; z-index: 300;
             padding: 15px 25px; font-size: 1.2rem; background: #ff0000;
@@ -15,27 +15,27 @@
             cursor: pointer; box-shadow: 0 0 15px rgba(255,0,0,0.5);
         }
 
-        /* End Screen */
+        #multiplayer-status {
+            position: absolute; top: 20px; left: 220px; z-index: 300;
+            font-size: 0.8rem; color: #00ffcc; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px;
+        }
+
         #end-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 400; backdrop-filter: blur(5px); }
         .btn-replay { padding: 25px 50px; font-size: 1.8rem; background: #ff0000; color: white; border: none; border-radius: 15px; cursor: pointer; }
 
-        /* HUD */
         #hud { position: absolute; top: 80px; left: 20px; z-index: 10; text-shadow: 3px 3px #000; visibility: hidden; }
         #rank-display { position: absolute; top: 20px; right: 20px; font-size: 3rem; color: #ff0000; font-style: italic; visibility: hidden; }
         #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; text-shadow: 0 0 30px #000; font-weight: 900; pointer-events: none; }
         
-        /* Speedometer */
         #speedometer { position: absolute; bottom: 30px; right: 30px; width: 180px; height: 90px; background: rgba(0,0,0,0.9); border: 4px solid #555; border-radius: 90px 90px 0 0; text-align: center; border-bottom: none; }
         #speed-text { font-size: 2.5rem; display: block; margin-top: 15px; color: #00ffcc; }
         
-        /* Starting Lights */
         #light-system { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: none; gap: 20px; z-index: 100; }
         .light { width: 60px; height: 60px; border-radius: 50%; background: #222; border: 4px solid #444; }
         .red { background: #ff0000; box-shadow: 0 0 30px #ff0000; }
         .yellow { background: #ffaa00; box-shadow: 0 0 30px #ffaa00; }
         .green { background: #00ff00; box-shadow: 0 0 30px #00ff00; }
 
-        /* Joystick */
         #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255, 255, 255, 0.1); border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 100; }
         #joy-stick { position: absolute; top: 35px; left: 35px; width: 70px; height: 70px; background: radial-gradient(circle, #fff, #888); border-radius: 50%; }
     </style>
@@ -43,6 +43,7 @@
 <body>
 
     <button id="start-race-btn" onclick="startRaceSequence()">PRESS TO RACE</button>
+    <div id="multiplayer-status">OFFLINE (Needs Server)</div>
 
     <div id="end-screen">
         <h1 style="font-size: 4rem;">RACE OVER</h1>
@@ -51,21 +52,10 @@
     </div>
 
     <div id="crash-alert">CRASHED!</div>
-
-    <div id="light-system">
-        <div id="l1" class="light"></div>
-        <div id="l2" class="light"></div>
-        <div id="l3" class="light"></div>
-    </div>
-
-    <div id="hud">
-        <div style="font-size: 1.8rem;">LAP <span id="lap-display" style="color: yellow;">1/3</span></div>
-        <div id="timer" style="font-family: monospace; font-size: 1.2rem;">00:00:00</div>
-    </div>
-
+    <div id="light-system"><div id="l1" class="light"></div><div id="l2" class="light"></div><div id="l3" class="light"></div></div>
+    <div id="hud"><div>LAP <span id="lap-display" style="color: yellow;">1/3</span></div><div id="timer">00:00:00</div></div>
     <div id="rank-display">1st</div>
     <div id="speedometer"><span id="speed-text">0</span><span style="font-size: 0.7rem; color: #888;">KM/H</span></div>
-    
     <div id="joy-base"><div id="joy-stick"></div></div>
     <div id="container"></div>
 
@@ -73,6 +63,10 @@
 
     <script type="module">
         import * as THREE from 'three';
+
+        // --- MULTIPLAYER SETUP ---
+        const socket = io("https://YOUR-SERVER-URL.com", { autoConnect: false }); 
+        const remotePlayers = {}; // Stores other people's bikes
 
         // --- 1. ENGINE & LIGHTING ---
         const scene = new THREE.Scene();
@@ -148,8 +142,25 @@
         [0x00ff00, 0x0044ff, 0xffee00].forEach((c, i) => {
             const bot = createMoto(c);
             bot.userData = { angle: -0.15 - (i*0.1), speed: 0.004 + Math.random()*0.002, lane: centerR + (i-1)*18 };
-            bot.visible = false; // Hidden until race starts
-            scene.add(bot); bots.push(bot);
+            bot.visible = false; scene.add(bot); bots.push(bot);
+        });
+
+        // --- MULTIPLAYER LOGIC ---
+        socket.on("playerUpdate", (data) => {
+            if (!remotePlayers[data.id]) {
+                remotePlayers[data.id] = createMoto(0x00ffff); // Friends appear Cyan
+                scene.add(remotePlayers[data.id]);
+            }
+            const p = remotePlayers[data.id];
+            p.position.set(data.x, data.y, data.z);
+            p.rotation.set(data.rx, data.ry, data.rz);
+        });
+
+        socket.on("playerDisconnect", (id) => {
+            if (remotePlayers[id]) {
+                scene.remove(remotePlayers[id]);
+                delete remotePlayers[id];
+            }
         });
 
         // --- 4. ENGINE LOGIC ---
@@ -157,12 +168,10 @@
 
         window.startRaceSequence = () => {
             document.getElementById('start-race-btn').style.display = 'none';
-            // Reset player and bots for race
             player.position.set(centerR, 0, -15);
             player.rotation.set(0, 0, 0);
             velocity = 0;
             bots.forEach((b, i) => { b.visible = true; b.userData.angle = -0.15 - (i*0.1); });
-            
             const lights = document.getElementById('light-system');
             lights.style.display = 'flex';
             setTimeout(() => document.getElementById('l1').classList.add('red'), 800);
@@ -176,7 +185,6 @@
             }, 2400);
         };
 
-        // Joystick
         const base = document.getElementById('joy-base'), stick = document.getElementById('joy-stick');
         let inX = 0, inY = 0, touching = false;
         base.addEventListener('touchstart', (e) => { touching = true; e.preventDefault(); }, {passive: false});
@@ -192,8 +200,6 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Movement (Always active for free-roam, raceActive checks for lights)
             if(!isFinished) {
                 let crash = false;
                 player.collisionSphere.center.copy(player.position);
@@ -203,7 +209,6 @@
                     velocity = 0.04; document.getElementById('crash-alert').style.display = 'block';
                 } else {
                     document.getElementById('crash-alert').style.display = 'none';
-                    // Allow movement even before race sequence (Free-roam)
                     if (Math.abs(inY) > 0.1) velocity += inY * 0.028;
                     velocity *= 0.975;
                 }
@@ -211,6 +216,14 @@
                 player.rotation.y -= inX * 0.065 * (Math.abs(velocity)/1.6);
                 player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 1.2 * (Math.abs(velocity)/1.6), 0.12);
                 player.translateZ(velocity);
+
+                // Send position to server
+                if (socket.connected) {
+                    socket.emit("move", {
+                        x: player.position.x, y: player.position.y, z: player.position.z,
+                        rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z
+                    });
+                }
 
                 if(Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
                     const p = smokePool[smokeIdx]; p.visible = true;
@@ -222,14 +235,12 @@
                 const dist = Math.sqrt(player.position.x**2 + player.position.z**2);
                 if (dist < innerR + 1.5 || dist > outerR - 1.5) velocity *= 0.92;
 
-                // Race specific logic
                 if(raceActive) {
                     bots.forEach(b => {
                         b.userData.angle += b.userData.speed;
                         b.position.set(Math.cos(b.userData.angle)*b.userData.lane, 0, Math.sin(b.userData.angle)*b.userData.lane);
                         b.rotation.y = -b.userData.angle + Math.PI;
                     });
-
                     const pA = Math.atan2(player.position.z, player.position.x);
                     if(pA > 3 || pA < -3) checkpoint = true;
                     if(checkpoint && pA > -0.1 && pA < 0.1 && player.position.x > 0) {
@@ -240,25 +251,18 @@
                             document.getElementById('final-rank').innerText = "RANK: " + document.getElementById('rank-display').innerText;
                         } else { lap++; document.getElementById('lap-display').innerText = lap + "/3"; }
                     }
-
                     let rank = 1;
                     bots.forEach(b => { if(b.userData.angle > (lap-1)*Math.PI*2 + (pA<0?pA+Math.PI*2:pA)) rank++; });
                     document.getElementById('rank-display').innerText = rank + (["st","nd","rd","th"][rank-1] || "th");
                     time += 1/60; document.getElementById('timer').innerText = time.toFixed(2) + "S";
                 }
             }
-            
             document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity)*215);
             const camOffset = new THREE.Vector3(0, 6, -11).applyMatrix4(player.matrixWorld);
             camera.position.lerp(camOffset, 0.1); camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
             renderer.render(scene, camera);
         }
         animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
