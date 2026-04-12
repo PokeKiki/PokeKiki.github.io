@@ -63,9 +63,12 @@
     <script type="module">
         import * as THREE from 'three';
 
-        let peer, conn, myName = "Player", iAmReady = false, friendIsReady = false;
-        let raceStarted = false, raceFinished = false, raceInProgress = false, time = 0, lap = 0, checkpointPassed = false;
+        let peer, myName = "Player", iAmReady = false;
+        let raceStarted = false, raceFinished = false, raceInProgress = false, time = 0, lap = 0;
+        const connections = {}; // up to 10 players
         const remotePlayers = {};
+        let readyCount = 0, totalPeers = 1;
+        let prevZ = null; // track previous Z to detect white line crossing
 
         window.initMultiplayer = (mode) => {
             myName = prompt("Enter your name:") || "Racer";
@@ -73,50 +76,79 @@
                 const code = String(Math.floor(1000 + Math.random() * 9000));
                 peer = new Peer('motogp-' + code);
                 peer.on('open', () => {
-                    alert("Share this code with your friend: " + code);
+                    alert("Share this 4-digit code: " + code);
                     document.getElementById('ready-ui').style.display = 'block';
                 });
-                peer.on('connection', (c) => { conn = c; setupConnection(c); });
+                peer.on('connection', (c) => {
+                    connections[c.peer] = c;
+                    totalPeers++;
+                    setupConnection(c);
+                });
             } else {
-                const code = prompt("Enter 4-digit room code:");
+                const code = prompt("Enter 4-digit code:");
                 if (!code) return;
                 peer = new Peer();
                 peer.on('open', () => {
-                    conn = peer.connect('motogp-' + code);
-                    setupConnection(conn);
+                    const c = peer.connect('motogp-' + code);
+                    connections[c.peer] = c;
+                    setupConnection(c);
                     document.getElementById('ready-ui').style.display = 'block';
+                });
+                peer.on('connection', (c) => {
+                    connections[c.peer] = c;
+                    totalPeers++;
+                    setupConnection(c);
                 });
             }
             document.getElementById('create-btn').style.display = 'none';
             document.getElementById('join-btn').style.display = 'none';
         };
 
+        function broadcast(data) {
+            Object.values(connections).forEach(c => { if (c.open) c.send(data); });
+        }
+
         function setupConnection(c) {
             c.on('open', () => {
                 document.getElementById('remote-status').style.display = 'block';
                 c.on('data', (d) => {
-                    if (d.type === 'ready') { friendIsReady = d.ready; updateUI(); }
+                    if (d.type === 'ready') {
+                        readyCount = d.readyCount;
+                        totalPeers = d.totalPeers;
+                        friendIsReady = true;
+                        updateUI();
+                    }
                     else if (d.type === 'start') executeRaceStart();
                     else if (d.type === 'move') {
-                        if (!remotePlayers["friend"]) { remotePlayers["friend"] = createMoto(0x00ffff, d.name); scene.add(remotePlayers["friend"]); }
-                        remotePlayers["friend"].position.set(d.x, d.y, d.z);
-                        remotePlayers["friend"].rotation.set(d.rx, d.ry, d.rz);
-                        remotePlayers["friend"].progress = d.progress;
+                        const id = d.id;
+                        if (!remotePlayers[id]) {
+                            const colors = [0x00ffff, 0xff00ff, 0xffff00, 0x00ff00, 0xff8800, 0x8800ff, 0x00ffaa, 0xff0088, 0xaaffoo];
+                            const col = colors[Object.keys(remotePlayers).length % colors.length];
+                            remotePlayers[id] = createMoto(col, d.name);
+                            scene.add(remotePlayers[id]);
+                        }
+                        remotePlayers[id].position.set(d.x, d.y, d.z);
+                        remotePlayers[id].rotation.set(d.rx, d.ry, d.rz);
+                        remotePlayers[id].progress = d.progress;
                     }
                 });
             });
         }
 
+        let friendIsReady = false;
         window.toggleReady = () => {
             iAmReady = !iAmReady;
-            if(conn) conn.send({ type: 'ready', ready: iAmReady });
+            readyCount += iAmReady ? 1 : -1;
+            broadcast({ type: 'ready', readyCount, totalPeers });
             updateUI();
         };
 
         function updateUI() {
             document.getElementById('my-dot').className = iAmReady ? "status-dot is-ready" : "status-dot";
             document.getElementById('friend-dot').className = friendIsReady ? "status-dot is-ready" : "status-dot";
-            document.getElementById('race-btn').style.display = (iAmReady && friendIsReady) ? "block" : "none";
+            document.getElementById('friend-ready-text').innerText = readyCount + '/' + totalPeers + ' READY';
+            const allReady = iAmReady && friendIsReady;
+            document.getElementById('race-btn').style.display = allReady ? "block" : "none";
         }
 
         // SCENE
@@ -449,13 +481,13 @@
         window.startRaceSequence = () => {
             document.getElementById('race-btn').style.display = 'none';
             document.getElementById('ready-ui').style.display = 'none';
-            if (conn) conn.send({ type: 'start' });
+            broadcast({ type: 'start' });
             executeRaceStart();
         };
 
         function executeRaceStart() {
             raceStarted = false; raceFinished = false; raceInProgress = true;
-            lap = 0; time = 0; checkpointPassed = false;
+            lap = 0; time = 0; prevZ = null;
             velocity = 0; inX = 0; inY = 0;
             document.getElementById('lap-display').innerText = '0/3';
             document.getElementById('race-btn').style.display = 'none';
@@ -471,6 +503,7 @@
             setTimeout(() => {
                 document.getElementById('l3').className = 'light green';
                 raceStarted = true;
+                prevZ = player.position.z;
                 document.getElementById('hud').style.visibility = 'visible';
                 document.getElementById('rank-display').style.visibility = 'visible';
                 setTimeout(() => ls.style.display = 'none', 1000);
@@ -501,18 +534,14 @@
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
-            // LAP LOGIC — finish line is at z=0 on the POSITIVE X side (x > 0)
-            // Player starts just behind it (z = -10, x = centerR)
-            // They must go around (z becomes positive = half lap checkpoint done)
-            // Then when they cross back to z < 0 AND they are on the positive X side = lap complete
-            const onFinishSide = player.position.x > 0;
-            if (player.position.z > 5 && !checkpointPassed) checkpointPassed = true;
-            if (player.position.z < 0 && checkpointPassed && onFinishSide && raceStarted) {
-                checkpointPassed = false;
-                if (lap < 3) {
+            // LAP LOGIC — player starts at z=-10, white line is at z=0
+            // Crossing from negative Z to positive Z on the finish line side = lap++
+            if (raceStarted && !raceFinished && prevZ !== null) {
+                const onFinishSide = player.position.x > innerR && player.position.x < outerR;
+                if (prevZ < 0 && player.position.z >= 0 && onFinishSide) {
                     lap++;
                     document.getElementById('lap-display').innerText = lap + '/3';
-                    if (lap === 3 && !raceFinished) {
+                    if (lap === 3) {
                         raceFinished = true;
                         document.getElementById('finish-screen').style.display = 'block';
                         document.getElementById('final-rank').innerText = document.getElementById('rank-display').innerText;
@@ -520,13 +549,16 @@
                     }
                 }
             }
+            if (raceStarted) prevZ = player.position.z;
 
             // RANKING
             let angle = Math.atan2(player.position.z, player.position.x);
             player.progress = lap * 10 + (angle < 0 ? angle + Math.PI * 2 : angle);
-            if (remotePlayers["friend"]) {
-                const rank = player.progress > remotePlayers["friend"].progress ? "1st" : "2nd";
-                document.getElementById('rank-display').innerText = rank;
+            const allPlayers = Object.values(remotePlayers);
+            if (allPlayers.length > 0) {
+                const ahead = allPlayers.filter(p => p.progress > player.progress).length;
+                const ranks = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'];
+                document.getElementById('rank-display').innerText = ranks[ahead] || (ahead+1)+'th';
             }
 
             // SMOKE
@@ -537,8 +569,8 @@
             }
             smokePool.forEach(s => { if (s.visible) { s.scale.multiplyScalar(0.92); if (s.scale.x < 0.1) s.visible = false; } });
 
-            if (raceStarted && !raceFinished) { time += 1 / 60; document.getElementById('timer').innerText = time.toFixed(2) + "S"; }
-            if (conn && conn.open) conn.send({ type: 'move', name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z, progress: player.progress });
+            if (raceStarted && !raceFinished) { time += 1/60; document.getElementById('timer').innerText = time.toFixed(2) + "S"; }
+            if (peer) broadcast({ type: 'move', id: peer.id, name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z, progress: player.progress });
 
             document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity) * 210);
             camera.position.lerp(new THREE.Vector3(0, 6, -12).applyMatrix4(player.matrixWorld), 0.1);
