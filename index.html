@@ -2,245 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto GP: Pro Multi-Lobby</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA Satellite Feed</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #1a2a1a; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; user-select: none; }
-        #menu-container { position: absolute; top: 20px; left: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; }
-        .menu-btn { padding: 12px 20px; font-size: 1rem; border-radius: 8px; border: 2px solid white; cursor: pointer; color: white; text-align: center; font-family: sans-serif; font-weight: bold; }
-        #race-btn { background: #ff0000; font-size: 1.2rem; border: 3px solid white; }
-        #create-btn { background: #0088ff; }
-        #join-btn { background: #00aa44; }
-        
-        #room-tag { position: absolute; top: 20px; left: 240px; z-index: 300; font-size: 0.9rem; color: #00ffcc; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; display: none; }
-        
-        /* Speedo & HUD */
-        #speedometer { position: absolute; bottom: 30px; right: 30px; width: 180px; height: 90px; background: rgba(0,0,0,0.9); border: 4px solid #555; border-radius: 90px 90px 0 0; text-align: center; }
-        #speed-text { font-size: 2.5rem; display: block; margin-top: 15px; color: #00ffcc; }
-        #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255, 255, 255, 0.1); border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 100; }
-        #joy-stick { position: absolute; top: 35px; left: 35px; width: 70px; height: 70px; background: radial-gradient(circle, #fff, #888); border-radius: 50%; }
-        
-        #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; font-weight: 900; text-shadow: 0 0 20px #000; }
-        #light-system { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: none; gap: 20px; z-index: 100; }
-        .light { width: 50px; height: 50px; border-radius: 50%; background: #222; border: 3px solid #444; }
-        .red { background: #ff0000; box-shadow: 0 0 20px #ff0000; }
-        .yellow { background: #ffaa00; box-shadow: 0 0 20px #ffaa00; }
-        .green { background: #00ff00; box-shadow: 0 0 20px #00ff00; }
+        body { font-family: sans-serif; text-align: center; background: #121212; color: white; }
+        #sat-image { border: 2px solid #333; margin-top: 20px; max-width: 90%; }
+        .info { color: #aaa; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-    <div id="menu-container">
-        <div id="race-btn" class="menu-btn" onclick="startRaceSequence()">PRESS TO START</div>
-        <div id="create-btn" class="menu-btn" onclick="initMultiplayer('create')">CREATE A ROOM</div>
-        <div id="join-btn" class="menu-btn" onclick="initMultiplayer('join')">JOIN A ROOM</div>
-    </div>
+    <h1>Daily Satellite Snapshot</h1>
+    <p class="info">Fetching data from NASA GIBS (Global Imagery Browse Services)</p>
+    
+    <img id="sat-image" src="" alt="Satellite imagery loading...">
 
-    <div id="room-tag">ROOM: <span id="current-room">...</span></div>
-    <div id="crash-alert">CRASHED!</div>
-    <div id="light-system"><div id="l1" class="light"></div><div id="l2" class="light"></div><div id="l3" class="light"></div></div>
+    <script>
+        // Satellite data is usually processed with a 1-day delay for public APIs
+        const date = new Date();
+        date.setDate(date.getDate() - 1);
+        const dateString = date.toISOString().split('T')[0];
 
-    <div id="speedometer"><span id="speed-text">0</span><span style="font-size: 0.7rem; color: #888;">KM/H</span></div>
-    <div id="joy-base"><div id="joy-stick"></div></div>
-    <div id="container"></div>
+        // NASA API URL for a specific 'tile' of the Earth
+        // Parameters: Layer=MODIS_Terra_CorrectedReflectance_TrueColor, TileMatrixSet=WebMercatorQuad
+        const nasaUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${dateString}/GoogleMapsCompatible_Level9/0/0/0.jpg`;
 
-    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
-
-    <script type="module">
-        import * as THREE from 'three';
-
-        // --- MULTIPLAYER LOGIC ---
-        let peer, connections = {}, myName = "Player";
-        const remotePlayers = {};
-
-        window.initMultiplayer = (mode) => {
-            myName = prompt("Enter your name:", "Racer") || "Racer";
-            peer = new Peer();
-            
-            peer.on('open', (id) => {
-                if(mode === 'create') {
-                    prompt("Room ID (Share this):", id);
-                    document.getElementById('current-room').innerText = id;
-                } else {
-                    const target = prompt("Enter Room ID to Join:");
-                    connectToPeer(target);
-                }
-                document.getElementById('room-tag').style.display = 'block';
-            });
-
-            peer.on('connection', (conn) => {
-                setupConnection(conn);
-            });
-
-            document.getElementById('create-btn').style.display = 'none';
-            document.getElementById('join-btn').style.display = 'none';
-        };
-
-        function connectToPeer(id) {
-            const conn = peer.connect(id);
-            setupConnection(conn);
-        }
-
-        function setupConnection(conn) {
-            conn.on('open', () => {
-                connections[conn.peer] = conn;
-                conn.on('data', (data) => {
-                    updateRemotePlayer(conn.peer, data);
-                });
-            });
-        }
-
-        function updateRemotePlayer(id, data) {
-            if (!remotePlayers[id]) {
-                remotePlayers[id] = createMoto(0x00ffff, data.name);
-                scene.add(remotePlayers[id]);
-            }
-            const p = remotePlayers[id];
-            p.position.set(data.x, data.y, data.z);
-            p.rotation.set(data.rx, data.ry, data.rz);
-        }
-
-        // --- 1. SCENE SETUP ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb);
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 3000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('container').appendChild(renderer.domElement);
-
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
-        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
-        sun.position.set(100, 200, 50);
-        scene.add(sun);
-
-        // --- 2. THE TRACK & BLOCKS ---
-        const innerR = 130, outerR = 190, centerR = 160;
-        const grass = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({color: 0x2d4d2d}));
-        grass.rotation.x = -Math.PI / 2; grass.position.y = -0.1;
-        scene.add(grass);
-
-        const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x222222 }));
-        road.rotation.x = -Math.PI / 2; road.position.y = 0.02;
-        scene.add(road);
-
-        // Red Obstacles (Blocks)
-        const obstacles = [];
-        for(let i=0; i<35; i++) {
-            const angle = (i/35) * Math.PI * 2 + Math.random();
-            const lane = centerR + (Math.random()-0.5)*50;
-            const block = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 6), new THREE.MeshStandardMaterial({color: 0xff1100, emissive: 0x440000}));
-            block.position.set(Math.cos(angle)*lane, 2.5, Math.sin(angle)*lane);
-            scene.add(block); obstacles.push(block);
-        }
-
-        // --- 3. BIKES & NAMES ---
-        function createMoto(color, label = "") {
-            const g = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 1.8), new THREE.MeshStandardMaterial({color}));
-            body.position.y = 0.8; g.add(body);
-            
-            // Name Tag using Canvas
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 256; canvas.height = 64;
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(0,0,256,64);
-            ctx.fillStyle = 'white'; ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center';
-            ctx.fillText(label, 128, 45);
-            const tex = new THREE.CanvasTexture(canvas);
-            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: tex}));
-            sprite.position.y = 2.5; sprite.scale.set(3, 0.75, 1);
-            g.add(sprite);
-
-            const wGeo = new THREE.TorusGeometry(0.4, 0.15, 12, 24);
-            const fw = new THREE.Mesh(wGeo, new THREE.MeshStandardMaterial({color:0x000}));
-            fw.position.set(0, 0.4, 0.8); g.add(fw);
-            const bw = fw.clone(); bw.position.z = -0.8; g.add(bw);
-            
-            g.collisionSphere = new THREE.Sphere(new THREE.Vector3(), 1.6);
-            return g;
-        }
-
-        const player = createMoto(0xff0000, "YOU");
-        player.position.set(centerR, 0, -15);
-        scene.add(player);
-
-        // Smoke
-        const smokePool = [];
-        for(let i=0; i<30; i++) {
-            const s = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.4}));
-            s.visible = false; scene.add(s); smokePool.push(s);
-        }
-        let smokeIdx = 0;
-
-        // --- 4. ENGINE ---
-        let velocity = 0, inX = 0, inY = 0, touching = false;
-        
-        // Joystick
-        const base = document.getElementById('joy-base'), stick = document.getElementById('joy-stick');
-        base.addEventListener('touchstart', (e) => { touching = true; e.preventDefault(); }, {passive: false});
-        window.addEventListener('touchmove', (e) => {
-            if(!touching) return;
-            const t = e.touches[0], r = base.getBoundingClientRect();
-            let dx = t.clientX - (r.left + 70), dy = t.clientY - (r.top + 70);
-            const d = Math.sqrt(dx*dx+dy*dy);
-            if(d > 55) { dx *= 55/d; dy *= 55/d; }
-            stick.style.transform = `translate(${dx}px, ${dy}px)`;
-            inX = dx/55; inY = -dy/55;
-        }, {passive: false});
-        window.addEventListener('touchend', () => { touching = false; stick.style.transform = 'translate(0,0)'; inX = 0; inY = 0; });
-
-        window.startRaceSequence = () => {
-            document.getElementById('race-btn').style.display = 'none';
-            const ls = document.getElementById('light-system'); ls.style.display = 'flex';
-            setTimeout(() => document.getElementById('l1').className = 'light red', 800);
-            setTimeout(() => document.getElementById('l2').className = 'light yellow', 1600);
-            setTimeout(() => {
-                document.getElementById('l3').className = 'light green';
-                setTimeout(() => ls.style.display = 'none', 1000);
-            }, 2400);
-        };
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Physics & Collision
-            let isCrashed = false;
-            player.collisionSphere.center.copy(player.position);
-            obstacles.forEach(o => { if(new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) isCrashed = true; });
-
-            if(isCrashed) {
-                velocity = 0.05; document.getElementById('crash-alert').style.display = 'block';
-            } else {
-                document.getElementById('crash-alert').style.display = 'none';
-                if(Math.abs(inY) > 0.1) velocity += inY * 0.026;
-                velocity *= 0.978;
-            }
-
-            player.rotation.y -= inX * 0.06 * (Math.abs(velocity)/1.5);
-            player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
-            player.translateZ(velocity);
-
-            // Smoke
-            if(Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
-                const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
-                s.position.set(player.position.x, 0.2, player.position.z);
-                smokeIdx = (smokeIdx + 1) % smokePool.length;
-            }
-            smokePool.forEach(s => { if(s.visible) { s.scale.multiplyScalar(0.92); if(s.scale.x < 0.1) s.visible = false; } });
-
-            // Sync
-            Object.values(connections).forEach(c => {
-                if(c.open) c.send({ name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z });
-            });
-
-            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity)*210);
-            camera.position.lerp(new THREE.Vector3(0, 6, -12).applyMatrix4(player.matrixWorld), 0.1);
-            camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
-            renderer.render(scene, camera);
-        }
-        animate();
+        document.getElementById('sat-image').src = nasaUrl;
     </script>
+
 </body>
 </html>
