@@ -64,7 +64,7 @@
         import * as THREE from 'three';
 
         let peer, conn, myName = "Player", iAmReady = false, friendIsReady = false;
-        let raceStarted = false, raceFinished = false, time = 0, lap = 0, checkpointPassed = false;
+        let raceStarted = false, raceFinished = false, raceInProgress = false, time = 0, lap = 0, checkpointPassed = false;
         const remotePlayers = {};
 
         window.initMultiplayer = (mode) => {
@@ -446,7 +446,7 @@
         };
 
         function executeRaceStart() {
-            raceStarted = false; raceFinished = false;
+            raceStarted = false; raceFinished = false; raceInProgress = true;
             lap = 0; time = 0; checkpointPassed = false;
             velocity = 0; inX = 0; inY = 0;
             document.getElementById('lap-display').innerText = '0/3';
@@ -479,8 +479,8 @@
             obstacles.forEach(o => { if (new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
 
             if (crashed) { velocity = 0.05; document.getElementById('crash-alert').style.display = 'block'; }
-            else if (!raceStarted && !raceFinished) {
-                // locked before green light — kill all movement
+            else if (raceInProgress && !raceStarted) {
+                // START pressed but green light not yet — lock movement
                 velocity = 0;
                 document.getElementById('crash-alert').style.display = 'none';
             } else if (!raceFinished) {
