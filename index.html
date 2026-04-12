@@ -3,29 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto GP: Full Multiplayer Pro</title>
+    <title>Moto GP: Pro Multiplayer Fixed</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #1a2a1a; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; user-select: none; }
+        
+        /* Menu & UI */
         #menu-container { position: absolute; top: 20px; left: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; }
-        .menu-btn { padding: 12px 20px; font-size: 1rem; border-radius: 8px; border: 2px solid white; cursor: pointer; color: white; text-align: center; font-family: sans-serif; font-weight: bold; }
+        .menu-btn { padding: 12px 20px; font-size: 1rem; border-radius: 8px; border: 2px solid white; cursor: pointer; color: white; text-align: center; font-weight: bold; }
         #race-btn { background: #ff0000; font-size: 1.2rem; border: 3px solid white; display: none; }
         #create-btn { background: #0088ff; }
         #join-btn { background: #00aa44; }
         
-        #ready-ui { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 10px; display: none; z-index: 300; min-width: 160px; border: 1px solid #444; }
+        #ready-ui { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; display: none; z-index: 300; min-width: 170px; border: 2px solid #444; }
         .status-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #444; margin-right: 8px; }
         .is-ready { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
         #ready-toggle-btn { background: #ffaa00; margin-top: 10px; width: 100%; border: 1px solid white; }
 
         #room-tag { position: absolute; top: 20px; left: 240px; z-index: 300; font-size: 0.9rem; color: #00ffcc; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; display: none; }
+        #conn-status { font-size: 0.7rem; color: #aaa; margin-top: 5px; }
+
+        /* Game HUD */
         #hud { position: absolute; top: 180px; left: 20px; z-index: 10; visibility: hidden; }
-        #rank-display { position: absolute; top: 20px; right: 200px; font-size: 3rem; color: #ff0000; font-style: italic; visibility: hidden; }
         #speedometer { position: absolute; bottom: 30px; right: 30px; width: 180px; height: 90px; background: rgba(0,0,0,0.9); border: 4px solid #555; border-radius: 90px 90px 0 0; text-align: center; }
         #speed-text { font-size: 2.5rem; display: block; margin-top: 15px; color: #00ffcc; }
+        #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; font-weight: 900; text-shadow: 0 0 20px #000; pointer-events: none; }
+        
+        /* Joystick */
         #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255, 255, 255, 0.1); border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 100; }
         #joy-stick { position: absolute; top: 35px; left: 35px; width: 70px; height: 70px; background: radial-gradient(circle, #fff, #888); border-radius: 50%; }
-        #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; font-weight: 900; text-shadow: 0 0 20px #000; pointer-events: none; }
+        
+        /* Start Lights */
         #light-system { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: none; gap: 20px; z-index: 100; }
         .light { width: 55px; height: 55px; border-radius: 50%; background: #222; border: 4px solid #444; }
         .red { background: #ff0000; box-shadow: 0 0 25px #ff0000; }
@@ -36,13 +44,14 @@
 <body>
 
     <div id="menu-container">
-        <div id="create-btn" class="menu-btn" onclick="initMultiplayer('create')">CREATE A ROOM</div>
-        <div id="join-btn" class="menu-btn" onclick="initMultiplayer('join')">JOIN A ROOM</div>
+        <div id="create-btn" class="menu-btn" onclick="initMultiplayer('create')">CREATE ROOM</div>
+        <div id="join-btn" class="menu-btn" onclick="initMultiplayer('join')">JOIN ROOM</div>
         <div id="race-btn" class="menu-btn" onclick="startRaceSequence()">START RACE</div>
+        <div id="conn-status">P2P: Offline</div>
     </div>
 
     <div id="ready-ui">
-        <div id="local-status"><span class="status-dot" id="my-dot"></span> You: <span id="my-ready-text">WAITING</span></div>
+        <div><span class="status-dot" id="my-dot"></span> You: <span id="my-ready-text">WAITING</span></div>
         <div id="remote-status" style="margin-top:8px; display:none;"><span class="status-dot" id="friend-dot"></span> Friend: <span id="friend-ready-text">WAITING</span></div>
         <button id="ready-toggle-btn" class="menu-btn" onclick="toggleReady()">READY UP</button>
     </div>
@@ -52,10 +61,9 @@
     <div id="light-system"><div id="l1" class="light"></div><div id="l2" class="light"></div><div id="l3" class="light"></div></div>
     
     <div id="hud">
-        <div style="font-size: 1.8rem;">LAP <span id="lap-display" style="color: yellow;">1/3</span></div>
+        <div style="font-size: 1.5rem;">LAP <span id="lap-display" style="color: yellow;">1/3</span></div>
         <div id="timer" style="font-family: monospace;">00:00:00</div>
     </div>
-    <div id="rank-display">1st</div>
 
     <div id="speedometer"><span id="speed-text">0</span><span style="font-size: 0.7rem; color: #888;">KM/H</span></div>
     <div id="joy-base"><div id="joy-stick"></div></div>
@@ -66,51 +74,58 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // --- MULTIPLAYER CORE ---
+        // --- FIXED MULTIPLAYER LOGIC ---
         let peer, conn, myName = "Player", iAmReady = false, friendIsReady = false;
         const remotePlayers = {};
 
         window.initMultiplayer = (mode) => {
             myName = prompt("Enter your name:", "Racer") || "Racer";
+            document.getElementById('conn-status').innerText = "P2P: Connecting...";
+            
             peer = new Peer();
+            
             peer.on('open', (id) => {
+                document.getElementById('conn-status').innerText = "P2P: Online";
                 if(mode === 'create') {
                     prompt("Room ID (Share this):", id);
                     document.getElementById('current-room').innerText = id;
                 } else {
-                    const target = prompt("Enter Room ID:");
-                    conn = peer.connect(target);
-                    setupConnection(conn);
+                    const target = prompt("Enter Room ID to Join:");
+                    if(target) {
+                        conn = peer.connect(target);
+                        setupConnection(conn);
+                    }
                 }
                 document.getElementById('room-tag').style.display = 'block';
                 document.getElementById('ready-ui').style.display = 'block';
             });
-            peer.on('connection', (c) => { 
-                conn = c; 
-                setupConnection(c); 
+
+            peer.on('connection', (incoming) => {
+                conn = incoming;
+                setupConnection(conn);
             });
+
+            peer.on('error', (err) => {
+                alert("Connection Error: " + err.type);
+                document.getElementById('conn-status').innerText = "P2P: Error";
+            });
+
             document.getElementById('create-btn').style.display = 'none';
             document.getElementById('join-btn').style.display = 'none';
-        };
-
-        window.toggleReady = () => {
-            iAmReady = !iAmReady;
-            document.getElementById('my-dot').className = iAmReady ? "status-dot is-ready" : "status-dot";
-            document.getElementById('my-ready-text').innerText = iAmReady ? "READY" : "WAITING";
-            if(conn) conn.send({ type: 'ready_sync', ready: iAmReady });
-            checkStartCondition();
         };
 
         function setupConnection(c) {
             c.on('open', () => {
                 document.getElementById('remote-status').style.display = 'block';
+                document.getElementById('conn-status').innerText = "P2P: Connected";
+                
                 c.on('data', (data) => {
                     if (data.type === 'ready_sync') {
                         friendIsReady = data.ready;
                         document.getElementById('friend-dot').className = friendIsReady ? "status-dot is-ready" : "status-dot";
                         document.getElementById('friend-ready-text').innerText = friendIsReady ? "READY" : "WAITING";
                         checkStartCondition();
-                    } else {
+                    } else if (data.type === 'move') {
                         if (!remotePlayers["friend"]) {
                             remotePlayers["friend"] = createMoto(0x00ffff, data.name);
                             scene.add(remotePlayers["friend"]);
@@ -122,12 +137,20 @@
             });
         }
 
+        window.toggleReady = () => {
+            iAmReady = !iAmReady;
+            document.getElementById('my-dot').className = iAmReady ? "status-dot is-ready" : "status-dot";
+            document.getElementById('my-ready-text').innerText = iAmReady ? "READY" : "WAITING";
+            if(conn && conn.open) conn.send({ type: 'ready_sync', ready: iAmReady });
+            checkStartCondition();
+        };
+
         function checkStartCondition() {
             if (iAmReady && friendIsReady) document.getElementById('race-btn').style.display = 'block';
             else document.getElementById('race-btn').style.display = 'none';
         }
 
-        // --- 1. SCENE & TRACK ---
+        // --- WORLD & TRACK ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 3000);
@@ -142,25 +165,24 @@
         const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x222222 }));
         road.rotation.x = -Math.PI / 2; road.position.y = 0.02; scene.add(road);
 
-        // Curbs & Sides
+        // Sides/Curbs
         for(let i=0; i<180; i++) {
             const a = (i/180) * Math.PI * 2, mat = new THREE.MeshStandardMaterial({ color: i%2===0 ? 0xdd0000 : 0xffffff });
             const cI = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 3), mat); cI.position.set(Math.cos(a)*innerR, 0.5, Math.sin(a)*innerR); cI.rotation.y = -a; scene.add(cI);
             const cO = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 3), mat); cO.position.set(Math.cos(a)*outerR, 0.5, Math.sin(a)*outerR); cO.rotation.y = -a; scene.add(cO);
         }
 
-        // Obstacles
         const obstacles = [];
         for(let i=0; i<35; i++) {
             const a = (i/35) * Math.PI * 2 + Math.random(), l = centerR + (Math.random()-0.5)*40;
-            const b = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 6), new THREE.MeshStandardMaterial({color: 0xff1100, emissive: 0x330000}));
+            const b = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 6), new THREE.MeshStandardMaterial({color: 0xff1100}));
             b.position.set(Math.cos(a)*l, 2.5, Math.sin(a)*l); scene.add(b); obstacles.push(b);
         }
 
-        // --- 2. BIKES & PARTICLES ---
+        // --- BIKES & SMOKE ---
         function createMoto(color, label = "") {
             const g = new THREE.Group();
-            const b = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 1.8), new THREE.MeshStandardMaterial({color, metalness: 0.6}));
+            const b = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 1.8), new THREE.MeshStandardMaterial({color}));
             b.position.y = 0.8; g.add(b);
             const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
             const ctx = canvas.getContext('2d'); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0,0,256,64);
@@ -184,8 +206,8 @@
         }
         let smokeIdx = 0;
 
-        // --- 3. CONTROLS ---
-        let velocity = 0, inX = 0, inY = 0, raceStarted = false, time = 0, lap = 1;
+        // --- CONTROLS & LOOP ---
+        let velocity = 0, inX = 0, inY = 0, raceStarted = false, time = 0;
         const base = document.getElementById('joy-base'), stick = document.getElementById('joy-stick');
         base.addEventListener('touchstart', (e) => { e.preventDefault(); }, {passive: false});
         window.addEventListener('touchmove', (e) => {
@@ -208,7 +230,6 @@
                 document.getElementById('l3').className = 'light green';
                 raceStarted = true;
                 document.getElementById('hud').style.visibility = 'visible';
-                document.getElementById('rank-display').style.visibility = 'visible';
                 setTimeout(() => ls.style.display = 'none', 1000);
             }, 2400);
         };
@@ -216,10 +237,11 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            // Physics & Boundary
+            // Boundary Slowdown
             const dWorld = Math.sqrt(player.position.x**2 + player.position.z**2);
             if (dWorld < innerR + 1.5 || dWorld > outerR - 1.5) velocity *= 0.85;
 
+            // Collision
             let crashed = false;
             player.collisionSphere.center.copy(player.position);
             obstacles.forEach(o => { if(new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
@@ -235,7 +257,7 @@
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
-            // Smoke
+            // Drift Smoke
             if(Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
                 const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
                 s.position.set(player.position.x, 0.2, player.position.z);
@@ -245,8 +267,9 @@
 
             if(raceStarted) { time += 1/60; document.getElementById('timer').innerText = time.toFixed(2) + "S"; }
 
+            // SEND SYNC DATA
             if(conn && conn.open) {
-                conn.send({ name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z });
+                conn.send({ type: 'move', name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z });
             }
 
             document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity)*210);
