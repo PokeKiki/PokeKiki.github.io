@@ -29,19 +29,40 @@
         .red { background: #ff0000; box-shadow: 0 0 25px #ff0000; }
         .yellow { background: #ffaa00; box-shadow: 0 0 25px #ffaa00; }
         .green { background: #00ff00; box-shadow: 0 0 25px #00ff00; }
+
+        /* TRACK SELECT SCREEN */
+        #track-select { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); background: rgba(0,0,0,0.95); border: 3px solid #ffcc00; border-radius: 20px; padding: 30px; z-index: 500; display: none; text-align: center; min-width: 340px; }
+        #track-select h2 { color: #ffcc00; margin: 0 0 20px; font-size: 1.8rem; }
+        .track-card { display: inline-block; margin: 8px; padding: 14px 18px; border-radius: 12px; border: 3px solid #555; cursor: pointer; width: 120px; font-size: 0.85rem; font-weight: bold; transition: border-color 0.2s; vertical-align: top; }
+        .track-card:hover { border-color: #ffcc00; }
+        .track-card.selected { border-color: #ffcc00; background: rgba(255,204,0,0.15); }
+        .track-card .track-icon { font-size: 2.2rem; display: block; margin-bottom: 6px; }
+        #confirm-track-btn { margin-top: 18px; padding: 14px 40px; background: #ff0000; border: 3px solid white; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; color: white; display: block; width: 100%; }
     </style>
 </head>
 <body>
     <div id="menu-container">
         <div id="create-btn" class="menu-btn" onclick="initMultiplayer('create')">CREATE ROOM</div>
         <div id="join-btn" class="menu-btn" onclick="initMultiplayer('join')">JOIN ROOM</div>
-        <div id="race-btn" class="menu-btn" onclick="startRaceSequence()">START RACE</div>
+        <div id="race-btn" class="menu-btn" onclick="showTrackSelect()">START RACE</div>
     </div>
     <div id="ready-ui">
         <div><span class="status-dot" id="my-dot"></span> You: <span id="my-ready-text">WAITING</span></div>
         <div id="remote-status" style="margin-top:8px; display:none;"><span class="status-dot" id="friend-dot"></span> Friend: <span id="friend-ready-text">WAITING</span></div>
         <button id="ready-toggle-btn" class="menu-btn" onclick="toggleReady()">READY UP</button>
     </div>
+
+    <!-- TRACK SELECT -->
+    <div id="track-select">
+        <h2>🏁 CHOOSE TRACK</h2>
+        <div class="track-card selected" onclick="selectTrack(0)" id="tc0"><span class="track-icon">🏟️</span>OVAL<br><small style="color:#aaa">Classic F1</small></div>
+        <div class="track-card" onclick="selectTrack(1)" id="tc1"><span class="track-icon">🏖️</span>BEACH<br><small style="color:#aaa">Sand & Sun</small></div>
+        <div class="track-card" onclick="selectTrack(2)" id="tc2"><span class="track-icon">❄️</span>SNOW<br><small style="color:#aaa">Ice Circuit</small></div>
+        <div class="track-card" onclick="selectTrack(3)" id="tc3"><span class="track-icon">⛰️</span>MOUNTAIN<br><small style="color:#aaa">Rocky Peaks</small></div>
+        <div class="track-card" onclick="selectTrack(4)" id="tc4"><span class="track-icon">🌃</span>NIGHT CITY<br><small style="color:#aaa">Neon Streets</small></div>
+        <button id="confirm-track-btn" onclick="confirmTrack()">RACE!</button>
+    </div>
+
     <div id="finish-screen">
         <h1 style="color: yellow; font-size: 3rem; margin: 0;">RACE FINISHED!</h1>
         <p id="final-rank" style="font-size: 4rem; margin: 10px 0;">1st</p>
@@ -67,11 +88,9 @@
         let raceStarted = false, raceFinished = false, raceInProgress = false, time = 0, lap = 0;
         const connections = {};
         const remotePlayers = {};
-        // LAP TRACKING: player starts at z=-10 (behind white line at z=0)
-        // Step 1: cross white line forward (z goes from <0 to >=0) — start of lap
-        // Step 2: go around the far side (z goes negative again — x will be negative side)
-        // Step 3: cross white line again (z goes from <0 to >=0 AND x > 0) = LAP COMPLETE
         let lapState = 'need_to_go_around';
+        let selectedTrack = 0;
+        let trackObjects = []; // all scene objects we clear on track switch
 
         window.initMultiplayer = (mode) => {
             myName = prompt("Enter your name:") || "Racer";
@@ -99,22 +118,19 @@
             document.getElementById('join-btn').style.display = 'none';
         };
 
-        function broadcast(data) {
-            Object.values(connections).forEach(c => { if (c.open) c.send(data); });
-        }
+        function broadcast(data) { Object.values(connections).forEach(c => { if (c.open) c.send(data); }); }
 
         function setupConnection(c) {
             c.on('open', () => {
                 document.getElementById('remote-status').style.display = 'block';
                 c.on('data', (d) => {
                     if (d.type === 'ready') { friendIsReady = d.ready; updateUI(); }
-                    else if (d.type === 'start') executeRaceStart();
+                    else if (d.type === 'start') { selectedTrack = d.track; buildTrack(selectedTrack); executeRaceStart(); }
                     else if (d.type === 'move') {
                         const id = d.id;
                         if (!remotePlayers[id]) {
-                            const palette = [0x00ffff, 0xff00ff, 0xffff00, 0x00ff00, 0xff8800, 0x8800ff, 0x00ffaa, 0xff0088, 0xaaffbb, 0x88aaff];
-                            const col = palette[Object.keys(remotePlayers).length % palette.length];
-                            remotePlayers[id] = createMoto(col, d.name);
+                            const palette = [0x00ffff,0xff00ff,0xffff00,0x00ff00,0xff8800,0x8800ff,0x00ffaa,0xff0088,0xaaffbb,0x88aaff];
+                            remotePlayers[id] = createMoto(palette[Object.keys(remotePlayers).length % palette.length], d.name);
                             scene.add(remotePlayers[id]);
                         }
                         remotePlayers[id].position.set(d.x, d.y, d.z);
@@ -125,446 +141,442 @@
             });
         }
 
-        window.toggleReady = () => {
-            iAmReady = !iAmReady;
-            broadcast({ type: 'ready', ready: iAmReady });
-            updateUI();
-        };
-
+        window.toggleReady = () => { iAmReady = !iAmReady; broadcast({ type: 'ready', ready: iAmReady }); updateUI(); };
         function updateUI() {
             document.getElementById('my-dot').className = iAmReady ? "status-dot is-ready" : "status-dot";
             document.getElementById('friend-dot').className = friendIsReady ? "status-dot is-ready" : "status-dot";
             document.getElementById('race-btn').style.display = (iAmReady && friendIsReady) ? "block" : "none";
         }
 
+        // TRACK SELECT UI
+        window.showTrackSelect = () => { document.getElementById('track-select').style.display = 'block'; };
+        window.selectTrack = (i) => {
+            selectedTrack = i;
+            for (let t = 0; t < 5; t++) document.getElementById('tc'+t).className = 'track-card' + (t===i?' selected':'');
+        };
+        window.confirmTrack = () => {
+            document.getElementById('track-select').style.display = 'none';
+            document.getElementById('race-btn').style.display = 'none';
+            document.getElementById('ready-ui').style.display = 'none';
+            buildTrack(selectedTrack);
+            broadcast({ type: 'start', track: selectedTrack });
+            executeRaceStart();
+        };
+
         // SCENE
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb);
-        scene.fog = new THREE.Fog(0x87ceeb, 400, 900);
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 3000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         document.getElementById('container').appendChild(renderer.domElement);
 
-        // LIGHTING
-        const sun = new THREE.DirectionalLight(0xffffff, 1.4);
-        sun.position.set(200, 300, 100);
-        sun.castShadow = true;
-        scene.add(sun);
-        scene.add(new THREE.HemisphereLight(0xadd8e6, 0x444422, 0.8));
-
         const innerR = 130, outerR = 190, centerR = 160;
 
-        // GRASS - green with slight texture feel
-        const grass = new THREE.Mesh(
-            new THREE.PlaneGeometry(5000, 5000),
-            new THREE.MeshStandardMaterial({ color: 0x3a7d3a })
-        );
-        grass.rotation.x = -Math.PI / 2;
-        scene.add(grass);
+        // Persistent lights (don't clear on track switch)
+        const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+        sun.position.set(200, 300, 100); sun.castShadow = true; scene.add(sun);
+        const hemiLight = new THREE.HemisphereLight(0xadd8e6, 0x444422, 0.8); scene.add(hemiLight);
 
-        // TRACK - dark asphalt
-        const road = new THREE.Mesh(
-            new THREE.RingGeometry(innerR, outerR, 128),
-            new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 })
-        );
-        road.rotation.x = -Math.PI / 2;
-        road.position.y = 0.02;
-        scene.add(road);
+        // ─── TRACK BUILDER ───────────────────────────────────────────
+        function buildTrack(trackId) {
+            // Remove old track objects
+            trackObjects.forEach(o => scene.remove(o));
+            trackObjects = [];
+            obstacles.length = 0;
 
-        // TRACK CENTER (inner grass)
-        const innerGrass = new THREE.Mesh(
-            new THREE.CircleGeometry(innerR - 1, 128),
-            new THREE.MeshStandardMaterial({ color: 0x2d6e2d })
-        );
-        innerGrass.rotation.x = -Math.PI / 2;
-        innerGrass.position.y = 0.01;
-        scene.add(innerGrass);
+            const add = (obj) => { scene.add(obj); trackObjects.push(obj); return obj; };
 
-        // KERBS - red/white alternating around inner and outer
-        for (let i = 0; i < 180; i++) {
-            const a = (i / 180) * Math.PI * 2;
-            const mat = new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xdd0000 : 0xffffff });
-            const cI = new THREE.Mesh(new THREE.BoxGeometry(8, 1.0, 3), mat);
-            cI.position.set(Math.cos(a) * innerR, 0.5, Math.sin(a) * innerR);
-            cI.rotation.y = -a;
-            scene.add(cI);
-            const cO = new THREE.Mesh(new THREE.BoxGeometry(8, 1.0, 3), mat);
-            cO.position.set(Math.cos(a) * outerR, 0.5, Math.sin(a) * outerR);
-            cO.rotation.y = -a;
-            scene.add(cO);
-        }
-
-        // TRACK DASHED CENTER LINE
-        for (let i = 0; i < 60; i++) {
-            const a = (i / 60) * Math.PI * 2;
-            if (i % 2 === 0) {
-                const dash = new THREE.Mesh(
-                    new THREE.PlaneGeometry(3, 8),
-                    new THREE.MeshStandardMaterial({ color: 0xffffff })
-                );
-                dash.rotation.x = -Math.PI / 2;
-                dash.position.set(Math.cos(a) * centerR, 0.03, Math.sin(a) * centerR);
-                dash.rotation.z = -a;
-                scene.add(dash);
-            }
-        }
-
-        // START/FINISH LINE (white wide stripe - this is the lap trigger line)
-        const finishLine = new THREE.Mesh(
-            new THREE.BoxGeometry(outerR - innerR, 0.15, 6),
-            new THREE.MeshStandardMaterial({ color: 0xffffff })
-        );
-        finishLine.position.set(centerR, 0.07, 0);
-        scene.add(finishLine);
-
-        // Checkered pattern on finish line
-        for (let i = 0; i < 8; i++) {
-            const checker = new THREE.Mesh(
-                new THREE.BoxGeometry(7, 0.16, 3),
-                new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x000000 : 0xffffff })
-            );
-            checker.position.set(innerR + 4 + i * 7.5, 0.08, 0);
-            scene.add(checker);
-        }
-
-        // ARMCO BARRIERS (metal guard rails around outer edge)
-        for (let i = 0; i < 90; i++) {
-            const a = (i / 90) * Math.PI * 2;
-            const barrier = new THREE.Mesh(
-                new THREE.BoxGeometry(14, 1.2, 1.2),
-                new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.8, roughness: 0.3 })
-            );
-            barrier.position.set(Math.cos(a) * (outerR + 10), 0.6, Math.sin(a) * (outerR + 10));
-            barrier.rotation.y = -a;
-            scene.add(barrier);
-        }
-
-        // TIRE BARRIERS (inner wall)
-        for (let i = 0; i < 60; i++) {
-            const a = (i / 60) * Math.PI * 2;
-            const tire = new THREE.Mesh(
-                new THREE.TorusGeometry(1.2, 0.6, 8, 12),
-                new THREE.MeshStandardMaterial({ color: 0x111111 })
-            );
-            tire.position.set(Math.cos(a) * (innerR - 8), 0.6, Math.sin(a) * (innerR - 8));
-            tire.rotation.x = Math.PI / 2;
-            scene.add(tire);
-        }
-
-        // GRANDSTANDS — all around the track, facing inward
-        const standColors = [0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222];
-        for (let si = 0; si < 12; si++) {
-            const angle = (si / 12) * Math.PI * 2;
-            const g = new THREE.Group();
-            for (let row = 0; row < 5; row++) {
-                const seat = new THREE.Mesh(
-                    new THREE.BoxGeometry(40, 2, 6),
-                    new THREE.MeshStandardMaterial({ color: standColors[si] })
-                );
-                seat.position.set(0, 2 + row * 2.2, row * 6);
-                g.add(seat);
-                for (let s = 0; s < 10; s++) {
-                    const spec = new THREE.Mesh(
-                        new THREE.BoxGeometry(2, 2, 1),
-                        new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0xff4400 : 0x0044ff })
-                    );
-                    spec.position.set(-18 + s * 4, 3.5 + row * 2.2, row * 6);
-                    g.add(spec);
+            const tracks = [
+                // 0: OVAL — classic F1
+                () => {
+                    scene.background = new THREE.Color(0x87ceeb);
+                    scene.fog = new THREE.Fog(0x87ceeb, 400, 900);
+                    sun.color.set(0xffffff); sun.intensity = 1.4;
+                    hemiLight.color.set(0xadd8e6); hemiLight.groundColor.set(0x444422);
+                    add(mesh(plane(5000,5000), mat(0x3a7d3a))).rotation.x = -Math.PI/2;
+                    add(ring(0x1a1a1a));
+                    add(innerCircle(0x2d6e2d));
+                    addKerbs(0xdd0000, add);
+                    addFinishLine(add);
+                    addBarriers(0xbbbbbb, add);
+                    addTireWall(0x111111, add);
+                    addGrandstands([0x2255aa,0xaa2222], add);
+                    addObstacles(0xff1100, add);
+                },
+                // 1: BEACH
+                () => {
+                    scene.background = new THREE.Color(0x66bbff);
+                    scene.fog = new THREE.Fog(0x66bbff, 500, 1200);
+                    sun.color.set(0xffdd88); sun.intensity = 1.8;
+                    hemiLight.color.set(0x88ccff); hemiLight.groundColor.set(0xddcc88);
+                    // sandy ground
+                    add(mesh(plane(5000,5000), mat(0xd4a96a))).rotation.x = -Math.PI/2;
+                    // ocean on outer edge
+                    add(mesh(plane(5000,5000), new THREE.MeshStandardMaterial({color:0x0077cc,transparent:true,opacity:0.7}))).rotation.x = -Math.PI/2; // covered by sand but placed for atmosphere
+                    add(ring(0xc8a05a)); // sandy asphalt
+                    add(innerCircle(0x88bb44)); // green palm area
+                    addKerbs(0xff8800, add); // orange kerbs
+                    addFinishLine(add);
+                    // palm trees around outer
+                    for(let i=0;i<24;i++){
+                        const a=(i/24)*Math.PI*2;
+                        const trunk=mesh(new THREE.CylinderGeometry(0.8,1.2,10,8), mat(0x885522));
+                        trunk.position.set(Math.cos(a)*(outerR+30),5,Math.sin(a)*(outerR+30));
+                        add(trunk);
+                        const top=mesh(new THREE.SphereGeometry(5,8,8), mat(0x228833));
+                        top.position.set(Math.cos(a)*(outerR+30),11,Math.sin(a)*(outerR+30));
+                        add(top);
+                    }
+                    addBarriers(0xff8800, add);
+                    addGrandstands([0xffaa00,0xff4400], add);
+                    addObstacles(0xff6600, add);
+                },
+                // 2: SNOW
+                () => {
+                    scene.background = new THREE.Color(0xccddff);
+                    scene.fog = new THREE.Fog(0xccddff, 300, 800);
+                    sun.color.set(0xaabbff); sun.intensity = 1.0;
+                    hemiLight.color.set(0xccddff); hemiLight.groundColor.set(0x8899aa);
+                    // snow ground
+                    add(mesh(plane(5000,5000), mat(0xeeeeff))).rotation.x = -Math.PI/2;
+                    add(ring(0x888899)); // icy track
+                    add(innerCircle(0xddeeff));
+                    addKerbs(0x0044cc, add); // blue/white kerbs
+                    addFinishLine(add);
+                    // snow piles on outer
+                    for(let i=0;i<30;i++){
+                        const a=(i/30)*Math.PI*2;
+                        const snow=mesh(new THREE.SphereGeometry(4+Math.random()*3,8,6), mat(0xffffff));
+                        snow.scale.y=0.4;
+                        snow.position.set(Math.cos(a)*(outerR+25),1,Math.sin(a)*(outerR+25));
+                        add(snow);
+                    }
+                    // pine trees
+                    for(let i=0;i<20;i++){
+                        const a=(i/20)*Math.PI*2;
+                        const pine=mesh(new THREE.ConeGeometry(4,12,8), mat(0x225522));
+                        pine.position.set(Math.cos(a)*(outerR+50),6,Math.sin(a)*(outerR+50));
+                        add(pine);
+                        const snow2=mesh(new THREE.ConeGeometry(3,5,8), mat(0xffffff));
+                        snow2.position.set(Math.cos(a)*(outerR+50),14,Math.sin(a)*(outerR+50));
+                        add(snow2);
+                    }
+                    addBarriers(0x88aaff, add);
+                    addGrandstands([0x3355aa,0x6688cc], add);
+                    addObstacles(0x4466aa, add);
+                },
+                // 3: MOUNTAIN
+                () => {
+                    scene.background = new THREE.Color(0x556677);
+                    scene.fog = new THREE.Fog(0x778899, 300, 1000);
+                    sun.color.set(0xffcc88); sun.intensity = 1.2;
+                    hemiLight.color.set(0x8899aa); hemiLight.groundColor.set(0x554433);
+                    // rocky ground
+                    add(mesh(plane(5000,5000), mat(0x7a6a5a))).rotation.x = -Math.PI/2;
+                    add(ring(0x333333));
+                    add(innerCircle(0x665544));
+                    addKerbs(0xcc6600, add);
+                    addFinishLine(add);
+                    // mountain peaks in background
+                    for(let i=0;i<12;i++){
+                        const a=(i/12)*Math.PI*2;
+                        const peak=mesh(new THREE.ConeGeometry(30+Math.random()*20,80+Math.random()*60,8), mat(0x776655));
+                        peak.position.set(Math.cos(a)*400,30,Math.sin(a)*400);
+                        add(peak);
+                        const snow=mesh(new THREE.ConeGeometry(12,25,8), mat(0xffffff));
+                        snow.position.set(Math.cos(a)*400,90+Math.random()*30,Math.sin(a)*400);
+                        add(snow);
+                    }
+                    // boulders
+                    for(let i=0;i<20;i++){
+                        const a=(i/20)*Math.PI*2;
+                        const rock=mesh(new THREE.DodecahedronGeometry(4+Math.random()*3), mat(0x887766));
+                        rock.position.set(Math.cos(a)*(outerR+30),2,Math.sin(a)*(outerR+30));
+                        add(rock);
+                    }
+                    addBarriers(0x886644, add);
+                    addGrandstands([0x665544,0x443322], add);
+                    addObstacles(0x886644, add);
+                },
+                // 4: NIGHT CITY
+                () => {
+                    scene.background = new THREE.Color(0x050510);
+                    scene.fog = new THREE.Fog(0x050510, 200, 600);
+                    sun.color.set(0x2233ff); sun.intensity = 0.3;
+                    hemiLight.color.set(0x112244); hemiLight.groundColor.set(0x110022);
+                    // neon ground
+                    add(mesh(plane(5000,5000), mat(0x111122))).rotation.x = -Math.PI/2;
+                    add(ring(0x1a1a2e));
+                    add(innerCircle(0x16213e));
+                    addKerbs(0xff00ff, add); // neon pink kerbs
+                    addFinishLine(add);
+                    // neon strip on track edge
+                    for(let i=0;i<60;i++){
+                        const a=(i/60)*Math.PI*2;
+                        const neon=mesh(new THREE.BoxGeometry(2,0.3,2), new THREE.MeshStandardMaterial({color: i%3===0?0xff00ff:i%3===1?0x00ffff:0xffff00, emissive: i%3===0?0xff00ff:i%3===1?0x00ffff:0xffff00, emissiveIntensity:1}));
+                        neon.position.set(Math.cos(a)*(outerR+5),0.2,Math.sin(a)*(outerR+5));
+                        add(neon);
+                    }
+                    // city buildings
+                    const buildingColors = [0xff00ff,0x00ffff,0xffff00,0xff4400,0x4400ff];
+                    for(let i=0;i<30;i++){
+                        const a=(i/30)*Math.PI*2;
+                        const h=20+Math.random()*60;
+                        const bld=mesh(new THREE.BoxGeometry(15+Math.random()*10,h,15+Math.random()*10), mat(0x111133));
+                        bld.position.set(Math.cos(a)*(outerR+60+Math.random()*40),h/2,Math.sin(a)*(outerR+60+Math.random()*40));
+                        add(bld);
+                        // neon window strips
+                        const win=mesh(new THREE.BoxGeometry(16,2,16), new THREE.MeshStandardMaterial({color:buildingColors[i%5],emissive:buildingColors[i%5],emissiveIntensity:0.8}));
+                        win.position.set(Math.cos(a)*(outerR+60+Math.random()*40),h*0.7,Math.sin(a)*(outerR+60+Math.random()*40));
+                        add(win);
+                    }
+                    // point lights for neon glow
+                    const neonColors=[0xff00ff,0x00ffff,0xffff00];
+                    for(let i=0;i<6;i++){
+                        const a=(i/6)*Math.PI*2;
+                        const pl=new THREE.PointLight(neonColors[i%3],2,150);
+                        pl.position.set(Math.cos(a)*centerR,5,Math.sin(a)*centerR);
+                        add(pl);
+                    }
+                    addBarriers(0xff00ff, add);
+                    addGrandstands([0x220033,0x003322], add);
+                    addObstacles(0xff00ff, add);
                 }
-            }
-            // place outside the track
-            g.position.set(Math.cos(angle) * (outerR + 15), 0, Math.sin(angle) * (outerR + 15));
-            // front of group (+Z) must point toward origin (inward)
-            // the group is at angle from origin, so rotate by angle + PI so +Z faces -angle direction = inward
-            g.rotation.y = -(angle + Math.PI);
-            scene.add(g);
+            ];
+
+            tracks[trackId]();
         }
 
-        // OBSTACLES - spread so they avoid the start line area (angle 0 = start)
+        // ─── SHARED TRACK HELPERS ─────────────────────────────────────
+        function mesh(geo, mat) { return new THREE.Mesh(geo, mat); }
+        function mat(color) { return new THREE.MeshStandardMaterial({color}); }
+        function plane(w,h) { return new THREE.PlaneGeometry(w,h); }
+        function ring(color) {
+            const m = mesh(new THREE.RingGeometry(innerR,outerR,128), new THREE.MeshStandardMaterial({color,roughness:0.9}));
+            m.rotation.x = -Math.PI/2; m.position.y = 0.02; return m;
+        }
+        function innerCircle(color) {
+            const m = mesh(new THREE.CircleGeometry(innerR-1,128), mat(color));
+            m.rotation.x = -Math.PI/2; m.position.y=0.01; return m;
+        }
+        function addKerbs(color, add) {
+            for(let i=0;i<180;i++){
+                const a=(i/180)*Math.PI*2;
+                const c = i%2===0?color:0xffffff;
+                const kI=mesh(new THREE.BoxGeometry(8,1,3),mat(c)); kI.position.set(Math.cos(a)*innerR,0.5,Math.sin(a)*innerR); kI.rotation.y=-a; add(kI);
+                const kO=mesh(new THREE.BoxGeometry(8,1,3),mat(c)); kO.position.set(Math.cos(a)*outerR,0.5,Math.sin(a)*outerR); kO.rotation.y=-a; add(kO);
+            }
+        }
+        function addFinishLine(add) {
+            const fl=mesh(new THREE.BoxGeometry(outerR-innerR,0.15,6),mat(0xffffff));
+            fl.position.set(centerR,0.07,0); add(fl);
+            for(let i=0;i<8;i++){
+                const ch=mesh(new THREE.BoxGeometry(7,0.16,3),mat(i%2===0?0x000000:0xffffff));
+                ch.position.set(innerR+4+i*7.5,0.08,0); add(ch);
+            }
+        }
+        function addBarriers(color, add) {
+            for(let i=0;i<90;i++){
+                const a=(i/90)*Math.PI*2;
+                const b=mesh(new THREE.BoxGeometry(14,1.2,1.2),new THREE.MeshStandardMaterial({color,metalness:0.6,roughness:0.4}));
+                b.position.set(Math.cos(a)*(outerR+10),0.6,Math.sin(a)*(outerR+10)); b.rotation.y=-a; add(b);
+            }
+        }
+        function addTireWall(color, add) {
+            for(let i=0;i<60;i++){
+                const a=(i/60)*Math.PI*2;
+                const t=mesh(new THREE.TorusGeometry(1.2,0.6,8,12),mat(color));
+                t.position.set(Math.cos(a)*(innerR-8),0.6,Math.sin(a)*(innerR-8)); t.rotation.x=Math.PI/2; add(t);
+            }
+        }
+        function addGrandstands(colors, add) {
+            for(let si=0;si<12;si++){
+                const angle=(si/12)*Math.PI*2;
+                const g=new THREE.Group();
+                for(let row=0;row<5;row++){
+                    const seat=mesh(new THREE.BoxGeometry(40,2,6),mat(colors[si%colors.length]));
+                    seat.position.set(0,2+row*2.2,row*6); g.add(seat);
+                    for(let s=0;s<10;s++){
+                        const spec=mesh(new THREE.BoxGeometry(2,2,1),mat(Math.random()>0.5?0xff4400:0x0044ff));
+                        spec.position.set(-18+s*4,3.5+row*2.2,row*6); g.add(spec);
+                    }
+                }
+                g.position.set(Math.cos(angle)*(outerR+15),0,Math.sin(angle)*(outerR+15));
+                g.rotation.y = -(angle+Math.PI);
+                scene.add(g); trackObjects.push(g);
+            }
+        }
+        function addObstacles(color, add) {
+            for(let i=0;i<30;i++){
+                const a=0.4+(i/30)*(Math.PI*2-0.8);
+                const l=centerR+(Math.random()-0.5)*40;
+                const b=mesh(new THREE.BoxGeometry(6,5,6),mat(color));
+                b.position.set(Math.cos(a)*l,2.5,Math.sin(a)*l);
+                add(b); obstacles.push(b);
+            }
+        }
+
+        // obstacles array (shared, rebuilt per track)
         const obstacles = [];
-        for (let i = 0; i < 30; i++) {
-            const a = 0.4 + (i / 30) * (Math.PI * 2 - 0.8);
-            const l = centerR + (Math.random() - 0.5) * 40;
-            const b = new THREE.Mesh(
-                new THREE.BoxGeometry(6, 5, 6),
-                new THREE.MeshStandardMaterial({ color: 0xff1100 })
-            );
-            b.position.set(Math.cos(a) * l, 2.5, Math.sin(a) * l);
-            scene.add(b);
-            obstacles.push(b);
-        }
 
-        // DETAILED MOTORCYCLE builder
-        function createMoto(color, label = "") {
-            const g = new THREE.Group();
-            const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.5, roughness: 0.4 });
-            const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.7, roughness: 0.3 });
-            const chromeMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 1.0, roughness: 0.1 });
-            const tireMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
+        // BUILD DEFAULT TRACK on load so you can see the world
+        buildTrack(0);
 
-            // MAIN FAIRING (body)
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 1.9), mat);
-            body.position.set(0, 0.95, 0);
-            g.add(body);
-
-            // NOSE FAIRING (front pointy bit)
-            const noseFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.32, 0.7, 8), mat);
-            noseFairing.rotation.x = Math.PI / 2;
-            noseFairing.position.set(0, 0.85, 1.2);
-            g.add(noseFairing);
-
-            // SEAT / TAIL
-            const tail = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.9), mat);
-            tail.position.set(0, 1.2, -0.8);
-            g.add(tail);
-
-            // FUEL TANK
-            const tank = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.35, 0.7), mat);
-            tank.position.set(0, 1.28, 0.2);
-            g.add(tank);
-
-            // WINDSCREEN
-            const windscreen = new THREE.Mesh(
-                new THREE.BoxGeometry(0.55, 0.35, 0.08),
-                new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 })
-            );
-            windscreen.position.set(0, 1.22, 1.0);
-            windscreen.rotation.x = -0.3;
-            g.add(windscreen);
-
-            // FRAME / CHASSIS
-            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 1.4), darkMat);
-            frame.position.set(0, 0.6, 0);
-            g.add(frame);
-
-            // ENGINE block
-            const engine = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.38, 0.55), darkMat);
-            engine.position.set(0, 0.52, 0.1);
-            g.add(engine);
-
-            // EXHAUST pipes
-            const exMat = new THREE.MeshStandardMaterial({ color: 0xcc8800, metalness: 0.9, roughness: 0.2 });
-            const ex1 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.1, 8), exMat);
-            ex1.rotation.x = Math.PI / 2 + 0.15;
-            ex1.position.set(0.28, 0.45, -0.35);
-            g.add(ex1);
-            const ex2 = ex1.clone();
-            ex2.position.set(-0.28, 0.45, -0.35);
-            g.add(ex2);
-
-            // SWINGARM
-            const swingarm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.8), darkMat);
-            swingarm.position.set(0, 0.42, -0.7);
-            g.add(swingarm);
-
-            // FRONT FORKS
-            const fork1 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.65, 8), chromeMat);
-            fork1.position.set(0.14, 0.55, 0.85);
-            g.add(fork1);
-            const fork2 = fork1.clone();
-            fork2.position.set(-0.14, 0.55, 0.85);
-            g.add(fork2);
-
-            // WHEELS (torus = tire + cylinder = rim)
-            function makeWheel(posZ) {
-                const wg = new THREE.Group();
-                const tire = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.14, 16, 32), tireMat);
-                wg.add(tire);
-                const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12), chromeMat);
-                rim.rotation.x = Math.PI / 2;
-                wg.add(rim);
-                // spokes
-                for (let s = 0; s < 6; s++) {
-                    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.56, 0.04), chromeMat);
-                    spoke.rotation.z = (s / 6) * Math.PI;
-                    wg.add(spoke);
-                }
-                wg.rotation.x = Math.PI / 2;
-                wg.position.set(0, 0.42, posZ);
-                return wg;
+        // ─── BIKE ─────────────────────────────────────────────────────
+        function createMoto(color, label="") {
+            const g=new THREE.Group();
+            const mat_=new THREE.MeshStandardMaterial({color,metalness:0.5,roughness:0.4});
+            const dark=new THREE.MeshStandardMaterial({color:0x111111,metalness:0.7,roughness:0.3});
+            const chrome=new THREE.MeshStandardMaterial({color:0xaaaaaa,metalness:1.0,roughness:0.1});
+            const tire=new THREE.MeshStandardMaterial({color:0x222222,roughness:0.9});
+            const add_=(m)=>{g.add(m);return m;};
+            // body parts
+            const body=mesh(new THREE.BoxGeometry(0.7,0.55,1.9),mat_); body.position.set(0,0.95,0); add_(body);
+            const nose=mesh(new THREE.CylinderGeometry(0.18,0.32,0.7,8),mat_); nose.rotation.x=Math.PI/2; nose.position.set(0,0.85,1.2); add_(nose);
+            const tail=mesh(new THREE.BoxGeometry(0.45,0.3,0.9),mat_); tail.position.set(0,1.2,-0.8); add_(tail);
+            const tank=mesh(new THREE.BoxGeometry(0.55,0.35,0.7),mat_); tank.position.set(0,1.28,0.2); add_(tank);
+            const ws=mesh(new THREE.BoxGeometry(0.55,0.35,0.08),new THREE.MeshStandardMaterial({color:0x88ccff,transparent:true,opacity:0.5})); ws.position.set(0,1.22,1.0); ws.rotation.x=-0.3; add_(ws);
+            const frame_=mesh(new THREE.BoxGeometry(0.18,0.18,1.4),dark); frame_.position.set(0,0.6,0); add_(frame_);
+            const eng=mesh(new THREE.BoxGeometry(0.5,0.38,0.55),dark); eng.position.set(0,0.52,0.1); add_(eng);
+            const exm=new THREE.MeshStandardMaterial({color:0xcc8800,metalness:0.9,roughness:0.2});
+            const ex1=mesh(new THREE.CylinderGeometry(0.06,0.06,1.1,8),exm); ex1.rotation.x=Math.PI/2+0.15; ex1.position.set(0.28,0.45,-0.35); add_(ex1);
+            const ex2=ex1.clone(); ex2.position.set(-0.28,0.45,-0.35); add_(ex2);
+            const sw=mesh(new THREE.BoxGeometry(0.1,0.1,0.8),dark); sw.position.set(0,0.42,-0.7); add_(sw);
+            const f1=mesh(new THREE.CylinderGeometry(0.06,0.06,0.65,8),chrome); f1.position.set(0.14,0.55,0.85); add_(f1);
+            const f2=f1.clone(); f2.position.set(-0.14,0.55,0.85); add_(f2);
+            function makeWheel(pz){
+                const wg=new THREE.Group();
+                wg.add(mesh(new THREE.TorusGeometry(0.42,0.14,16,32),tire));
+                const rim_=mesh(new THREE.CylinderGeometry(0.28,0.28,0.1,12),chrome); rim_.rotation.x=Math.PI/2; wg.add(rim_);
+                for(let s=0;s<6;s++){const sp=mesh(new THREE.BoxGeometry(0.04,0.56,0.04),chrome);sp.rotation.z=(s/6)*Math.PI;wg.add(sp);}
+                wg.rotation.x=Math.PI/2; wg.position.set(0,0.42,pz); return wg;
             }
-            g.add(makeWheel(0.85));
-            g.add(makeWheel(-0.85));
-
-            // HANDLEBAR
-            const bar = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.07, 0.07), chromeMat);
-            bar.position.set(0, 1.18, 0.72);
-            g.add(bar);
-
-            // RIDER
-            const riderMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            const suitMat = new THREE.MeshStandardMaterial({ color });
-            // torso
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.5, 0.55), suitMat);
-            torso.position.set(0, 1.45, 0.05);
-            torso.rotation.x = 0.55;
-            g.add(torso);
-            // helmet
-            const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), new THREE.MeshStandardMaterial({ color: 0xff2200, metalness: 0.3 }));
-            helmet.position.set(0, 1.82, 0.38);
-            g.add(helmet);
-            // visor
-            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.05), new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.7 }));
-            visor.position.set(0, 1.82, 0.59);
-            g.add(visor);
-            // arms
-            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.38), suitMat);
-            arm.position.set(0.25, 1.52, 0.5); arm.rotation.x = 0.5;
-            g.add(arm);
-            const arm2 = arm.clone(); arm2.position.set(-0.25, 1.52, 0.5);
-            g.add(arm2);
-            // legs
-            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.44, 0.16), suitMat);
-            leg.position.set(0.2, 1.05, -0.22);
-            g.add(leg);
-            const leg2 = leg.clone(); leg2.position.set(-0.2, 1.05, -0.22);
-            g.add(leg2);
-
-            // NAME LABEL
-            const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'white'; ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center';
-            ctx.fillText(label, 128, 45);
-            const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
-            s.position.y = 2.5; s.scale.set(3, 0.75, 1);
-            g.add(s);
-
-            g.collisionSphere = new THREE.Sphere(new THREE.Vector3(), 1.6);
-            g.progress = 0;
-            return g;
+            add_(makeWheel(0.85)); add_(makeWheel(-0.85));
+            const bar=mesh(new THREE.BoxGeometry(0.7,0.07,0.07),chrome); bar.position.set(0,1.18,0.72); add_(bar);
+            // rider
+            const suit=new THREE.MeshStandardMaterial({color});
+            const torso=mesh(new THREE.BoxGeometry(0.45,0.5,0.55),suit); torso.position.set(0,1.45,0.05); torso.rotation.x=0.55; add_(torso);
+            const helm=mesh(new THREE.SphereGeometry(0.22,12,12),new THREE.MeshStandardMaterial({color:0xff2200,metalness:0.3})); helm.position.set(0,1.82,0.38); add_(helm);
+            const visor=mesh(new THREE.BoxGeometry(0.3,0.1,0.05),new THREE.MeshStandardMaterial({color:0x88ccff,transparent:true,opacity:0.7})); visor.position.set(0,1.82,0.59); add_(visor);
+            const arm1=mesh(new THREE.BoxGeometry(0.12,0.12,0.38),suit); arm1.position.set(0.25,1.52,0.5); arm1.rotation.x=0.5; add_(arm1);
+            const arm2=arm1.clone(); arm2.position.set(-0.25,1.52,0.5); add_(arm2);
+            const leg1=mesh(new THREE.BoxGeometry(0.16,0.44,0.16),suit); leg1.position.set(0.2,1.05,-0.22); add_(leg1);
+            const leg2=leg1.clone(); leg2.position.set(-0.2,1.05,-0.22); add_(leg2);
+            // label
+            const cv=document.createElement('canvas'); cv.width=256; cv.height=64;
+            const ctx=cv.getContext('2d'); ctx.fillStyle='white'; ctx.font='bold 32px Arial'; ctx.textAlign='center'; ctx.fillText(label,128,45);
+            const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv)}));
+            sp.position.y=2.5; sp.scale.set(3,0.75,1); g.add(sp);
+            g.collisionSphere=new THREE.Sphere(new THREE.Vector3(),1.6);
+            g.progress=0; return g;
         }
 
         const player = createMoto(0xff0000, "YOU");
-        player.position.set(centerR - 10, 0, 50);
-        scene.add(player);
+        player.position.set(centerR-10,0,50); scene.add(player);
 
-        // SMOKE POOL
-        const smokePool = [];
-        for (let i = 0; i < 30; i++) {
-            const s = new THREE.Mesh(
-                new THREE.SphereGeometry(0.4, 8, 8),
-                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 })
-            );
-            s.visible = false; scene.add(s); smokePool.push(s);
-        }
-        let smokeIdx = 0;
+        // SMOKE
+        const smokePool=[];
+        for(let i=0;i<30;i++){const s=mesh(new THREE.SphereGeometry(0.4,8,8),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.4}));s.visible=false;scene.add(s);smokePool.push(s);}
+        let smokeIdx=0;
 
         // JOYSTICK
-        let velocity = 0, inX = 0, inY = 0;
-        const stick = document.getElementById('joy-stick'), base = document.getElementById('joy-base');
-        window.addEventListener('touchmove', (e) => {
-            const t = e.touches[0], r = base.getBoundingClientRect();
-            let dx = t.clientX - (r.left + 70), dy = t.clientY - (r.top + 70);
-            const d = Math.sqrt(dx * dx + dy * dy);
-            if (d > 55) { dx *= 55 / d; dy *= 55 / d; }
-            stick.style.transform = `translate(${dx}px, ${dy}px)`;
-            inX = dx / 55; inY = -dy / 55;
+        let velocity=0,inX=0,inY=0;
+        const stick=document.getElementById('joy-stick'),base=document.getElementById('joy-base');
+        window.addEventListener('touchmove',(e)=>{
+            const t=e.touches[0],r=base.getBoundingClientRect();
+            let dx=t.clientX-(r.left+70),dy=t.clientY-(r.top+70);
+            const d=Math.sqrt(dx*dx+dy*dy); if(d>55){dx*=55/d;dy*=55/d;}
+            stick.style.transform=`translate(${dx}px,${dy}px)`;
+            inX=dx/55; inY=-dy/55;
         });
-        window.addEventListener('touchend', () => { stick.style.transform = 'translate(0,0)'; inX = 0; inY = 0; });
-
-        window.startRaceSequence = () => {
-            document.getElementById('race-btn').style.display = 'none';
-            document.getElementById('ready-ui').style.display = 'none';
-            broadcast({ type: 'start' });
-            executeRaceStart();
-        };
+        window.addEventListener('touchend',()=>{stick.style.transform='translate(0,0)';inX=0;inY=0;});
 
         function executeRaceStart() {
-            raceStarted = false; raceFinished = false; raceInProgress = true;
-            lap = 0; time = 0; lapState = 'need_to_go_around';
-            velocity = 0; inX = 0; inY = 0;
-            document.getElementById('lap-display').innerText = '0/3';
-            document.getElementById('race-btn').style.display = 'none';
-            document.getElementById('ready-ui').style.display = 'none';
-            player.position.set(centerR + 2, 0, -10);
-            player.rotation.set(0, 0, 0);
-            const ls = document.getElementById('light-system'); ls.style.display = 'flex';
-            document.getElementById('l1').className = 'light';
-            document.getElementById('l2').className = 'light';
-            document.getElementById('l3').className = 'light';
-            setTimeout(() => document.getElementById('l1').className = 'light red', 800);
-            setTimeout(() => document.getElementById('l2').className = 'light yellow', 1600);
-            setTimeout(() => {
-                document.getElementById('l3').className = 'light green';
-                raceStarted = true;
-                document.getElementById('hud').style.visibility = 'visible';
-                document.getElementById('rank-display').style.visibility = 'visible';
-                setTimeout(() => { ls.style.display = 'none'; }, 1000);
-            }, 2400);
+            raceStarted=false; raceFinished=false; raceInProgress=true;
+            lap=0; time=0; lapState='need_to_go_around';
+            velocity=0; inX=0; inY=0;
+            document.getElementById('lap-display').innerText='0/3';
+            document.getElementById('race-btn').style.display='none';
+            document.getElementById('ready-ui').style.display='none';
+            player.position.set(centerR+2,0,-10);
+            player.rotation.set(0,0,0);
+            const ls=document.getElementById('light-system'); ls.style.display='flex';
+            document.getElementById('l1').className='light';
+            document.getElementById('l2').className='light';
+            document.getElementById('l3').className='light';
+            setTimeout(()=>document.getElementById('l1').className='light red',800);
+            setTimeout(()=>document.getElementById('l2').className='light yellow',1600);
+            setTimeout(()=>{
+                document.getElementById('l3').className='light green';
+                raceStarted=true;
+                document.getElementById('hud').style.visibility='visible';
+                document.getElementById('rank-display').style.visibility='visible';
+                setTimeout(()=>{ls.style.display='none';},1000);
+            },2400);
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            const dWorld = Math.sqrt(player.position.x ** 2 + player.position.z ** 2);
-            if (dWorld < innerR + 1.5 || dWorld > outerR - 1.5) velocity *= 0.85;
+            const dWorld=Math.sqrt(player.position.x**2+player.position.z**2);
+            if(dWorld<innerR+1.5||dWorld>outerR-1.5) velocity*=0.85;
 
-            let crashed = false;
+            let crashed=false;
             player.collisionSphere.center.copy(player.position);
-            obstacles.forEach(o => { if (new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
+            obstacles.forEach(o=>{if(new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere))crashed=true;});
 
-            if (crashed) { velocity = 0.05; document.getElementById('crash-alert').style.display = 'block'; }
-            else if (raceInProgress && !raceStarted) {
-                // START pressed but green light not yet — lock movement
-                velocity = 0;
-                document.getElementById('crash-alert').style.display = 'none';
-            } else if (!raceFinished) {
-                document.getElementById('crash-alert').style.display = 'none';
-                if (Math.abs(inY) > 0.1) velocity += inY * 0.026;
-                velocity *= 0.978;
-            } else { velocity *= 0.95; }
+            if(crashed){velocity=0.05;document.getElementById('crash-alert').style.display='block';}
+            else if(raceInProgress&&!raceStarted){velocity=0;document.getElementById('crash-alert').style.display='none';}
+            else if(!raceFinished){
+                document.getElementById('crash-alert').style.display='none';
+                if(Math.abs(inY)>0.1) velocity+=inY*0.026;
+                velocity*=0.978;
+            } else {velocity*=0.95;}
 
-            player.rotation.y -= inX * 0.06 * (Math.abs(velocity) / 1.5);
-            player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
+            player.rotation.y-=inX*0.06*(Math.abs(velocity)/1.5);
+            player.rotation.z=THREE.MathUtils.lerp(player.rotation.z,-inX*0.8,0.1);
             player.translateZ(velocity);
 
-            // LAP LOGIC
-            // Track is a circle centered at origin. White line = where x>innerR and z≈0
-            // Player starts at x=centerR, z=-10 (just behind white line)
-            // They drive forward → z increases → go around → x goes negative → come back → cross white line = 1 lap
-            if (raceStarted && !raceFinished) {
-                // Step 1: player goes to negative X side (halfway around)
-                if (lapState === 'need_to_go_around' && player.position.x < 0) lapState = 'went_around';
-                // Step 2: they come back and cross the white line (x > innerR, z near 0 from negative side)
-                if (lapState === 'went_around' && player.position.x > innerR && player.position.z > -5 && player.position.z < 5) {
-                    lapState = 'need_to_go_around';
-                    lap++;
-                    document.getElementById('lap-display').innerText = lap + '/3';
-                    if (lap === 3) {
-                        raceFinished = true;
-                        document.getElementById('finish-screen').style.display = 'block';
-                        document.getElementById('final-rank').innerText = document.getElementById('rank-display').innerText;
-                        document.getElementById('final-time').innerText = "TIME: " + time.toFixed(2) + "S";
+            // LAP — must reach x<0 (far side) then cross finish line zone
+            if(raceStarted&&!raceFinished){
+                if(lapState==='need_to_go_around'&&player.position.x<0) lapState='went_around';
+                if(lapState==='went_around'&&player.position.x>innerR&&player.position.z>-5&&player.position.z<5){
+                    lapState='need_to_go_around'; lap++;
+                    document.getElementById('lap-display').innerText=lap+'/3';
+                    if(lap===3){
+                        raceFinished=true;
+                        document.getElementById('finish-screen').style.display='block';
+                        document.getElementById('final-rank').innerText=document.getElementById('rank-display').innerText;
+                        document.getElementById('final-time').innerText="TIME: "+time.toFixed(2)+"S";
                     }
                 }
             }
 
             // RANKING
-            let angle = Math.atan2(player.position.z, player.position.x);
-            player.progress = lap * 10 + (angle < 0 ? angle + Math.PI * 2 : angle);
-            const allPlayers = Object.values(remotePlayers);
-            if (allPlayers.length > 0) {
-                const ahead = allPlayers.filter(p => p.progress > player.progress).length;
-                const ranks = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'];
-                document.getElementById('rank-display').innerText = ranks[ahead] || (ahead+1)+'th';
+            let angle=Math.atan2(player.position.z,player.position.x);
+            player.progress=lap*10+(angle<0?angle+Math.PI*2:angle);
+            const all=Object.values(remotePlayers);
+            if(all.length>0){
+                const ahead=all.filter(p=>p.progress>player.progress).length;
+                const ranks=['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'];
+                document.getElementById('rank-display').innerText=ranks[ahead]||(ahead+1)+'th';
             }
 
             // SMOKE
-            if (Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
-                const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
-                s.position.set(player.position.x, 0.2, player.position.z);
-                smokeIdx = (smokeIdx + 1) % smokePool.length;
+            if(Math.abs(inX)>0.7&&Math.abs(velocity)>0.6){
+                const s=smokePool[smokeIdx];s.visible=true;s.scale.setScalar(1);
+                s.position.set(player.position.x,0.2,player.position.z);
+                smokeIdx=(smokeIdx+1)%smokePool.length;
             }
-            smokePool.forEach(s => { if (s.visible) { s.scale.multiplyScalar(0.92); if (s.scale.x < 0.1) s.visible = false; } });
+            smokePool.forEach(s=>{if(s.visible){s.scale.multiplyScalar(0.92);if(s.scale.x<0.1)s.visible=false;}});
 
-            if (raceStarted && !raceFinished) { time += 1/60; document.getElementById('timer').innerText = time.toFixed(2) + "S"; }
-            if (peer) broadcast({ type: 'move', id: peer.id, name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z, progress: player.progress });
+            if(raceStarted&&!raceFinished){time+=1/60;document.getElementById('timer').innerText=time.toFixed(2)+"S";}
+            if(peer) broadcast({type:'move',id:peer.id,name:myName,x:player.position.x,y:player.position.y,z:player.position.z,rx:player.rotation.x,ry:player.rotation.y,rz:player.rotation.z,progress:player.progress});
 
-            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity) * 210);
-            camera.position.lerp(new THREE.Vector3(0, 6, -12).applyMatrix4(player.matrixWorld), 0.1);
-            camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
-            renderer.render(scene, camera);
+            document.getElementById('speed-text').innerText=Math.round(Math.abs(velocity)*210);
+            camera.position.lerp(new THREE.Vector3(0,6,-12).applyMatrix4(player.matrixWorld),0.1);
+            camera.lookAt(player.position.x,player.position.y+1,player.position.z);
+            renderer.render(scene,camera);
         }
         animate();
     </script>
