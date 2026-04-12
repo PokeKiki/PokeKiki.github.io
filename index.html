@@ -236,22 +236,22 @@
                     new THREE.BoxGeometry(40, 2, 6),
                     new THREE.MeshStandardMaterial({ color })
                 );
-                // rows step back AWAY from track (positive Z in local space = outward)
-                seat.position.set(0, 2 + row * 2.2, row * 5);
+                // rows step back away from track (negative Z = away from track in local space after rotation)
+                seat.position.set(0, 2 + row * 2.2, -(row * 5));
                 g.add(seat);
                 for (let s = 0; s < 10; s++) {
                     const spec = new THREE.Mesh(
                         new THREE.BoxGeometry(2, 2, 1),
                         new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0xff4400 : 0x0044ff })
                     );
-                    spec.position.set(-18 + s * 4, 3.5 + row * 2.2, row * 5);
+                    spec.position.set(-18 + s * 4, 3.5 + row * 2.2, -(row * 5));
                     g.add(spec);
                 }
             }
             const r = outerR + 18;
             g.position.set(Math.cos(angle) * r, 0, Math.sin(angle) * r);
-            // face inward: rotate so the front of the stand points toward the track center
-            g.rotation.y = angle + Math.PI;
+            // face inward: point toward origin (track center)
+            g.rotation.y = Math.atan2(-Math.sin(angle), -Math.cos(angle));
             scene.add(g);
         }
 
@@ -447,12 +447,16 @@
         function executeRaceStart() {
             raceStarted = false; raceFinished = false;
             lap = 0; time = 0; checkpointPassed = false;
+            velocity = 0; inX = 0; inY = 0;
             document.getElementById('lap-display').innerText = '0/3';
             document.getElementById('race-btn').style.display = 'none';
             document.getElementById('ready-ui').style.display = 'none';
             player.position.set(centerR + 2, 0, -10);
             player.rotation.set(0, 0, 0);
             const ls = document.getElementById('light-system'); ls.style.display = 'flex';
+            document.getElementById('l1').className = 'light';
+            document.getElementById('l2').className = 'light';
+            document.getElementById('l3').className = 'light';
             setTimeout(() => document.getElementById('l1').className = 'light red', 800);
             setTimeout(() => document.getElementById('l2').className = 'light yellow', 1600);
             setTimeout(() => {
@@ -474,18 +478,18 @@
             obstacles.forEach(o => { if (new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
 
             if (crashed) { velocity = 0.05; document.getElementById('crash-alert').style.display = 'block'; }
-            else if (!raceFinished) {
+            else if (!raceStarted && !raceFinished) {
+                // locked before green light — kill all movement
+                velocity = 0;
                 document.getElementById('crash-alert').style.display = 'none';
-                // BLOCK movement until green light (raceStarted)
-                if (raceStarted && Math.abs(inY) > 0.1) velocity += inY * 0.026;
+            } else if (!raceFinished) {
+                document.getElementById('crash-alert').style.display = 'none';
+                if (Math.abs(inY) > 0.1) velocity += inY * 0.026;
                 velocity *= 0.978;
             } else { velocity *= 0.95; }
 
-            // BLOCK steering too until race starts
-            if (raceStarted) {
-                player.rotation.y -= inX * 0.06 * (Math.abs(velocity) / 1.5);
-                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
-            }
+            player.rotation.y -= inX * 0.06 * (Math.abs(velocity) / 1.5);
+            player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
             // LAP LOGIC — finish line is at z=0 on the POSITIVE X side (x > 0)
