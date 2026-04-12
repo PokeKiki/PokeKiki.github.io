@@ -71,7 +71,7 @@
         // Step 1: cross white line forward (z goes from <0 to >=0) — start of lap
         // Step 2: go around the far side (z goes negative again — x will be negative side)
         // Step 3: cross white line again (z goes from <0 to >=0 AND x > 0) = LAP COMPLETE
-        let lapState = 'start'; // 'start' | 'past_line' | 'far_side'
+        let lapState = 'need_to_go_around';
 
         window.initMultiplayer = (mode) => {
             myName = prompt("Enter your name:") || "Racer";
@@ -473,7 +473,7 @@
 
         function executeRaceStart() {
             raceStarted = false; raceFinished = false; raceInProgress = true;
-            lap = 0; time = 0; lapState = 'far_side'; // start on far_side so first crossing of white line = lap 1
+            lap = 0; time = 0; lapState = 'need_to_go_around';
             velocity = 0; inX = 0; inY = 0;
             document.getElementById('lap-display').innerText = '0/3';
             document.getElementById('race-btn').style.display = 'none';
@@ -489,10 +489,9 @@
             setTimeout(() => {
                 document.getElementById('l3').className = 'light green';
                 raceStarted = true;
-                prevZ = player.position.z;
                 document.getElementById('hud').style.visibility = 'visible';
                 document.getElementById('rank-display').style.visibility = 'visible';
-                setTimeout(() => ls.style.display = 'none', 1000);
+                setTimeout(() => { ls.style.display = 'none'; }, 1000);
             }, 2400);
         }
 
@@ -520,16 +519,16 @@
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
-            // LAP LOGIC — white line is at z=0 on positive X side (x > innerR)
-            // lapState machine: 'far_side' → player is on far side (z<0 or x<0)
-            //                   'crossing' → player crosses white line = lap complete
+            // LAP LOGIC
+            // Track is a circle centered at origin. White line = where x>innerR and z≈0
+            // Player starts at x=centerR, z=-10 (just behind white line)
+            // They drive forward → z increases → go around → x goes negative → come back → cross white line = 1 lap
             if (raceStarted && !raceFinished) {
-                const onTrack = player.position.x > innerR; // on the finish-line half
-                // once player goes to far side of track (x < 0), they've gone around
-                if (lapState === 'far_side' && player.position.x < 0) lapState = 'went_around';
-                // when they come back and cross z=0 on the positive-x side = lap complete
-                if (lapState === 'went_around' && player.position.z > -3 && player.position.z < 3 && player.position.x > innerR) {
-                    lapState = 'far_side'; // reset for next lap
+                // Step 1: player goes to negative X side (halfway around)
+                if (lapState === 'need_to_go_around' && player.position.x < 0) lapState = 'went_around';
+                // Step 2: they come back and cross the white line (x > innerR, z near 0 from negative side)
+                if (lapState === 'went_around' && player.position.x > innerR && player.position.z > -5 && player.position.z < 5) {
+                    lapState = 'need_to_go_around';
                     lap++;
                     document.getElementById('lap-display').innerText = lap + '/3';
                     if (lap === 3) {
