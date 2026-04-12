@@ -236,22 +236,23 @@
                     new THREE.BoxGeometry(40, 2, 6),
                     new THREE.MeshStandardMaterial({ color })
                 );
-                // rows step back away from track (negative Z = away from track in local space after rotation)
-                seat.position.set(0, 2 + row * 2.2, -(row * 5));
+                // positive Z = away from track in local space (behind the stand front)
+                seat.position.set(0, 2 + row * 2.2, row * 6);
                 g.add(seat);
                 for (let s = 0; s < 10; s++) {
                     const spec = new THREE.Mesh(
                         new THREE.BoxGeometry(2, 2, 1),
                         new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0xff4400 : 0x0044ff })
                     );
-                    spec.position.set(-18 + s * 4, 3.5 + row * 2.2, -(row * 5));
+                    spec.position.set(-18 + s * 4, 3.5 + row * 2.2, row * 6);
                     g.add(spec);
                 }
             }
-            const r = outerR + 18;
+            // place stand just outside the outer barrier, front row closest to track
+            const r = outerR + 15;
             g.position.set(Math.cos(angle) * r, 0, Math.sin(angle) * r);
-            // face inward: point toward origin (track center)
-            g.rotation.y = Math.atan2(-Math.sin(angle), -Math.cos(angle));
+            // angle points outward from center, add PI so front faces inward (toward track)
+            g.rotation.y = angle + Math.PI;
             scene.add(g);
         }
 
