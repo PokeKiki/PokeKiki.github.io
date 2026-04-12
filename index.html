@@ -16,16 +16,13 @@
         .status-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #444; margin-right: 8px; }
         .is-ready { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
         #ready-toggle-btn { background: #ffaa00; margin-top: 10px; width: 100%; border: 1px solid white; }
-        
         #hud { position: absolute; top: 180px; left: 20px; z-index: 10; visibility: hidden; }
         #rank-display { position: absolute; top: 20px; right: 210px; font-size: 3.5rem; color: #ffcc00; font-style: italic; visibility: hidden; text-shadow: 2px 2px 5px #000; }
         #speedometer { position: absolute; bottom: 30px; right: 30px; width: 180px; height: 90px; background: rgba(0,0,0,0.9); border: 4px solid #555; border-radius: 90px 90px 0 0; text-align: center; }
         #speed-text { font-size: 2.5rem; display: block; margin-top: 15px; color: #00ffcc; }
         #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; font-weight: 900; text-shadow: 0 0 20px #000; pointer-events: none; }
-        
         #finish-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 40px; border: 5px solid yellow; border-radius: 20px; text-align: center; display: none; z-index: 1000; min-width: 300px; }
-        
-        #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255, 255, 255, 0.1); border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 100; }
+        #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255,255,255,0.1); border: 5px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 100; }
         #joy-stick { position: absolute; top: 35px; left: 35px; width: 70px; height: 70px; background: radial-gradient(circle, #fff, #888); border-radius: 50%; }
         #light-system { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: none; gap: 20px; z-index: 100; }
         .light { width: 55px; height: 55px; border-radius: 50%; background: #222; border: 4px solid #444; }
@@ -35,7 +32,6 @@
     </style>
 </head>
 <body>
-
     <div id="menu-container">
         <div id="create-btn" class="menu-btn" onclick="initMultiplayer('create')">CREATE ROOM</div>
         <div id="join-btn" class="menu-btn" onclick="initMultiplayer('join')">JOIN ROOM</div>
@@ -58,22 +54,20 @@
     <div id="crash-alert">CRASHED!</div>
     <div id="light-system"><div id="l1" class="light"></div><div id="l2" class="light"></div><div id="l3" class="light"></div></div>
     <div id="hud">
-        <div style="font-size: 1.5rem;">LAP <span id="lap-display" style="color: yellow;">1/3</span></div>
+        <div style="font-size: 1.5rem;">LAP <span id="lap-display" style="color: yellow;">0/3</span></div>
         <div id="timer" style="font-family: monospace;">0.00S</div>
     </div>
     <div id="rank-display">1st</div>
-
     <div id="speedometer"><span id="speed-text">0</span><span style="font-size: 0.7rem; color: #888;">KM/H</span></div>
     <div id="joy-base"><div id="joy-stick"></div></div>
     <div id="container"></div>
 
     <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
-
     <script type="module">
         import * as THREE from 'three';
 
         let peer, conn, myName = "Player", iAmReady = false, friendIsReady = false;
-        let raceStarted = false, raceFinished = false, time = 0, lap = 1, checkpointPassed = true;
+        let raceStarted = false, raceFinished = false, time = 0, lap = 0, checkpointPassed = false;
         const remotePlayers = {};
 
         window.initMultiplayer = (mode) => {
@@ -117,7 +111,6 @@
             document.getElementById('race-btn').style.display = (iAmReady && friendIsReady) ? "block" : "none";
         }
 
-        // --- WORLD SETUP ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 3000);
@@ -127,20 +120,16 @@
         scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
 
         const innerR = 130, outerR = 190, centerR = 160;
-        
-        // GRASS
+
         const grass = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({color: 0x2d4d2d}));
         grass.rotation.x = -Math.PI / 2; scene.add(grass);
-        
-        // ROAD
+
         const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x222222 }));
         road.rotation.x = -Math.PI / 2; road.position.y = 0.02; scene.add(road);
 
-        // WHITE LINE
         const whiteLine = new THREE.Mesh(new THREE.BoxGeometry(outerR-innerR, 0.1, 4), new THREE.MeshStandardMaterial({color: 0xffffff}));
         whiteLine.position.set(centerR, 0.05, 0); scene.add(whiteLine);
 
-        // OBSTACLES & CURBS
         const obstacles = [];
         for(let i=0; i<35; i++) {
             const a = (i/35) * Math.PI * 2 + Math.random(), l = centerR + (Math.random()-0.5)*40;
@@ -153,7 +142,6 @@
             const cO = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 3), mat); cO.position.set(Math.cos(a)*outerR, 0.5, Math.sin(a)*outerR); cO.rotation.y = -a; scene.add(cO);
         }
 
-        // --- BIKE & SMOKE ---
         function createMoto(color, label = "") {
             const g = new THREE.Group();
             const b = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 1.8), new THREE.MeshStandardMaterial({color}));
@@ -179,7 +167,6 @@
         }
         let smokeIdx = 0;
 
-        // --- LOOP ---
         let velocity = 0, inX = 0, inY = 0;
         const stick = document.getElementById('joy-stick'), base = document.getElementById('joy-base');
         window.addEventListener('touchmove', (e) => {
@@ -192,12 +179,24 @@
         });
         window.addEventListener('touchend', () => { stick.style.transform = 'translate(0,0)'; inX = 0; inY = 0; });
 
-        window.startRaceSequence = () => { if(conn) conn.send({ type: 'start' }); executeRaceStart(); };
+        window.startRaceSequence = () => {
+            document.getElementById('race-btn').style.display = 'none';
+            document.getElementById('ready-ui').style.display = 'none';
+            if(conn) conn.send({ type: 'start' });
+            executeRaceStart();
+        };
 
         function executeRaceStart() {
-            raceStarted = false; raceFinished = false; lap = 1; time = 0;
-            player.position.set(centerR + 2, 0, -10); player.rotation.set(0, 0, 0);
+            raceStarted = false; raceFinished = false;
+            lap = 0;
+            time = 0;
+            checkpointPassed = false;
+            document.getElementById('lap-display').innerText = '0/3';
+            document.getElementById('race-btn').style.display = 'none';
             document.getElementById('ready-ui').style.display = 'none';
+
+            player.position.set(centerR + 2, 0, -10); player.rotation.set(0, 0, 0);
+
             const ls = document.getElementById('light-system'); ls.style.display = 'flex';
             setTimeout(() => document.getElementById('l1').className = 'light red', 800);
             setTimeout(() => document.getElementById('l2').className = 'light yellow', 1600);
@@ -224,25 +223,29 @@
                 document.getElementById('crash-alert').style.display = 'none';
                 if(Math.abs(inY) > 0.1) velocity += inY * 0.026;
                 velocity *= 0.978;
-            } else { velocity *= 0.95; } // Slow down on finish
+            } else { velocity *= 0.95; }
 
             player.rotation.y -= inX * 0.06 * (Math.abs(velocity)/1.5);
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
-            // LAP & FINISH
-            if(player.position.z > 0 && checkpointPassed) checkpointPassed = false;
-            if(player.position.z < 0 && !checkpointPassed) {
-                if(lap < 3) { lap++; checkpointPassed = true; document.getElementById('lap-display').innerText = lap + "/3"; }
-                else if(!raceFinished) {
-                    raceFinished = true;
-                    document.getElementById('finish-screen').style.display = 'block';
-                    document.getElementById('final-rank').innerText = document.getElementById('rank-display').innerText;
-                    document.getElementById('final-time').innerText = "TIME: " + time.toFixed(2) + "S";
+            if (player.position.z > 0 && !checkpointPassed) {
+                checkpointPassed = true;
+            }
+            if (player.position.z < 0 && checkpointPassed) {
+                checkpointPassed = false;
+                if (lap < 3) {
+                    lap++;
+                    document.getElementById('lap-display').innerText = lap + '/3';
+                    if (lap === 3 && !raceFinished) {
+                        raceFinished = true;
+                        document.getElementById('finish-screen').style.display = 'block';
+                        document.getElementById('final-rank').innerText = document.getElementById('rank-display').innerText;
+                        document.getElementById('final-time').innerText = "TIME: " + time.toFixed(2) + "S";
+                    }
                 }
             }
 
-            // RANKING
             let angle = Math.atan2(player.position.z, player.position.x);
             player.progress = lap * 10 + (angle < 0 ? angle + Math.PI*2 : angle);
             if(remotePlayers["friend"]) {
@@ -250,7 +253,6 @@
                 document.getElementById('rank-display').innerText = rank;
             }
 
-            // SMOKE
             if(Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
                 const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
                 s.position.set(player.position.x, 0.2, player.position.z);
