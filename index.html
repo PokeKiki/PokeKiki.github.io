@@ -68,14 +68,25 @@
         const remotePlayers = {};
 
         window.initMultiplayer = (mode) => {
-            myName = prompt("Enter Name:") || "Racer";
-            peer = new Peer();
-            peer.on('open', (id) => {
-                if(mode === 'create') prompt("Room ID:", id);
-                else { const t = prompt("Enter Room ID:"); if(t) { conn = peer.connect(t); setupConnection(conn); }}
-                document.getElementById('ready-ui').style.display = 'block';
-            });
-            peer.on('connection', (c) => { conn = c; setupConnection(c); });
+            myName = prompt("Enter your name:") || "Racer";
+            if (mode === 'create') {
+                const code = String(Math.floor(1000 + Math.random() * 9000));
+                peer = new Peer('motogp-' + code);
+                peer.on('open', () => {
+                    alert("Share this code with your friend: " + code);
+                    document.getElementById('ready-ui').style.display = 'block';
+                });
+                peer.on('connection', (c) => { conn = c; setupConnection(c); });
+            } else {
+                const code = prompt("Enter 4-digit room code:");
+                if (!code) return;
+                peer = new Peer();
+                peer.on('open', () => {
+                    conn = peer.connect('motogp-' + code);
+                    setupConnection(conn);
+                    document.getElementById('ready-ui').style.display = 'block';
+                });
+            }
             document.getElementById('create-btn').style.display = 'none';
             document.getElementById('join-btn').style.display = 'none';
         };
@@ -224,19 +235,16 @@
             scene.add(tire);
         }
 
-        // GRANDSTANDS — all around the track, facing inward toward the circuit
+        // GRANDSTANDS — all around the track, facing inward
         const standColors = [0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222];
-        const numStands = 12;
-        for (let si = 0; si < numStands; si++) {
-            const angle = (si / numStands) * Math.PI * 2;
-            const color = standColors[si];
+        for (let si = 0; si < 12; si++) {
+            const angle = (si / 12) * Math.PI * 2;
             const g = new THREE.Group();
             for (let row = 0; row < 5; row++) {
                 const seat = new THREE.Mesh(
                     new THREE.BoxGeometry(40, 2, 6),
-                    new THREE.MeshStandardMaterial({ color })
+                    new THREE.MeshStandardMaterial({ color: standColors[si] })
                 );
-                // positive Z = away from track in local space (behind the stand front)
                 seat.position.set(0, 2 + row * 2.2, row * 6);
                 g.add(seat);
                 for (let s = 0; s < 10; s++) {
@@ -248,11 +256,11 @@
                     g.add(spec);
                 }
             }
-            // place stand just outside the outer barrier, front row closest to track
-            const r = outerR + 15;
-            g.position.set(Math.cos(angle) * r, 0, Math.sin(angle) * r);
-            // angle points outward from center, add PI so front faces inward (toward track)
-            g.rotation.y = angle + Math.PI;
+            // place outside the track
+            g.position.set(Math.cos(angle) * (outerR + 15), 0, Math.sin(angle) * (outerR + 15));
+            // front of group (+Z) must point toward origin (inward)
+            // the group is at angle from origin, so rotate by angle + PI so +Z faces -angle direction = inward
+            g.rotation.y = -(angle + Math.PI);
             scene.add(g);
         }
 
