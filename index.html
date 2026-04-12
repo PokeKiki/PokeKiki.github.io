@@ -3,28 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto GP: Full Pro Edition</title>
+    <title>Moto GP: Pro Championship</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #111; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; user-select: none; }
+        body { margin: 0; overflow: hidden; background: #1a2a1a; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; user-select: none; }
         #menu-container { position: absolute; top: 20px; left: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; }
         .menu-btn { padding: 12px 20px; font-size: 1rem; border-radius: 8px; border: 2px solid white; cursor: pointer; color: white; text-align: center; font-weight: bold; }
         #race-btn { background: #ff0000; font-size: 1.2rem; border: 3px solid white; display: none; }
         #create-btn { background: #0088ff; }
         #join-btn { background: #00aa44; }
-        #ready-ui { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; z-index: 300; display: none; border: 2px solid #444; }
+        #ready-ui { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; z-index: 300; min-width: 170px; border: 2px solid #444; display: none; }
         .status-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #444; margin-right: 8px; }
         .is-ready { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        #ready-toggle-btn { background: #ffaa00; margin-top: 10px; width: 100%; border: 1px solid white; }
+        
         #hud { position: absolute; top: 180px; left: 20px; z-index: 10; visibility: hidden; }
         #rank-display { position: absolute; top: 20px; right: 210px; font-size: 3.5rem; color: #ffcc00; font-style: italic; visibility: hidden; text-shadow: 2px 2px 5px #000; }
         #speedometer { position: absolute; bottom: 30px; right: 30px; width: 180px; height: 90px; background: rgba(0,0,0,0.9); border: 4px solid #555; border-radius: 90px 90px 0 0; text-align: center; }
-        #finish-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); padding: 40px; border: 5px solid yellow; display: none; z-index: 1000; text-align: center; }
-        #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255,255,255,0.1); border: 5px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 100;}
-        #joy-stick { position: absolute; top: 35px; left: 35px; width: 70px; height: 70px; background: #fff; border-radius: 50%; }
+        #speed-text { font-size: 2.5rem; display: block; margin-top: 15px; color: #00ffcc; }
         #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; font-weight: 900; text-shadow: 0 0 20px #000; pointer-events: none; }
-        #light-system { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: none; gap: 20px; z-index: 100;}
-        .light { width: 55px; height: 55px; border-radius: 50%; background: #222; border: 4px solid #444;}
-        .red { background: #ff0000; box-shadow: 0 0 25px #ff0000;} .yellow { background: #ffaa00; box-shadow: 0 0 25px #ffaa00;} .green { background: #00ff00; box-shadow: 0 0 25px #00ff00;}
+        
+        #finish-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 40px; border: 5px solid yellow; border-radius: 20px; text-align: center; display: none; z-index: 1000; min-width: 300px; }
+        
+        #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255, 255, 255, 0.1); border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 100; }
+        #joy-stick { position: absolute; top: 35px; left: 35px; width: 70px; height: 70px; background: radial-gradient(circle, #fff, #888); border-radius: 50%; }
+        #light-system { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: none; gap: 20px; z-index: 100; }
+        .light { width: 55px; height: 55px; border-radius: 50%; background: #222; border: 4px solid #444; }
+        .red { background: #ff0000; box-shadow: 0 0 25px #ff0000; }
+        .yellow { background: #ffaa00; box-shadow: 0 0 25px #ffaa00; }
+        .green { background: #00ff00; box-shadow: 0 0 25px #00ff00; }
     </style>
 </head>
 <body>
@@ -37,27 +44,26 @@
 
     <div id="ready-ui">
         <div><span class="status-dot" id="my-dot"></span> You: <span id="my-ready-text">WAITING</span></div>
-        <div id="remote-status"><span class="status-dot" id="friend-dot"></span> Friend: <span id="friend-ready-text">WAITING</span></div>
-        <button class="menu-btn" style="background:#ffaa00; margin-top:10px; width:100%" onclick="toggleReady()">READY UP</button>
+        <div id="remote-status" style="margin-top:8px; display:none;"><span class="status-dot" id="friend-dot"></span> Friend: <span id="friend-ready-text">WAITING</span></div>
+        <button id="ready-toggle-btn" class="menu-btn" onclick="toggleReady()">READY UP</button>
     </div>
 
     <div id="finish-screen">
-        <h1 style="color: yellow;">FINISHED!</h1>
-        <p id="final-rank" style="font-size: 3rem;">1st</p>
-        <p id="final-time">0.00S</p>
-        <button class="menu-btn" onclick="location.reload()">RESTART</button>
+        <h1 style="color: yellow; font-size: 3rem; margin: 0;">RACE FINISHED!</h1>
+        <p id="final-rank" style="font-size: 4rem; margin: 10px 0;">1st</p>
+        <p id="final-time" style="font-size: 1.5rem; color: #00ffcc;">TIME: 00:00:00</p>
+        <div class="menu-btn" style="background: white; color: black;" onclick="location.reload()">PLAY AGAIN</div>
     </div>
 
     <div id="crash-alert">CRASHED!</div>
     <div id="light-system"><div id="l1" class="light"></div><div id="l2" class="light"></div><div id="l3" class="light"></div></div>
-    
     <div id="hud">
-        <div style="font-size: 1.5rem;">LAP <span id="lap-display" style="color: yellow;">0/3</span></div>
-        <div id="timer">0.00S</div>
+        <div style="font-size: 1.5rem;">LAP <span id="lap-display" style="color: yellow;">1/3</span></div>
+        <div id="timer" style="font-family: monospace;">0.00S</div>
     </div>
     <div id="rank-display">1st</div>
 
-    <div id="speedometer"><span id="speed-text" style="font-size: 2.5rem; color:#00ffcc;">0</span><br><span style="font-size:0.8rem; color:#888;">KM/H</span></div>
+    <div id="speedometer"><span id="speed-text">0</span><span style="font-size: 0.7rem; color: #888;">KM/H</span></div>
     <div id="joy-base"><div id="joy-stick"></div></div>
     <div id="container"></div>
 
@@ -66,16 +72,16 @@
     <script type="module">
         import * as THREE from 'three';
 
-        let peer, conn, myRole = "", myName = "Player", iAmReady = false, friendIsReady = false;
-        let raceStarted = false, raceFinished = false, time = 0, lap = 0, hasPassedHalfway = false;
+        let peer, conn, myName = "Player", iAmReady = false, friendIsReady = false;
+        let raceStarted = false, raceFinished = false, time = 0, lap = 1, checkpointPassed = true;
         const remotePlayers = {};
 
         window.initMultiplayer = (mode) => {
-            myRole = mode;
+            myName = prompt("Enter Name:") || "Racer";
             peer = new Peer();
             peer.on('open', (id) => {
-                if(mode === 'create') prompt("Share Room ID:", id);
-                else { const t = prompt("Enter ID:"); if(t) { conn = peer.connect(t); setupConnection(conn); }}
+                if(mode === 'create') prompt("Room ID:", id);
+                else { const t = prompt("Enter Room ID:"); if(t) { conn = peer.connect(t); setupConnection(conn); }}
                 document.getElementById('ready-ui').style.display = 'block';
             });
             peer.on('connection', (c) => { conn = c; setupConnection(c); });
@@ -85,17 +91,14 @@
 
         function setupConnection(c) {
             c.on('open', () => {
+                document.getElementById('remote-status').style.display = 'block';
                 c.on('data', (d) => {
                     if (d.type === 'ready') { friendIsReady = d.ready; updateUI(); }
                     else if (d.type === 'start') executeRaceStart();
                     else if (d.type === 'move') {
-                        if (!remotePlayers["friend"]) { 
-                            remotePlayers["friend"] = createMoto(0x00ffff, "FRIEND"); 
-                            scene.add(remotePlayers["friend"]); 
-                        }
+                        if (!remotePlayers["friend"]) { remotePlayers["friend"] = createMoto(0x00ffff, d.name); scene.add(remotePlayers["friend"]); }
                         remotePlayers["friend"].position.set(d.x, d.y, d.z);
-                        remotePlayers["friend"].rotation.y = d.ry;
-                        remotePlayers["friend"].rotation.z = d.rz;
+                        remotePlayers["friend"].rotation.set(d.rx, d.ry, d.rz);
                         remotePlayers["friend"].progress = d.progress;
                     }
                 });
@@ -111,30 +114,33 @@
         function updateUI() {
             document.getElementById('my-dot').className = iAmReady ? "status-dot is-ready" : "status-dot";
             document.getElementById('friend-dot').className = friendIsReady ? "status-dot is-ready" : "status-dot";
-            if(iAmReady && friendIsReady && myRole === 'create') document.getElementById('race-btn').style.display = "block";
+            document.getElementById('race-btn').style.display = (iAmReady && friendIsReady) ? "block" : "none";
         }
 
-        // --- WORLD ---
+        // --- WORLD SETUP ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 3000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('container').appendChild(renderer.domElement);
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.5));
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
 
         const innerR = 130, outerR = 190, centerR = 160;
-        const grass = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({color: 0x2d4d2d}));
-        grass.rotation.x = -Math.PI/2; scene.add(grass);
         
-        const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({color: 0x222222}));
-        road.rotation.x = -Math.PI/2; road.position.y = 0.01; scene.add(road);
+        // GRASS
+        const grass = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({color: 0x2d4d2d}));
+        grass.rotation.x = -Math.PI / 2; scene.add(grass);
+        
+        // ROAD
+        const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+        road.rotation.x = -Math.PI / 2; road.position.y = 0.02; scene.add(road);
 
-        // Finish Line
-        const finishLine = new THREE.Mesh(new THREE.BoxGeometry(outerR-innerR, 0.1, 5), new THREE.MeshStandardMaterial({color: 0xffffff}));
-        finishLine.position.set(centerR, 0.02, 0); scene.add(finishLine);
+        // WHITE LINE
+        const whiteLine = new THREE.Mesh(new THREE.BoxGeometry(outerR-innerR, 0.1, 4), new THREE.MeshStandardMaterial({color: 0xffffff}));
+        whiteLine.position.set(centerR, 0.05, 0); scene.add(whiteLine);
 
-        // Curbs & Obstacles
+        // OBSTACLES & CURBS
         const obstacles = [];
         for(let i=0; i<35; i++) {
             const a = (i/35) * Math.PI * 2 + Math.random(), l = centerR + (Math.random()-0.5)*40;
@@ -147,20 +153,25 @@
             const cO = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 3), mat); cO.position.set(Math.cos(a)*outerR, 0.5, Math.sin(a)*outerR); cO.rotation.y = -a; scene.add(cO);
         }
 
-        function createMoto(color, label) {
+        // --- BIKE & SMOKE ---
+        function createMoto(color, label = "") {
             const g = new THREE.Group();
-            const b = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 1.9), new THREE.MeshStandardMaterial({color}));
-            b.position.y = 0.6; g.add(b);
+            const b = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 1.8), new THREE.MeshStandardMaterial({color}));
+            b.position.y = 0.8; g.add(b);
+            const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
+            const ctx = canvas.getContext('2d'); ctx.fillStyle = 'white'; ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center'; ctx.fillText(label, 128, 45);
+            const s = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(canvas)}));
+            s.position.y = 2.8; s.scale.set(3, 0.75, 1); g.add(s);
             const wGeo = new THREE.TorusGeometry(0.4, 0.15, 12, 24);
             const fw = new THREE.Mesh(wGeo, new THREE.MeshStandardMaterial({color:0x000})); fw.position.set(0, 0.4, 0.8); g.add(fw);
             const bw = fw.clone(); bw.position.set(0, 0.4, -0.8); g.add(bw);
             g.collisionSphere = new THREE.Sphere(new THREE.Vector3(), 1.6);
             g.progress = 0; return g;
         }
-        const player = createMoto(0xff0000, "YOU"); scene.add(player);
-        player.position.set(centerR - 10, 0, 50);
 
-        // Smoke
+        const player = createMoto(0xff0000, "YOU");
+        player.position.set(centerR - 10, 0, 50); scene.add(player);
+
         const smokePool = [];
         for(let i=0; i<30; i++) {
             const s = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.4}));
@@ -174,9 +185,8 @@
         window.addEventListener('touchmove', (e) => {
             const t = e.touches[0], r = base.getBoundingClientRect();
             let dx = t.clientX - (r.left + 70), dy = t.clientY - (r.top + 70);
-            const d = Math.min(55, Math.sqrt(dx*dx+dy*dy));
-            const angle = Math.atan2(dy, dx);
-            dx = Math.cos(angle) * d; dy = Math.sin(angle) * d;
+            const d = Math.sqrt(dx*dx+dy*dy);
+            if(d > 55) { dx *= 55/d; dy *= 55/d; }
             stick.style.transform = `translate(${dx}px, ${dy}px)`;
             inX = dx/55; inY = -dy/55;
         });
@@ -185,15 +195,9 @@
         window.startRaceSequence = () => { if(conn) conn.send({ type: 'start' }); executeRaceStart(); };
 
         function executeRaceStart() {
-            document.getElementById('menu-container').style.display = 'none';
+            raceStarted = false; raceFinished = false; lap = 1; time = 0;
+            player.position.set(centerR + 2, 0, -10); player.rotation.set(0, 0, 0);
             document.getElementById('ready-ui').style.display = 'none';
-            lap = 0; time = 0; velocity = 0; hasPassedHalfway = false;
-            document.getElementById('lap-display').innerText = "0/3";
-            
-            const offset = (myRole === 'create') ? -4 : 4;
-            player.position.set(centerR + offset, 0, -10);
-            player.rotation.set(0, 0, 0);
-
             const ls = document.getElementById('light-system'); ls.style.display = 'flex';
             setTimeout(() => document.getElementById('l1').className = 'light red', 800);
             setTimeout(() => document.getElementById('l2').className = 'light yellow', 1600);
@@ -208,64 +212,56 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            if(raceStarted && !raceFinished) {
-                const dWorld = Math.sqrt(player.position.x**2 + player.position.z**2);
-                if (dWorld < innerR + 1.5 || dWorld > outerR - 1.5) velocity *= 0.85;
+            const dWorld = Math.sqrt(player.position.x**2 + player.position.z**2);
+            if (dWorld < innerR + 1.5 || dWorld > outerR - 1.5) velocity *= 0.85;
 
-                let crashed = false;
-                player.collisionSphere.center.copy(player.position);
-                obstacles.forEach(o => { if(new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
+            let crashed = false;
+            player.collisionSphere.center.copy(player.position);
+            obstacles.forEach(o => { if(new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
 
-                if(crashed) { 
-                    velocity = 0.05; 
-                    document.getElementById('crash-alert').style.display = 'block'; 
-                } else {
-                    document.getElementById('crash-alert').style.display = 'none';
-                    if(Math.abs(inY) > 0.1) velocity += inY * 0.03;
-                    velocity *= 0.978;
+            if(crashed) { velocity = 0.05; document.getElementById('crash-alert').style.display = 'block'; }
+            else if (!raceFinished) {
+                document.getElementById('crash-alert').style.display = 'none';
+                if(Math.abs(inY) > 0.1) velocity += inY * 0.026;
+                velocity *= 0.978;
+            } else { velocity *= 0.95; } // Slow down on finish
+
+            player.rotation.y -= inX * 0.06 * (Math.abs(velocity)/1.5);
+            player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
+            player.translateZ(velocity);
+
+            // LAP & FINISH
+            if(player.position.z > 0 && checkpointPassed) checkpointPassed = false;
+            if(player.position.z < 0 && !checkpointPassed) {
+                if(lap < 3) { lap++; checkpointPassed = true; document.getElementById('lap-display').innerText = lap + "/3"; }
+                else if(!raceFinished) {
+                    raceFinished = true;
+                    document.getElementById('finish-screen').style.display = 'block';
+                    document.getElementById('final-rank').innerText = document.getElementById('rank-display').innerText;
+                    document.getElementById('final-time').innerText = "TIME: " + time.toFixed(2) + "S";
                 }
-
-                player.rotation.y -= inX * 0.06 * (Math.abs(velocity)/1.5 + 0.1);
-                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.7, 0.1);
-                player.translateZ(velocity);
-
-                // LAP LOGIC
-                if (player.position.x < -100) hasPassedHalfway = true;
-                if (hasPassedHalfway && player.position.x > 100 && Math.abs(player.position.z) < 8) {
-                    lap++;
-                    hasPassedHalfway = false;
-                    document.getElementById('lap-display').innerText = lap + "/3";
-                    if(lap >= 3) {
-                        raceFinished = true;
-                        document.getElementById('finish-screen').style.display = 'block';
-                        document.getElementById('final-rank').innerText = document.getElementById('rank-display').innerText;
-                        document.getElementById('final-time').innerText = "TIME: " + time.toFixed(2) + "S";
-                    }
-                }
-
-                // Smoke logic
-                if(Math.abs(inX) > 0.7 && velocity > 0.5) {
-                    const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
-                    s.position.set(player.position.x, 0.2, player.position.z);
-                    smokeIdx = (smokeIdx + 1) % smokePool.length;
-                }
-                smokePool.forEach(s => { if(s.visible) { s.scale.multiplyScalar(0.9); if(s.scale.x < 0.1) s.visible = false; } });
-
-                time += 1/60;
-                document.getElementById('timer').innerText = time.toFixed(2) + "S";
-                document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity)*210);
             }
 
-            // Syncing Data
+            // RANKING
             let angle = Math.atan2(player.position.z, player.position.x);
-            player.progress = (lap * 100) + (angle + Math.PI);
-            if(conn && conn.open) conn.send({ type: 'move', x: player.position.x, y: player.position.y, z: player.position.z, ry: player.rotation.y, rz: player.rotation.z, progress: player.progress });
-            
+            player.progress = lap * 10 + (angle < 0 ? angle + Math.PI*2 : angle);
             if(remotePlayers["friend"]) {
                 const rank = player.progress > remotePlayers["friend"].progress ? "1st" : "2nd";
                 document.getElementById('rank-display').innerText = rank;
             }
 
+            // SMOKE
+            if(Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
+                const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
+                s.position.set(player.position.x, 0.2, player.position.z);
+                smokeIdx = (smokeIdx + 1) % smokePool.length;
+            }
+            smokePool.forEach(s => { if(s.visible) { s.scale.multiplyScalar(0.92); if(s.scale.x < 0.1) s.visible = false; } });
+
+            if(raceStarted && !raceFinished) { time += 1/60; document.getElementById('timer').innerText = time.toFixed(2) + "S"; }
+            if(conn && conn.open) conn.send({ type: 'move', name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z, progress: player.progress });
+
+            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity)*210);
             camera.position.lerp(new THREE.Vector3(0, 6, -12).applyMatrix4(player.matrixWorld), 0.1);
             camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
             renderer.render(scene, camera);
