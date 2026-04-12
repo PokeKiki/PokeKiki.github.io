@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto GP: Pro Grid Start</title>
+    <title>Moto GP: Pro Multi Fixed</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #1a2a1a; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; user-select: none; }
+        
+        /* UI Layers */
         #menu-container { position: absolute; top: 20px; left: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; }
         .menu-btn { padding: 12px 20px; font-size: 1rem; border-radius: 8px; border: 2px solid white; cursor: pointer; color: white; text-align: center; font-weight: bold; }
         #race-btn { background: #ff0000; font-size: 1.2rem; border: 3px solid white; display: none; }
         #create-btn { background: #0088ff; }
         #join-btn { background: #00aa44; }
+        
         #ready-ui { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; z-index: 300; min-width: 170px; border: 2px solid #444; display: none; }
         .status-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #444; margin-right: 8px; }
         .is-ready { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
@@ -24,8 +27,10 @@
         #crash-alert { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: #ff0000; display: none; z-index: 150; font-weight: 900; text-shadow: 0 0 20px #000; pointer-events: none; }
         
         #finish-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 40px; border: 5px solid yellow; border-radius: 20px; text-align: center; display: none; z-index: 1000; min-width: 300px; }
+        
         #joy-base { position: absolute; bottom: 50px; left: 50px; width: 140px; height: 140px; background: rgba(255, 255, 255, 0.1); border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 100; }
         #joy-stick { position: absolute; top: 35px; left: 35px; width: 70px; height: 70px; background: radial-gradient(circle, #fff, #888); border-radius: 50%; }
+        
         #light-system { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: none; gap: 20px; z-index: 100; }
         .light { width: 55px; height: 55px; border-radius: 50%; background: #222; border: 4px solid #444; }
         .red { background: #ff0000; box-shadow: 0 0 25px #ff0000; }
@@ -50,12 +55,13 @@
     <div id="finish-screen">
         <h1 style="color: yellow; font-size: 3rem; margin: 0;">RACE FINISHED!</h1>
         <p id="final-rank" style="font-size: 4rem; margin: 10px 0;">1st</p>
-        <p id="final-time" style="font-size: 1.5rem; color: #00ffcc;">TIME: 00:00:00</p>
+        <p id="final-time" style="font-size: 1.5rem; color: #00ffcc;">TIME: 0.00S</p>
         <div class="menu-btn" style="background: white; color: black;" onclick="location.reload()">REPLAY</div>
     </div>
 
     <div id="crash-alert">CRASHED!</div>
     <div id="light-system"><div id="l1" class="light"></div><div id="l2" class="light"></div><div id="l3" class="light"></div></div>
+    
     <div id="hud">
         <div style="font-size: 1.5rem;">LAP <span id="lap-display" style="color: yellow;">0/3</span></div>
         <div id="timer" style="font-family: monospace;">0.00S</div>
@@ -77,11 +83,11 @@
 
         window.initMultiplayer = (mode) => {
             myRole = mode;
-            myName = prompt("Name:") || "Racer";
+            myName = prompt("Enter Name:") || "Racer";
             peer = new Peer();
             peer.on('open', (id) => {
-                if(mode === 'create') prompt("Room ID:", id);
-                else { const t = prompt("Room ID:"); if(t) { conn = peer.connect(t); setupConnection(conn); }}
+                if(mode === 'create') prompt("Room ID (Share this):", id);
+                else { const t = prompt("Enter Room ID:"); if(t) { conn = peer.connect(t); setupConnection(conn); }}
                 document.getElementById('ready-ui').style.display = 'block';
             });
             peer.on('connection', (c) => { conn = c; setupConnection(c); });
@@ -96,7 +102,10 @@
                     if (d.type === 'ready') { friendIsReady = d.ready; updateUI(); }
                     else if (d.type === 'start') executeRaceStart();
                     else if (d.type === 'move') {
-                        if (!remotePlayers["friend"]) { remotePlayers["friend"] = createMoto(0x00ffff, d.name); scene.add(remotePlayers["friend"]); }
+                        if (!remotePlayers["friend"]) { 
+                            remotePlayers["friend"] = createMoto(0x00ffff, d.name); 
+                            scene.add(remotePlayers["friend"]); 
+                        }
                         remotePlayers["friend"].position.set(d.x, d.y, d.z);
                         remotePlayers["friend"].rotation.set(d.rx, d.ry, d.rz);
                         remotePlayers["friend"].progress = d.progress;
@@ -114,9 +123,15 @@
         function updateUI() {
             document.getElementById('my-dot').className = iAmReady ? "status-dot is-ready" : "status-dot";
             document.getElementById('friend-dot').className = friendIsReady ? "status-dot is-ready" : "status-dot";
-            document.getElementById('race-btn').style.display = (iAmReady && friendIsReady && myRole === 'create') ? "block" : "none";
+            // Show start button only to Host (creator) if both are ready
+            if (iAmReady && friendIsReady && myRole === 'create') {
+                document.getElementById('race-btn').style.display = "block";
+            } else {
+                document.getElementById('race-btn').style.display = "none";
+            }
         }
 
+        // --- WORLD ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 3000);
@@ -148,6 +163,7 @@
             const cO = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 3), mat); cO.position.set(Math.cos(a)*outerR, 0.5, Math.sin(a)*outerR); cO.rotation.y = -a; scene.add(cO);
         }
 
+        // --- BIKES ---
         function createMoto(color, label = "") {
             const g = new THREE.Group();
             const b = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 1.8), new THREE.MeshStandardMaterial({color}));
@@ -194,12 +210,12 @@
             raceStarted = false; raceFinished = false; lap = 0; time = 0; velocity = 0; checkpointPassed = true;
             document.getElementById('lap-display').innerText = "0/3";
             
-            // GRID POSITION (Side-by-Side)
-            const offsetX = (myRole === 'create') ? -5 : 5;
+            // SIDE-BY-SIDE GRID
+            const offsetX = (myRole === 'create') ? -4 : 4;
             player.position.set(centerR + offsetX, 0, -15); 
             player.rotation.set(0, 0, 0);
 
-            document.getElementById('race-btn').style.display = 'none';
+            // BUTTON DISAPPEARS NOW
             document.getElementById('menu-container').style.display = 'none';
             document.getElementById('ready-ui').style.display = 'none';
             
@@ -235,7 +251,7 @@
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
-            // LAP SYSTEM
+            // LAPS
             if(player.position.z > 0 && checkpointPassed) checkpointPassed = false;
             if(player.position.z < 0 && !checkpointPassed) {
                 lap++; checkpointPassed = true;
@@ -248,6 +264,7 @@
                 }
             }
 
+            // RANKING
             let angle = Math.atan2(player.position.z, player.position.x);
             player.progress = lap * 10 + (angle < 0 ? angle + Math.PI*2 : angle);
             if(remotePlayers["friend"]) {
@@ -255,6 +272,7 @@
                 document.getElementById('rank-display').innerText = rank;
             }
 
+            // SMOKE
             if(Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
                 const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
                 s.position.set(player.position.x, 0.2, player.position.z);
