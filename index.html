@@ -224,36 +224,36 @@
             scene.add(tire);
         }
 
-        // GRANDSTANDS (simple stepped bleachers on outside at key spots)
-        function addGrandstand(angle, color) {
+        // GRANDSTANDS — all around the track, facing inward toward the circuit
+        const standColors = [0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222, 0x2255aa, 0xaa2222];
+        const numStands = 12;
+        for (let si = 0; si < numStands; si++) {
+            const angle = (si / numStands) * Math.PI * 2;
+            const color = standColors[si];
             const g = new THREE.Group();
             for (let row = 0; row < 5; row++) {
                 const seat = new THREE.Mesh(
                     new THREE.BoxGeometry(40, 2, 6),
                     new THREE.MeshStandardMaterial({ color })
                 );
-                seat.position.set(0, 2 + row * 2.2, -(row * 5));
+                // rows step back AWAY from track (positive Z in local space = outward)
+                seat.position.set(0, 2 + row * 2.2, row * 5);
                 g.add(seat);
-                // tiny spectators
                 for (let s = 0; s < 10; s++) {
                     const spec = new THREE.Mesh(
                         new THREE.BoxGeometry(2, 2, 1),
                         new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0xff4400 : 0x0044ff })
                     );
-                    spec.position.set(-18 + s * 4, 3.5 + row * 2.2, -(row * 5));
+                    spec.position.set(-18 + s * 4, 3.5 + row * 2.2, row * 5);
                     g.add(spec);
                 }
             }
-            const r = outerR + 35;
+            const r = outerR + 18;
             g.position.set(Math.cos(angle) * r, 0, Math.sin(angle) * r);
-            g.rotation.y = -angle + Math.PI / 2;
+            // face inward: rotate so the front of the stand points toward the track center
+            g.rotation.y = angle + Math.PI;
             scene.add(g);
         }
-        addGrandstand(Math.PI * 0.1, 0x2255aa);
-        addGrandstand(Math.PI * 0.5, 0xaa2222);
-        addGrandstand(Math.PI * 0.9, 0x2255aa);
-        addGrandstand(Math.PI * 1.4, 0xaa2222);
-        addGrandstand(Math.PI * 1.8, 0x2255aa);
 
         // OBSTACLES - spread so they avoid the start line area (angle 0 = start)
         const obstacles = [];
@@ -476,19 +476,25 @@
             if (crashed) { velocity = 0.05; document.getElementById('crash-alert').style.display = 'block'; }
             else if (!raceFinished) {
                 document.getElementById('crash-alert').style.display = 'none';
-                if (Math.abs(inY) > 0.1) velocity += inY * 0.026;
+                // BLOCK movement until green light (raceStarted)
+                if (raceStarted && Math.abs(inY) > 0.1) velocity += inY * 0.026;
                 velocity *= 0.978;
             } else { velocity *= 0.95; }
 
-            player.rotation.y -= inX * 0.06 * (Math.abs(velocity) / 1.5);
-            player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
+            // BLOCK steering too until race starts
+            if (raceStarted) {
+                player.rotation.y -= inX * 0.06 * (Math.abs(velocity) / 1.5);
+                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
+            }
             player.translateZ(velocity);
 
-            // LAP LOGIC — finish line is at z=0, x=centerR (positive x side)
-            // cross z=0 going positive = half lap checkpoint
-            // cross z=0 going negative = full lap (but only if player is on positive x = finish line side)
-            if (player.position.z > 0 && !checkpointPassed) checkpointPassed = true;
-            if (player.position.z < 0 && checkpointPassed) {
+            // LAP LOGIC — finish line is at z=0 on the POSITIVE X side (x > 0)
+            // Player starts just behind it (z = -10, x = centerR)
+            // They must go around (z becomes positive = half lap checkpoint done)
+            // Then when they cross back to z < 0 AND they are on the positive X side = lap complete
+            const onFinishSide = player.position.x > 0;
+            if (player.position.z > 5 && !checkpointPassed) checkpointPassed = true;
+            if (player.position.z < 0 && checkpointPassed && onFinishSide && raceStarted) {
                 checkpointPassed = false;
                 if (lap < 3) {
                     lap++;
