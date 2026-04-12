@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Moto GP: Pro Multiplayer Fixed</title>
+    <title>Moto GP: Pro Race Lineup</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #1a2a1a; font-family: 'Arial Black', sans-serif; touch-action: none; color: white; user-select: none; }
@@ -74,42 +74,26 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // --- FIXED MULTIPLAYER LOGIC ---
+        // --- MULTIPLAYER LOGIC ---
         let peer, conn, myName = "Player", iAmReady = false, friendIsReady = false;
         const remotePlayers = {};
 
         window.initMultiplayer = (mode) => {
             myName = prompt("Enter your name:", "Racer") || "Racer";
-            document.getElementById('conn-status').innerText = "P2P: Connecting...";
-            
             peer = new Peer();
-            
             peer.on('open', (id) => {
                 document.getElementById('conn-status').innerText = "P2P: Online";
                 if(mode === 'create') {
-                    prompt("Room ID (Share this):", id);
+                    prompt("Room ID:", id);
                     document.getElementById('current-room').innerText = id;
                 } else {
-                    const target = prompt("Enter Room ID to Join:");
-                    if(target) {
-                        conn = peer.connect(target);
-                        setupConnection(conn);
-                    }
+                    const target = prompt("Enter Room ID:");
+                    if(target) { conn = peer.connect(target); setupConnection(conn); }
                 }
                 document.getElementById('room-tag').style.display = 'block';
                 document.getElementById('ready-ui').style.display = 'block';
             });
-
-            peer.on('connection', (incoming) => {
-                conn = incoming;
-                setupConnection(conn);
-            });
-
-            peer.on('error', (err) => {
-                alert("Connection Error: " + err.type);
-                document.getElementById('conn-status').innerText = "P2P: Error";
-            });
-
+            peer.on('connection', (incoming) => { conn = incoming; setupConnection(conn); });
             document.getElementById('create-btn').style.display = 'none';
             document.getElementById('join-btn').style.display = 'none';
         };
@@ -117,14 +101,14 @@
         function setupConnection(c) {
             c.on('open', () => {
                 document.getElementById('remote-status').style.display = 'block';
-                document.getElementById('conn-status').innerText = "P2P: Connected";
-                
                 c.on('data', (data) => {
                     if (data.type === 'ready_sync') {
                         friendIsReady = data.ready;
                         document.getElementById('friend-dot').className = friendIsReady ? "status-dot is-ready" : "status-dot";
                         document.getElementById('friend-ready-text').innerText = friendIsReady ? "READY" : "WAITING";
                         checkStartCondition();
+                    } else if (data.type === 'start_race') {
+                        executeRaceStart(); // Remote trigger
                     } else if (data.type === 'move') {
                         if (!remotePlayers["friend"]) {
                             remotePlayers["friend"] = createMoto(0x00ffff, data.name);
@@ -165,7 +149,12 @@
         const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x222222 }));
         road.rotation.x = -Math.PI / 2; road.position.y = 0.02; scene.add(road);
 
-        // Sides/Curbs
+        // Checkpoint White Line
+        const finishLine = new THREE.Mesh(new THREE.BoxGeometry(outerR-innerR, 0.1, 4), new THREE.MeshStandardMaterial({color: 0xffffff}));
+        finishLine.position.set(centerR, 0.05, 0);
+        scene.add(finishLine);
+
+        // Sides
         for(let i=0; i<180; i++) {
             const a = (i/180) * Math.PI * 2, mat = new THREE.MeshStandardMaterial({ color: i%2===0 ? 0xdd0000 : 0xffffff });
             const cI = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 3), mat); cI.position.set(Math.cos(a)*innerR, 0.5, Math.sin(a)*innerR); cI.rotation.y = -a; scene.add(cI);
@@ -179,7 +168,7 @@
             b.position.set(Math.cos(a)*l, 2.5, Math.sin(a)*l); scene.add(b); obstacles.push(b);
         }
 
-        // --- BIKES & SMOKE ---
+        // --- BIKES ---
         function createMoto(color, label = "") {
             const g = new THREE.Group();
             const b = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 1.8), new THREE.MeshStandardMaterial({color}));
@@ -197,7 +186,8 @@
         }
 
         const player = createMoto(0xff0000, "YOU");
-        player.position.set(centerR, 0, 0); scene.add(player);
+        player.position.set(centerR - 10, 0, 50); // Start away from line
+        scene.add(player);
 
         const smokePool = [];
         for(let i=0; i<30; i++) {
@@ -206,10 +196,10 @@
         }
         let smokeIdx = 0;
 
-        // --- CONTROLS & LOOP ---
+        // --- GAME LOGIC ---
         let velocity = 0, inX = 0, inY = 0, raceStarted = false, time = 0;
         const base = document.getElementById('joy-base'), stick = document.getElementById('joy-stick');
-        base.addEventListener('touchstart', (e) => { e.preventDefault(); }, {passive: false});
+        
         window.addEventListener('touchmove', (e) => {
             const t = e.touches[0], r = base.getBoundingClientRect();
             let dx = t.clientX - (r.left + 70), dy = t.clientY - (r.top + 70);
@@ -221,9 +211,20 @@
         window.addEventListener('touchend', () => { stick.style.transform = 'translate(0,0)'; inX = 0; inY = 0; });
 
         window.startRaceSequence = () => {
+            if(conn && conn.open) conn.send({ type: 'start_race' });
+            executeRaceStart();
+        };
+
+        function executeRaceStart() {
+            // TELEPORT TO LINE
+            velocity = 0;
+            player.position.set(centerR + 2, 0, -10); // Line up at checkpoint
+            player.rotation.set(0, 0, 0);
+            
             document.getElementById('race-btn').style.display = 'none';
             document.getElementById('ready-ui').style.display = 'none';
             const ls = document.getElementById('light-system'); ls.style.display = 'flex';
+            
             setTimeout(() => document.getElementById('l1').className = 'light red', 800);
             setTimeout(() => document.getElementById('l2').className = 'light yellow', 1600);
             setTimeout(() => {
@@ -232,16 +233,13 @@
                 document.getElementById('hud').style.visibility = 'visible';
                 setTimeout(() => ls.style.display = 'none', 1000);
             }, 2400);
-        };
+        }
 
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Boundary Slowdown
             const dWorld = Math.sqrt(player.position.x**2 + player.position.z**2);
             if (dWorld < innerR + 1.5 || dWorld > outerR - 1.5) velocity *= 0.85;
 
-            // Collision
             let crashed = false;
             player.collisionSphere.center.copy(player.position);
             obstacles.forEach(o => { if(new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
@@ -257,7 +255,7 @@
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
-            // Drift Smoke
+            // Smoke
             if(Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
                 const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
                 s.position.set(player.position.x, 0.2, player.position.z);
@@ -266,8 +264,6 @@
             smokePool.forEach(s => { if(s.visible) { s.scale.multiplyScalar(0.92); if(s.scale.x < 0.1) s.visible = false; } });
 
             if(raceStarted) { time += 1/60; document.getElementById('timer').innerText = time.toFixed(2) + "S"; }
-
-            // SEND SYNC DATA
             if(conn && conn.open) {
                 conn.send({ type: 'move', name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z });
             }
