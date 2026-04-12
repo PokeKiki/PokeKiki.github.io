@@ -63,12 +63,15 @@
     <script type="module">
         import * as THREE from 'three';
 
-        let peer, myName = "Player", iAmReady = false;
+        let peer, myName = "Player", iAmReady = false, friendIsReady = false;
         let raceStarted = false, raceFinished = false, raceInProgress = false, time = 0, lap = 0;
-        const connections = {}; // up to 10 players
+        const connections = {};
         const remotePlayers = {};
-        let readyCount = 0, totalPeers = 1;
-        let prevZ = null; // track previous Z to detect white line crossing
+        // LAP TRACKING: player starts at z=-10 (behind white line at z=0)
+        // Step 1: cross white line forward (z goes from <0 to >=0) — start of lap
+        // Step 2: go around the far side (z goes negative again — x will be negative side)
+        // Step 3: cross white line again (z goes from <0 to >=0 AND x > 0) = LAP COMPLETE
+        let lapState = 'start'; // 'start' | 'past_line' | 'far_side'
 
         window.initMultiplayer = (mode) => {
             myName = prompt("Enter your name:") || "Racer";
@@ -79,11 +82,7 @@
                     alert("Share this 4-digit code: " + code);
                     document.getElementById('ready-ui').style.display = 'block';
                 });
-                peer.on('connection', (c) => {
-                    connections[c.peer] = c;
-                    totalPeers++;
-                    setupConnection(c);
-                });
+                peer.on('connection', (c) => { connections[c.peer] = c; setupConnection(c); });
             } else {
                 const code = prompt("Enter 4-digit code:");
                 if (!code) return;
@@ -94,11 +93,7 @@
                     setupConnection(c);
                     document.getElementById('ready-ui').style.display = 'block';
                 });
-                peer.on('connection', (c) => {
-                    connections[c.peer] = c;
-                    totalPeers++;
-                    setupConnection(c);
-                });
+                peer.on('connection', (c) => { connections[c.peer] = c; setupConnection(c); });
             }
             document.getElementById('create-btn').style.display = 'none';
             document.getElementById('join-btn').style.display = 'none';
@@ -112,18 +107,13 @@
             c.on('open', () => {
                 document.getElementById('remote-status').style.display = 'block';
                 c.on('data', (d) => {
-                    if (d.type === 'ready') {
-                        readyCount = d.readyCount;
-                        totalPeers = d.totalPeers;
-                        friendIsReady = true;
-                        updateUI();
-                    }
+                    if (d.type === 'ready') { friendIsReady = d.ready; updateUI(); }
                     else if (d.type === 'start') executeRaceStart();
                     else if (d.type === 'move') {
                         const id = d.id;
                         if (!remotePlayers[id]) {
-                            const colors = [0x00ffff, 0xff00ff, 0xffff00, 0x00ff00, 0xff8800, 0x8800ff, 0x00ffaa, 0xff0088, 0xaaffoo];
-                            const col = colors[Object.keys(remotePlayers).length % colors.length];
+                            const palette = [0x00ffff, 0xff00ff, 0xffff00, 0x00ff00, 0xff8800, 0x8800ff, 0x00ffaa, 0xff0088, 0xaaffbb, 0x88aaff];
+                            const col = palette[Object.keys(remotePlayers).length % palette.length];
                             remotePlayers[id] = createMoto(col, d.name);
                             scene.add(remotePlayers[id]);
                         }
@@ -135,20 +125,16 @@
             });
         }
 
-        let friendIsReady = false;
         window.toggleReady = () => {
             iAmReady = !iAmReady;
-            readyCount += iAmReady ? 1 : -1;
-            broadcast({ type: 'ready', readyCount, totalPeers });
+            broadcast({ type: 'ready', ready: iAmReady });
             updateUI();
         };
 
         function updateUI() {
             document.getElementById('my-dot').className = iAmReady ? "status-dot is-ready" : "status-dot";
             document.getElementById('friend-dot').className = friendIsReady ? "status-dot is-ready" : "status-dot";
-            document.getElementById('friend-ready-text').innerText = readyCount + '/' + totalPeers + ' READY';
-            const allReady = iAmReady && friendIsReady;
-            document.getElementById('race-btn').style.display = allReady ? "block" : "none";
+            document.getElementById('race-btn').style.display = (iAmReady && friendIsReady) ? "block" : "none";
         }
 
         // SCENE
@@ -487,7 +473,7 @@
 
         function executeRaceStart() {
             raceStarted = false; raceFinished = false; raceInProgress = true;
-            lap = 0; time = 0; prevZ = null;
+            lap = 0; time = 0; lapState = 'far_side'; // start on far_side so first crossing of white line = lap 1
             velocity = 0; inX = 0; inY = 0;
             document.getElementById('lap-display').innerText = '0/3';
             document.getElementById('race-btn').style.display = 'none';
@@ -534,11 +520,16 @@
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
-            // LAP LOGIC — player starts at z=-10, white line is at z=0
-            // Crossing from negative Z to positive Z on the finish line side = lap++
-            if (raceStarted && !raceFinished && prevZ !== null) {
-                const onFinishSide = player.position.x > innerR && player.position.x < outerR;
-                if (prevZ < 0 && player.position.z >= 0 && onFinishSide) {
+            // LAP LOGIC — white line is at z=0 on positive X side (x > innerR)
+            // lapState machine: 'far_side' → player is on far side (z<0 or x<0)
+            //                   'crossing' → player crosses white line = lap complete
+            if (raceStarted && !raceFinished) {
+                const onTrack = player.position.x > innerR; // on the finish-line half
+                // once player goes to far side of track (x < 0), they've gone around
+                if (lapState === 'far_side' && player.position.x < 0) lapState = 'went_around';
+                // when they come back and cross z=0 on the positive-x side = lap complete
+                if (lapState === 'went_around' && player.position.z > -3 && player.position.z < 3 && player.position.x > innerR) {
+                    lapState = 'far_side'; // reset for next lap
                     lap++;
                     document.getElementById('lap-display').innerText = lap + '/3';
                     if (lap === 3) {
@@ -549,7 +540,6 @@
                     }
                 }
             }
-            if (raceStarted) prevZ = player.position.z;
 
             // RANKING
             let angle = Math.atan2(player.position.z, player.position.x);
