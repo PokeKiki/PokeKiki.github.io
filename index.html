@@ -37,20 +37,17 @@
         <div id="join-btn" class="menu-btn" onclick="initMultiplayer('join')">JOIN ROOM</div>
         <div id="race-btn" class="menu-btn" onclick="startRaceSequence()">START RACE</div>
     </div>
-
     <div id="ready-ui">
         <div><span class="status-dot" id="my-dot"></span> You: <span id="my-ready-text">WAITING</span></div>
         <div id="remote-status" style="margin-top:8px; display:none;"><span class="status-dot" id="friend-dot"></span> Friend: <span id="friend-ready-text">WAITING</span></div>
         <button id="ready-toggle-btn" class="menu-btn" onclick="toggleReady()">READY UP</button>
     </div>
-
     <div id="finish-screen">
         <h1 style="color: yellow; font-size: 3rem; margin: 0;">RACE FINISHED!</h1>
         <p id="final-rank" style="font-size: 4rem; margin: 10px 0;">1st</p>
         <p id="final-time" style="font-size: 1.5rem; color: #00ffcc;">TIME: 00:00:00</p>
         <div class="menu-btn" style="background: white; color: black;" onclick="location.reload()">PLAY AGAIN</div>
     </div>
-
     <div id="crash-alert">CRASHED!</div>
     <div id="light-system"><div id="l1" class="light"></div><div id="l2" class="light"></div><div id="l3" class="light"></div></div>
     <div id="hud">
@@ -111,92 +108,350 @@
             document.getElementById('race-btn').style.display = (iAmReady && friendIsReady) ? "block" : "none";
         }
 
+        // SCENE
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 400, 900);
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 3000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.getElementById('container').appendChild(renderer.domElement);
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
+
+        // LIGHTING
+        const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+        sun.position.set(200, 300, 100);
+        sun.castShadow = true;
+        scene.add(sun);
+        scene.add(new THREE.HemisphereLight(0xadd8e6, 0x444422, 0.8));
 
         const innerR = 130, outerR = 190, centerR = 160;
 
-        const grass = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({color: 0x2d4d2d}));
-        grass.rotation.x = -Math.PI / 2; scene.add(grass);
+        // GRASS - green with slight texture feel
+        const grass = new THREE.Mesh(
+            new THREE.PlaneGeometry(5000, 5000),
+            new THREE.MeshStandardMaterial({ color: 0x3a7d3a })
+        );
+        grass.rotation.x = -Math.PI / 2;
+        scene.add(grass);
 
-        const road = new THREE.Mesh(new THREE.RingGeometry(innerR, outerR, 128), new THREE.MeshStandardMaterial({ color: 0x222222 }));
-        road.rotation.x = -Math.PI / 2; road.position.y = 0.02; scene.add(road);
+        // TRACK - dark asphalt
+        const road = new THREE.Mesh(
+            new THREE.RingGeometry(innerR, outerR, 128),
+            new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 })
+        );
+        road.rotation.x = -Math.PI / 2;
+        road.position.y = 0.02;
+        scene.add(road);
 
-        const whiteLine = new THREE.Mesh(new THREE.BoxGeometry(outerR-innerR, 0.1, 4), new THREE.MeshStandardMaterial({color: 0xffffff}));
-        whiteLine.position.set(centerR, 0.05, 0); scene.add(whiteLine);
+        // TRACK CENTER (inner grass)
+        const innerGrass = new THREE.Mesh(
+            new THREE.CircleGeometry(innerR - 1, 128),
+            new THREE.MeshStandardMaterial({ color: 0x2d6e2d })
+        );
+        innerGrass.rotation.x = -Math.PI / 2;
+        innerGrass.position.y = 0.01;
+        scene.add(innerGrass);
 
+        // KERBS - red/white alternating around inner and outer
+        for (let i = 0; i < 180; i++) {
+            const a = (i / 180) * Math.PI * 2;
+            const mat = new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xdd0000 : 0xffffff });
+            const cI = new THREE.Mesh(new THREE.BoxGeometry(8, 1.0, 3), mat);
+            cI.position.set(Math.cos(a) * innerR, 0.5, Math.sin(a) * innerR);
+            cI.rotation.y = -a;
+            scene.add(cI);
+            const cO = new THREE.Mesh(new THREE.BoxGeometry(8, 1.0, 3), mat);
+            cO.position.set(Math.cos(a) * outerR, 0.5, Math.sin(a) * outerR);
+            cO.rotation.y = -a;
+            scene.add(cO);
+        }
+
+        // TRACK DASHED CENTER LINE
+        for (let i = 0; i < 60; i++) {
+            const a = (i / 60) * Math.PI * 2;
+            if (i % 2 === 0) {
+                const dash = new THREE.Mesh(
+                    new THREE.PlaneGeometry(3, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff })
+                );
+                dash.rotation.x = -Math.PI / 2;
+                dash.position.set(Math.cos(a) * centerR, 0.03, Math.sin(a) * centerR);
+                dash.rotation.z = -a;
+                scene.add(dash);
+            }
+        }
+
+        // START/FINISH LINE (white wide stripe - this is the lap trigger line)
+        const finishLine = new THREE.Mesh(
+            new THREE.BoxGeometry(outerR - innerR, 0.15, 6),
+            new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        finishLine.position.set(centerR, 0.07, 0);
+        scene.add(finishLine);
+
+        // Checkered pattern on finish line
+        for (let i = 0; i < 8; i++) {
+            const checker = new THREE.Mesh(
+                new THREE.BoxGeometry(7, 0.16, 3),
+                new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x000000 : 0xffffff })
+            );
+            checker.position.set(innerR + 4 + i * 7.5, 0.08, 0);
+            scene.add(checker);
+        }
+
+        // ARMCO BARRIERS (metal guard rails around outer edge)
+        for (let i = 0; i < 90; i++) {
+            const a = (i / 90) * Math.PI * 2;
+            const barrier = new THREE.Mesh(
+                new THREE.BoxGeometry(14, 1.2, 1.2),
+                new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.8, roughness: 0.3 })
+            );
+            barrier.position.set(Math.cos(a) * (outerR + 10), 0.6, Math.sin(a) * (outerR + 10));
+            barrier.rotation.y = -a;
+            scene.add(barrier);
+        }
+
+        // TIRE BARRIERS (inner wall)
+        for (let i = 0; i < 60; i++) {
+            const a = (i / 60) * Math.PI * 2;
+            const tire = new THREE.Mesh(
+                new THREE.TorusGeometry(1.2, 0.6, 8, 12),
+                new THREE.MeshStandardMaterial({ color: 0x111111 })
+            );
+            tire.position.set(Math.cos(a) * (innerR - 8), 0.6, Math.sin(a) * (innerR - 8));
+            tire.rotation.x = Math.PI / 2;
+            scene.add(tire);
+        }
+
+        // GRANDSTANDS (simple stepped bleachers on outside at key spots)
+        function addGrandstand(angle, color) {
+            const g = new THREE.Group();
+            for (let row = 0; row < 5; row++) {
+                const seat = new THREE.Mesh(
+                    new THREE.BoxGeometry(40, 2, 6),
+                    new THREE.MeshStandardMaterial({ color })
+                );
+                seat.position.set(0, 2 + row * 2.2, -(row * 5));
+                g.add(seat);
+                // tiny spectators
+                for (let s = 0; s < 10; s++) {
+                    const spec = new THREE.Mesh(
+                        new THREE.BoxGeometry(2, 2, 1),
+                        new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0xff4400 : 0x0044ff })
+                    );
+                    spec.position.set(-18 + s * 4, 3.5 + row * 2.2, -(row * 5));
+                    g.add(spec);
+                }
+            }
+            const r = outerR + 35;
+            g.position.set(Math.cos(angle) * r, 0, Math.sin(angle) * r);
+            g.rotation.y = -angle + Math.PI / 2;
+            scene.add(g);
+        }
+        addGrandstand(Math.PI * 0.1, 0x2255aa);
+        addGrandstand(Math.PI * 0.5, 0xaa2222);
+        addGrandstand(Math.PI * 0.9, 0x2255aa);
+        addGrandstand(Math.PI * 1.4, 0xaa2222);
+        addGrandstand(Math.PI * 1.8, 0x2255aa);
+
+        // OBSTACLES - spread so they avoid the start line area (angle 0 = start)
         const obstacles = [];
-        for(let i=0; i<35; i++) {
-            const a = (i/35) * Math.PI * 2 + Math.random(), l = centerR + (Math.random()-0.5)*40;
-            const b = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 6), new THREE.MeshStandardMaterial({color: 0xff1100}));
-            b.position.set(Math.cos(a)*l, 2.5, Math.sin(a)*l); scene.add(b); obstacles.push(b);
-        }
-        for(let i=0; i<180; i++) {
-            const a = (i/180) * Math.PI * 2, mat = new THREE.MeshStandardMaterial({ color: i%2===0 ? 0xdd0000 : 0xffffff });
-            const cI = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 3), mat); cI.position.set(Math.cos(a)*innerR, 0.5, Math.sin(a)*innerR); cI.rotation.y = -a; scene.add(cI);
-            const cO = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 3), mat); cO.position.set(Math.cos(a)*outerR, 0.5, Math.sin(a)*outerR); cO.rotation.y = -a; scene.add(cO);
+        for (let i = 0; i < 30; i++) {
+            const a = 0.4 + (i / 30) * (Math.PI * 2 - 0.8);
+            const l = centerR + (Math.random() - 0.5) * 40;
+            const b = new THREE.Mesh(
+                new THREE.BoxGeometry(6, 5, 6),
+                new THREE.MeshStandardMaterial({ color: 0xff1100 })
+            );
+            b.position.set(Math.cos(a) * l, 2.5, Math.sin(a) * l);
+            scene.add(b);
+            obstacles.push(b);
         }
 
+        // DETAILED MOTORCYCLE builder
         function createMoto(color, label = "") {
             const g = new THREE.Group();
-            const b = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 1.8), new THREE.MeshStandardMaterial({color}));
-            b.position.y = 0.8; g.add(b);
+            const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.5, roughness: 0.4 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.7, roughness: 0.3 });
+            const chromeMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 1.0, roughness: 0.1 });
+            const tireMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
+
+            // MAIN FAIRING (body)
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 1.9), mat);
+            body.position.set(0, 0.95, 0);
+            g.add(body);
+
+            // NOSE FAIRING (front pointy bit)
+            const noseFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.32, 0.7, 8), mat);
+            noseFairing.rotation.x = Math.PI / 2;
+            noseFairing.position.set(0, 0.85, 1.2);
+            g.add(noseFairing);
+
+            // SEAT / TAIL
+            const tail = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.9), mat);
+            tail.position.set(0, 1.2, -0.8);
+            g.add(tail);
+
+            // FUEL TANK
+            const tank = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.35, 0.7), mat);
+            tank.position.set(0, 1.28, 0.2);
+            g.add(tank);
+
+            // WINDSCREEN
+            const windscreen = new THREE.Mesh(
+                new THREE.BoxGeometry(0.55, 0.35, 0.08),
+                new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 })
+            );
+            windscreen.position.set(0, 1.22, 1.0);
+            windscreen.rotation.x = -0.3;
+            g.add(windscreen);
+
+            // FRAME / CHASSIS
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 1.4), darkMat);
+            frame.position.set(0, 0.6, 0);
+            g.add(frame);
+
+            // ENGINE block
+            const engine = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.38, 0.55), darkMat);
+            engine.position.set(0, 0.52, 0.1);
+            g.add(engine);
+
+            // EXHAUST pipes
+            const exMat = new THREE.MeshStandardMaterial({ color: 0xcc8800, metalness: 0.9, roughness: 0.2 });
+            const ex1 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.1, 8), exMat);
+            ex1.rotation.x = Math.PI / 2 + 0.15;
+            ex1.position.set(0.28, 0.45, -0.35);
+            g.add(ex1);
+            const ex2 = ex1.clone();
+            ex2.position.set(-0.28, 0.45, -0.35);
+            g.add(ex2);
+
+            // SWINGARM
+            const swingarm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.8), darkMat);
+            swingarm.position.set(0, 0.42, -0.7);
+            g.add(swingarm);
+
+            // FRONT FORKS
+            const fork1 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.65, 8), chromeMat);
+            fork1.position.set(0.14, 0.55, 0.85);
+            g.add(fork1);
+            const fork2 = fork1.clone();
+            fork2.position.set(-0.14, 0.55, 0.85);
+            g.add(fork2);
+
+            // WHEELS (torus = tire + cylinder = rim)
+            function makeWheel(posZ) {
+                const wg = new THREE.Group();
+                const tire = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.14, 16, 32), tireMat);
+                wg.add(tire);
+                const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12), chromeMat);
+                rim.rotation.x = Math.PI / 2;
+                wg.add(rim);
+                // spokes
+                for (let s = 0; s < 6; s++) {
+                    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.56, 0.04), chromeMat);
+                    spoke.rotation.z = (s / 6) * Math.PI;
+                    wg.add(spoke);
+                }
+                wg.rotation.x = Math.PI / 2;
+                wg.position.set(0, 0.42, posZ);
+                return wg;
+            }
+            g.add(makeWheel(0.85));
+            g.add(makeWheel(-0.85));
+
+            // HANDLEBAR
+            const bar = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.07, 0.07), chromeMat);
+            bar.position.set(0, 1.18, 0.72);
+            g.add(bar);
+
+            // RIDER
+            const riderMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const suitMat = new THREE.MeshStandardMaterial({ color });
+            // torso
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.5, 0.55), suitMat);
+            torso.position.set(0, 1.45, 0.05);
+            torso.rotation.x = 0.55;
+            g.add(torso);
+            // helmet
+            const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), new THREE.MeshStandardMaterial({ color: 0xff2200, metalness: 0.3 }));
+            helmet.position.set(0, 1.82, 0.38);
+            g.add(helmet);
+            // visor
+            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.05), new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.7 }));
+            visor.position.set(0, 1.82, 0.59);
+            g.add(visor);
+            // arms
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.38), suitMat);
+            arm.position.set(0.25, 1.52, 0.5); arm.rotation.x = 0.5;
+            g.add(arm);
+            const arm2 = arm.clone(); arm2.position.set(-0.25, 1.52, 0.5);
+            g.add(arm2);
+            // legs
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.44, 0.16), suitMat);
+            leg.position.set(0.2, 1.05, -0.22);
+            g.add(leg);
+            const leg2 = leg.clone(); leg2.position.set(-0.2, 1.05, -0.22);
+            g.add(leg2);
+
+            // NAME LABEL
             const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
-            const ctx = canvas.getContext('2d'); ctx.fillStyle = 'white'; ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center'; ctx.fillText(label, 128, 45);
-            const s = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(canvas)}));
-            s.position.y = 2.8; s.scale.set(3, 0.75, 1); g.add(s);
-            const wGeo = new THREE.TorusGeometry(0.4, 0.15, 12, 24);
-            const fw = new THREE.Mesh(wGeo, new THREE.MeshStandardMaterial({color:0x000})); fw.position.set(0, 0.4, 0.8); g.add(fw);
-            const bw = fw.clone(); bw.position.set(0, 0.4, -0.8); g.add(bw);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white'; ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center';
+            ctx.fillText(label, 128, 45);
+            const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
+            s.position.y = 2.5; s.scale.set(3, 0.75, 1);
+            g.add(s);
+
             g.collisionSphere = new THREE.Sphere(new THREE.Vector3(), 1.6);
-            g.progress = 0; return g;
+            g.progress = 0;
+            return g;
         }
 
         const player = createMoto(0xff0000, "YOU");
-        player.position.set(centerR - 10, 0, 50); scene.add(player);
+        player.position.set(centerR - 10, 0, 50);
+        scene.add(player);
 
+        // SMOKE POOL
         const smokePool = [];
-        for(let i=0; i<30; i++) {
-            const s = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.4}));
+        for (let i = 0; i < 30; i++) {
+            const s = new THREE.Mesh(
+                new THREE.SphereGeometry(0.4, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 })
+            );
             s.visible = false; scene.add(s); smokePool.push(s);
         }
         let smokeIdx = 0;
 
+        // JOYSTICK
         let velocity = 0, inX = 0, inY = 0;
         const stick = document.getElementById('joy-stick'), base = document.getElementById('joy-base');
         window.addEventListener('touchmove', (e) => {
             const t = e.touches[0], r = base.getBoundingClientRect();
             let dx = t.clientX - (r.left + 70), dy = t.clientY - (r.top + 70);
-            const d = Math.sqrt(dx*dx+dy*dy);
-            if(d > 55) { dx *= 55/d; dy *= 55/d; }
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d > 55) { dx *= 55 / d; dy *= 55 / d; }
             stick.style.transform = `translate(${dx}px, ${dy}px)`;
-            inX = dx/55; inY = -dy/55;
+            inX = dx / 55; inY = -dy / 55;
         });
         window.addEventListener('touchend', () => { stick.style.transform = 'translate(0,0)'; inX = 0; inY = 0; });
 
         window.startRaceSequence = () => {
             document.getElementById('race-btn').style.display = 'none';
             document.getElementById('ready-ui').style.display = 'none';
-            if(conn) conn.send({ type: 'start' });
+            if (conn) conn.send({ type: 'start' });
             executeRaceStart();
         };
 
         function executeRaceStart() {
             raceStarted = false; raceFinished = false;
-            lap = 0;
-            time = 0;
-            checkpointPassed = false;
+            lap = 0; time = 0; checkpointPassed = false;
             document.getElementById('lap-display').innerText = '0/3';
             document.getElementById('race-btn').style.display = 'none';
             document.getElementById('ready-ui').style.display = 'none';
-
-            player.position.set(centerR + 2, 0, -10); player.rotation.set(0, 0, 0);
-
+            player.position.set(centerR + 2, 0, -10);
+            player.rotation.set(0, 0, 0);
             const ls = document.getElementById('light-system'); ls.style.display = 'flex';
             setTimeout(() => document.getElementById('l1').className = 'light red', 800);
             setTimeout(() => document.getElementById('l2').className = 'light yellow', 1600);
@@ -211,27 +466,28 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            const dWorld = Math.sqrt(player.position.x**2 + player.position.z**2);
+            const dWorld = Math.sqrt(player.position.x ** 2 + player.position.z ** 2);
             if (dWorld < innerR + 1.5 || dWorld > outerR - 1.5) velocity *= 0.85;
 
             let crashed = false;
             player.collisionSphere.center.copy(player.position);
-            obstacles.forEach(o => { if(new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
+            obstacles.forEach(o => { if (new THREE.Box3().setFromObject(o).intersectsSphere(player.collisionSphere)) crashed = true; });
 
-            if(crashed) { velocity = 0.05; document.getElementById('crash-alert').style.display = 'block'; }
+            if (crashed) { velocity = 0.05; document.getElementById('crash-alert').style.display = 'block'; }
             else if (!raceFinished) {
                 document.getElementById('crash-alert').style.display = 'none';
-                if(Math.abs(inY) > 0.1) velocity += inY * 0.026;
+                if (Math.abs(inY) > 0.1) velocity += inY * 0.026;
                 velocity *= 0.978;
             } else { velocity *= 0.95; }
 
-            player.rotation.y -= inX * 0.06 * (Math.abs(velocity)/1.5);
+            player.rotation.y -= inX * 0.06 * (Math.abs(velocity) / 1.5);
             player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -inX * 0.8, 0.1);
             player.translateZ(velocity);
 
-            if (player.position.z > 0 && !checkpointPassed) {
-                checkpointPassed = true;
-            }
+            // LAP LOGIC — finish line is at z=0, x=centerR (positive x side)
+            // cross z=0 going positive = half lap checkpoint
+            // cross z=0 going negative = full lap (but only if player is on positive x = finish line side)
+            if (player.position.z > 0 && !checkpointPassed) checkpointPassed = true;
             if (player.position.z < 0 && checkpointPassed) {
                 checkpointPassed = false;
                 if (lap < 3) {
@@ -246,24 +502,26 @@
                 }
             }
 
+            // RANKING
             let angle = Math.atan2(player.position.z, player.position.x);
-            player.progress = lap * 10 + (angle < 0 ? angle + Math.PI*2 : angle);
-            if(remotePlayers["friend"]) {
+            player.progress = lap * 10 + (angle < 0 ? angle + Math.PI * 2 : angle);
+            if (remotePlayers["friend"]) {
                 const rank = player.progress > remotePlayers["friend"].progress ? "1st" : "2nd";
                 document.getElementById('rank-display').innerText = rank;
             }
 
-            if(Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
+            // SMOKE
+            if (Math.abs(inX) > 0.7 && Math.abs(velocity) > 0.6) {
                 const s = smokePool[smokeIdx]; s.visible = true; s.scale.setScalar(1);
                 s.position.set(player.position.x, 0.2, player.position.z);
                 smokeIdx = (smokeIdx + 1) % smokePool.length;
             }
-            smokePool.forEach(s => { if(s.visible) { s.scale.multiplyScalar(0.92); if(s.scale.x < 0.1) s.visible = false; } });
+            smokePool.forEach(s => { if (s.visible) { s.scale.multiplyScalar(0.92); if (s.scale.x < 0.1) s.visible = false; } });
 
-            if(raceStarted && !raceFinished) { time += 1/60; document.getElementById('timer').innerText = time.toFixed(2) + "S"; }
-            if(conn && conn.open) conn.send({ type: 'move', name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z, progress: player.progress });
+            if (raceStarted && !raceFinished) { time += 1 / 60; document.getElementById('timer').innerText = time.toFixed(2) + "S"; }
+            if (conn && conn.open) conn.send({ type: 'move', name: myName, x: player.position.x, y: player.position.y, z: player.position.z, rx: player.rotation.x, ry: player.rotation.y, rz: player.rotation.z, progress: player.progress });
 
-            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity)*210);
+            document.getElementById('speed-text').innerText = Math.round(Math.abs(velocity) * 210);
             camera.position.lerp(new THREE.Vector3(0, 6, -12).applyMatrix4(player.matrixWorld), 0.1);
             camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
             renderer.render(scene, camera);
