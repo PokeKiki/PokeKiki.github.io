@@ -610,8 +610,7 @@ function executeRaceStart(){
   },2400);
 }
 
-// ── CINEMATIC REPLAY ──────────────────────────────────────────────
-let replayMode=false,replayCamAngle=0;
+let replayMode=false,replayCamAngle=0; // replay disabled
 
 // ── ANIMATE ───────────────────────────────────────────────────────
 function animate(){
@@ -650,7 +649,7 @@ function animate(){
       document.getElementById('lap-display').innerText=lap+'/3';
       playBeep(660,0.2);
       if(lap===3){
-        raceFinished=true;replayMode=true;
+        raceFinished=true;
         const trackNames=['Oval','Beach','Snow','Mountain','Night City'];
         // coins based on rank
         const allProgress=[player.progress,...bots.map(b=>b.progress),...Object.values(remotePlayers).map(r=>r.progress)];
@@ -706,17 +705,9 @@ function animate(){
 
   document.getElementById('speed-text').innerText=Math.round(Math.abs(velocity)*210);
 
-  // CAMERA — cinematic replay mode after finish
-  if(replayMode){
-    replayCamAngle+=0.005;
-    const cx2=player.position.x+Math.cos(replayCamAngle)*20;
-    const cz2=player.position.z+Math.sin(replayCamAngle)*20;
-    camera.position.lerp(new THREE.Vector3(cx2,12,cz2),0.05);
-    camera.lookAt(player.position.x,player.position.y+1,player.position.z);
-  } else {
-    camera.position.lerp(new THREE.Vector3(0,6,-12).applyMatrix4(player.matrixWorld),0.1);
-    camera.lookAt(player.position.x,player.position.y+1,player.position.z);
-  }
+  // CAMERA — always follow player
+  camera.position.lerp(new THREE.Vector3(0,6,-12).applyMatrix4(player.matrixWorld),0.1);
+  camera.lookAt(player.position.x,player.position.y+1,player.position.z);
 
   renderer.render(scene,camera);
 }
