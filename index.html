@@ -185,34 +185,41 @@ const saveProfile = () => save('mgp_profile', profile);
 
 // ── BIKES ─────────────────────────────────────────────────────────
 const BIKES=[
-  {id:0,name:'STOCK',    icon:'🔴',color:0xff2200,accel:0.022,maxV:1.8,drag:0.980,desc:'Balanced starter bike. Good for learning.',topSpeed:'180'},
-  {id:1,name:'CRUISER',  icon:'🟠',color:0xff8800,accel:0.020,maxV:2.0,drag:0.982,desc:'Smooth and stable. Great cornering.',     topSpeed:'200'},
-  {id:2,name:'SPORT',    icon:'🟡',color:0xffdd00,accel:0.026,maxV:2.4,drag:0.979,desc:'Lightweight. Quick acceleration.',         topSpeed:'240'},
-  {id:3,name:'SUPERBIKE',icon:'🟢',color:0x00ff66,accel:0.031,maxV:2.9,drag:0.976,desc:'Track monster. Hard to control.',          topSpeed:'290'},
-  {id:4,name:'HYPERBIKE',icon:'🔵',color:0x0088ff,accel:0.038,maxV:3.5,drag:0.972,desc:'Ultimate machine. Pros only.',             topSpeed:'350'},
+  {id:0,name:'STOCK',    icon:'🔴',color:0xff2200,accel:0.022,maxV:1.8, drag:0.980,desc:'Balanced starter bike. Good for learning.',topSpeed:'180',price:0},
+  {id:1,name:'CRUISER',  icon:'🟠',color:0xff8800,accel:0.020,maxV:2.0, drag:0.982,desc:'Smooth and stable. Great cornering.',     topSpeed:'200',price:100},
+  {id:2,name:'SPORT',    icon:'🟡',color:0xffdd00,accel:0.026,maxV:2.4, drag:0.979,desc:'Lightweight. Quick acceleration.',         topSpeed:'240',price:250},
+  {id:3,name:'SUPERBIKE',icon:'🟢',color:0x00ff66,accel:0.031,maxV:2.9, drag:0.976,desc:'Track monster. Hard to control.',          topSpeed:'290',price:500},
+  {id:4,name:'HYPERBIKE',icon:'🔵',color:0x0088ff,accel:0.038,maxV:3.5, drag:0.972,desc:'Ultimate machine. Pros only.',             topSpeed:'350',price:1000},
+  {id:5,name:'DEMON',    icon:'☠️',color:0xff00ff,accel:0.075,maxV:7.15,drag:0.965,desc:'ILLEGAL. 750 km/h. Pure madness. Good luck.',topSpeed:'750',price:5000},
 ];
 let selectedBike=BIKES[0];
 
 // Build bike cards
 const bikeCardsEl=document.getElementById('bike-cards');
-BIKES.forEach(b=>{
-  const sp=Math.round((b.maxV/3.5)*100), ac=Math.round((b.accel/0.038)*100);
-  bikeCardsEl.innerHTML+=`<div class="bike-card ${b.id===0?'selected':''}" id="bc${b.id}" onclick="selectBike(${b.id})">
-    <span class="bi">${b.icon}</span><div style="font-size:0.9rem;margin-bottom:6px;">${b.name}</div>
-    <div style="text-align:left;font-size:0.7rem;color:#aaa;">SPEED</div>
-    <div class="stat-bar"><div class="stat-fill" style="width:${sp}%"></div></div>
-    <div style="text-align:left;font-size:0.7rem;color:#aaa;">ACCEL</div>
-    <div class="stat-bar"><div class="stat-fill" style="width:${ac}%"></div></div>
-    <div style="margin-top:5px;color:#ffcc00;font-size:0.75rem;">${b.topSpeed} km/h</div>
-    <div class="free-tag">FREE</div></div>`;
-});
-window.selectBike=(id)=>{
-  selectedBike=BIKES[id];
-  document.querySelectorAll('.bike-card').forEach(c=>c.classList.remove('selected'));
-  document.getElementById('bc'+id).classList.add('selected');
-  document.getElementById('bike-desc').innerText=selectedBike.desc;
-  rebuildPlayer();
-};
+function buildBikeCards(){
+  bikeCardsEl.innerHTML='';
+  BIKES.forEach(b=>{
+    const sp=Math.round((b.maxV/7.15)*100), ac=Math.round((b.accel/0.075)*100);
+    const owned=profile.owned&&profile.owned.includes(b.id);
+    const isFree=b.price===0;
+    const canAfford=profile.coins>=b.price;
+    const isSelected=selectedBike.id===b.id;
+    let tag='';
+    if(isFree) tag=`<div class="free-tag">FREE</div>`;
+    else if(owned) tag=`<div class="free-tag" style="color:#00ffff;border-color:#00ffff;">OWNED</div>`;
+    else tag=`<div class="free-tag" style="color:${canAfford?'#ffcc00':'#ff4444'};border-color:${canAfford?'#ffcc00':'#ff4444'};">🪙 ${b.price}</div>`;
+    bikeCardsEl.innerHTML+=`<div class="bike-card ${isSelected?'selected':''}" id="bc${b.id}" onclick="selectBike(${b.id})">
+      <span class="bi">${b.icon}</span><div style="font-size:0.9rem;margin-bottom:6px;">${b.name}</div>
+      <div style="text-align:left;font-size:0.7rem;color:#aaa;">SPEED</div>
+      <div class="stat-bar"><div class="stat-fill" style="width:${sp}%"></div></div>
+      <div style="text-align:left;font-size:0.7rem;color:#aaa;">ACCEL</div>
+      <div class="stat-bar"><div class="stat-fill" style="width:${ac}%"></div></div>
+      <div style="margin-top:5px;color:#ffcc00;font-size:0.75rem;">${b.topSpeed} km/h</div>
+      ${tag}</div>`;
+  });
+}
+if(!profile.owned) profile.owned=[0];
+buildBikeCards();
 window.showShop=()=>document.getElementById('shop-screen').style.display='block';
 window.closeShop=()=>document.getElementById('shop-screen').style.display='none';
 window.closePopup=(id)=>document.getElementById(id).style.display='none';
@@ -484,7 +491,26 @@ function rebuildPlayer(){
   player.position.set(centerR-10,0,50);
   scene.add(player);
 }
-window.selectBike=(id)=>{ selectedBike=BIKES[id]; document.querySelectorAll('.bike-card').forEach(c=>c.classList.remove('selected')); document.getElementById('bc'+id).classList.add('selected'); document.getElementById('bike-desc').innerText=selectedBike.desc; rebuildPlayer(); };
+window.selectBike=(id)=>{
+  const b=BIKES[id];
+  const owned=profile.owned&&profile.owned.includes(id);
+  if(b.price>0&&!owned){
+    if(profile.coins>=b.price){
+      if(!confirm(`Buy ${b.name} for 🪙${b.price} coins?`)) return;
+      profile.coins-=b.price;
+      if(!profile.owned) profile.owned=[];
+      profile.owned.push(id);
+      saveProfile();
+    } else {
+      alert(`Need 🪙${b.price} — you only have 🪙${profile.coins}. Race more to earn coins!`);
+      return;
+    }
+  }
+  selectedBike=b;
+  buildBikeCards();
+  document.getElementById('bike-desc').innerText=b.desc;
+  rebuildPlayer();
+};
 
 // ── AI BOTS ───────────────────────────────────────────────────────
 const BOT_COLORS=[0xee00ee,0x00eeee,0xeeee00];
