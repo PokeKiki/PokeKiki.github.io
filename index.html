@@ -616,19 +616,18 @@ window.addEventListener('keydown',(e)=>{
   initAudio();
   keys[e.code]=true;
   if(e.code==='Space') useNitro();
-  // prevent page scroll on arrow keys
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
 });
 window.addEventListener('keyup',(e)=>{ keys[e.code]=false; });
 function applyKeyboard(){
-  // W / ArrowUp = throttle forward
-  if(keys['KeyW']||keys['ArrowUp'])    inY= 1;
-  else if(keys['KeyS']||keys['ArrowDown']) inY=-1;
-  else if(!keys['KeyW']&&!keys['ArrowUp']&&!keys['KeyS']&&!keys['ArrowDown']) inY=0;
-  // A / ArrowLeft = steer left, D / ArrowRight = steer right
-  if(keys['KeyA']||keys['ArrowLeft'])   inX=-1;
+  const anyKey=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']||keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'];
+  if(!anyKey) return; // no keys pressed — let joystick control inX/inY
+  if(keys['KeyW']||keys['ArrowUp'])         inY= 1;
+  else if(keys['KeyS']||keys['ArrowDown'])  inY=-1;
+  else                                       inY= 0;
+  if(keys['KeyA']||keys['ArrowLeft'])        inX=-1;
   else if(keys['KeyD']||keys['ArrowRight']) inX= 1;
-  else inX=0;
+  else                                       inX= 0;
 }
 
 // ── RACE START ────────────────────────────────────────────────────
