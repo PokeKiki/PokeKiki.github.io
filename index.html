@@ -2,164 +2,161 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FNAF: Survival Office</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kyan AI | Interactive Voice Assistant</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial', sans-serif; user-select: none; }
-        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #app-container {
+            width: 90%;
+            max-width: 600px;
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 0.5rem; }
         
-        /* Stats */
-        .stat-box { position: absolute; color: #fff; text-shadow: 2px 2px #000; pointer-events: auto; }
-        #clock { top: 20px; right: 30px; font-size: 2.5rem; }
-        #power-container { bottom: 20px; left: 30px; font-size: 1.5rem; }
-        #usage { color: #0f0; font-size: 1rem; }
+        .settings {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
 
-        /* Door/Light Controls */
-        .btn-panel { position: absolute; top: 40%; width: 60px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
-        #left-btns { left: 5%; }
-        #right-btns { right: 5%; }
-        .btn { width: 50px; height: 50px; border: 3px solid #444; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; border-radius: 5px; }
-        .btn-door { background: #700; }
-        .btn-light { background: #770; }
-        .active-door { background: #f00; box-shadow: 0 0 15px #f00; }
-        .active-light { background: #ff0; box-shadow: 0 0 15px #ff0; color: #000; }
+        select, input, button {
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+        }
 
-        /* Camera Toggle */
-        #cam-trigger { position: absolute; bottom: 0; left: 25%; width: 50%; height: 40px; background: rgba(255,255,255,0.1); border: 2px solid #fff; pointer-events: auto; cursor: pointer; transition: 0.2s; }
-        #cam-trigger:hover { background: rgba(255,255,255,0.3); }
+        input {
+            width: 70%;
+            background: #334155;
+            color: white;
+        }
 
-        #cam-view { position: absolute; inset: 0; background: rgba(0,20,0,0.4); display: none; border: 30px solid #111; pointer-events: auto; }
-        #static { position: absolute; inset: 0; background: url('https://media.giphy.com/media/oEI9uWU0WMrQmZpG60/giphy.gif'); opacity: 0.1; }
+        button {
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        #chat-log {
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            padding: 10px;
+            background: #0f172a;
+            border-radius: 10px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; }
+        .user { background: var(--primary); align-self: flex-end; }
+        .ai { background: #475569; align-self: flex-start; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <div id="clock" class="stat-box">12 AM</div>
-        <div id="power-container" class="stat-box">
-            Power: <span id="power-val">100</span>%<br>
-            <span id="usage">Usage: <span id="use-dots">●</span></span>
+    <div id="app-container">
+        <h1>Kyan AI</h1>
+        <p>Voice-enabled Intelligence</p>
+
+        <div class="settings">
+            <select id="lang-select">
+                <option value="en-US">English</option>
+                <option value="fr-FR">Français</option>
+            </select>
         </div>
 
-        <div id="left-btns" class="btn-panel">
-            <div id="btn-door-L" class="btn btn-door" onclick="toggleDoor('L')">DOOR</div>
-            <div id="btn-light-L" class="btn btn-light" onmousedown="toggleLight('L', true)" onmouseup="toggleLight('L', false)">LIGHT</div>
+        <div id="chat-log">
+            <div class="msg ai">Hello! I am Kyan AI. How can I help you today?</div>
         </div>
 
-        <div id="right-btns" class="btn-panel">
-            <div id="btn-door-R" class="btn btn-door" onclick="toggleDoor('R')">DOOR</div>
-            <div id="btn-light-R" class="btn btn-light" onmousedown="toggleLight('R', true)" onmouseup="toggleLight('R', false)">LIGHT</div>
-        </div>
-
-        <div id="cam-trigger" onclick="toggleCam()"></div>
-        
-        <div id="cam-view">
-            <div id="static"></div>
-            <div style="color:#0f0; padding:20px;">CAM 1A - SHOWSTAGE</div>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="user-input" placeholder="Type your question...">
+            <button onclick="askKyan()">Ask</button>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
     <script>
-        let scene, camera, renderer, leftDoor, rightDoor, lLight, rLight;
-        let power = 100, hour = 0, usage = 1;
-        let doorL = false, doorR = false, lightL = false, lightR = false, camOpen = false;
+        const chatLog = document.getElementById('chat-log');
+        const userInput = document.getElementById('user-input');
+        const langSelect = document.getElementById('lang-select');
+        const synth = window.speechSynthesis;
 
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({antialias: true});
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-
-            // Office Walls
-            const room = new THREE.Mesh(new THREE.BoxGeometry(12, 6, 10), new THREE.MeshStandardMaterial({color: 0x151515, side: THREE.BackSide}));
-            scene.add(room);
-
-            // Left & Right Door Meshes
-            leftDoor = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 3), new THREE.MeshStandardMaterial({color: 0x333333}));
-            leftDoor.position.set(-5.8, 5, -1); // Start open (up)
-            scene.add(leftDoor);
-
-            rightDoor = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 3), new THREE.MeshStandardMaterial({color: 0x333333}));
-            rightDoor.position.set(5.8, 5, -1); 
-            scene.add(rightDoor);
-
-            // Hall Lights
-            lLight = new THREE.PointLight(0xffffff, 0, 5); lLight.position.set(-5, 0, -1); scene.add(lLight);
-            rLight = new THREE.PointLight(0xffffff, 0, 5); rLight.position.set(5, 0, -1); scene.add(rLight);
-
-            const officeLight = new THREE.PointLight(0x4444ff, 0.5, 10); officeLight.position.set(0, 2, 0); scene.add(officeLight);
-
-            camera.position.z = 2;
-            
-            document.addEventListener('mousemove', (e) => {
-                if(!camOpen) {
-                    camera.rotation.y = -((e.clientX / window.innerWidth) - 0.5) * 0.8;
-                }
-            });
-
-            loop();
-            setInterval(updateGame, 3000); // Drain power
-            setInterval(updateClock, 45000); // 45s = 1 hour
+        function speak(text) {
+            if (synth.speaking) synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langSelect.value;
+            // Find a voice that matches the language
+            const voices = synth.getVoices();
+            utterance.voice = voices.find(v => v.lang.includes(langSelect.value)) || voices[0];
+            synth.speak(utterance);
         }
 
-        function toggleDoor(side) {
-            if(side === 'L') { 
-                doorL = !doorL; 
-                document.getElementById('btn-door-L').classList.toggle('active-door');
-            } else { 
-                doorR = !doorR; 
-                document.getElementById('btn-door-R').classList.toggle('active-door');
-            }
-            calculateUsage();
+        function addMessage(text, isUser) {
+            const div = document.createElement('div');
+            div.className = `msg ${isUser ? 'user' : 'ai'}`;
+            div.textContent = text;
+            chatLog.appendChild(div);
+            chatLog.scrollTop = chatLog.scrollHeight;
         }
 
-        function toggleLight(side, state) {
-            if(side === 'L') { lightL = state; lLight.intensity = state ? 2 : 0; document.getElementById('btn-light-L').classList.toggle('active-light', state); }
-            else { lightR = state; rLight.intensity = state ? 2 : 0; document.getElementById('btn-light-R').classList.toggle('active-light', state); }
-            calculateUsage();
-        }
+        async function askKyan() {
+            const query = userInput.value.trim();
+            if (!query) return;
 
-        function toggleCam() {
-            camOpen = !camOpen;
-            document.getElementById('cam-view').style.display = camOpen ? 'block' : 'none';
-            calculateUsage();
-        }
+            addMessage(query, true);
+            userInput.value = '';
 
-        function calculateUsage() {
-            usage = 1 + (doorL?1:0) + (doorR?1:0) + (lightL?1:0) + (lightR?1:0) + (camOpen?1:0);
-            let dots = ""; for(let i=0; i<usage; i++) dots += "●";
-            document.getElementById('use-dots').innerText = dots;
-            document.getElementById('use-dots').style.color = usage > 3 ? "red" : "#0f0";
-        }
-
-        function updateGame() {
-            if(power > 0) {
-                power -= (usage * 0.5);
-                document.getElementById('power-val').innerText = Math.max(0, Math.floor(power));
+            // SIMULATED AI RESPONSE 
+            // In a real app, you would fetch() from an API like Gemini or OpenAI here.
+            let response = "";
+            if (langSelect.value === "fr-FR") {
+                response = "C'est une excellente question ! En tant que Kyan AI, je suis là pour vous aider.";
             } else {
-                // Game Over: Power Outage
-                scene.children.forEach(c => { if(c.intensity) c.intensity = 0; });
-                document.getElementById('ui').innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%'>POWER OUTAGE</h1>";
+                response = "That is a great question! As Kyan AI, I am here to help you.";
             }
+
+            setTimeout(() => {
+                addMessage(response, false);
+                speak(response);
+            }, 600);
         }
 
-        function updateClock() {
-            hour++;
-            if(hour <= 6) document.getElementById('clock').innerText = hour + " AM";
-            if(hour === 6) alert("WINNER!");
-        }
-
-        function loop() {
-            requestAnimationFrame(loop);
-            // Animate door movement
-            leftDoor.position.y = THREE.MathUtils.lerp(leftDoor.position.y, doorL ? 0 : 5, 0.1);
-            rightDoor.position.y = THREE.MathUtils.lerp(rightDoor.position.y, doorR ? 0 : 5, 0.1);
-            renderer.render(scene, camera);
-        }
-
-        init();
+        // Allow 'Enter' key to send
+        userInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") askKyan();
+        });
     </script>
 </body>
 </html>
