@@ -1,1350 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Among Us — Multiplayer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-
-:root{
-  --bg:#0a0e1a;
-  --bg2:#111827;
-  --bg3:#1a2235;
-  --accent:#c84b31;
-  --accent2:#e8652a;
-  --blue:#4b8bc8;
-  --green:#4bc87a;
-  --yellow:#c8b84b;
-  --text:#e8e8f0;
-  --muted:#8899aa;
-  --border:rgba(200,200,255,0.12);
-  --card:rgba(255,255,255,0.04);
-}
-
-html,body{
-  font-family:'Share Tech Mono',monospace;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  overflow-x:hidden;
-}
-
-/* Stars background */
-body::before{
-  content:'';
-  position:fixed;
-  inset:0;
-  background-image:
-    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.6) 0%, transparent 100%),
-    radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 92% 25%, rgba(255,255,255,0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 40% 90%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 60% 55%, rgba(255,255,255,0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 78% 8%, rgba(255,255,255,0.5) 0%, transparent 100%),
-    radial-gradient(2px 2px at 25% 35%, rgba(255,255,255,0.2) 0%, transparent 100%),
-    radial-gradient(2px 2px at 55% 70%, rgba(255,255,255,0.15) 0%, transparent 100%),
-    radial-gradient(2px 2px at 88% 50%, rgba(255,255,255,0.2) 0%, transparent 100%);
-  pointer-events:none;
-  z-index:0;
-}
-
-.container{
-  position:relative;
-  z-index:1;
-  width:100%;
-  max-width:620px;
-  margin:0 auto;
-  padding:1.5rem 1rem 3rem;
-}
-
-/* ── SCREENS ── */
-.screen{display:none;animation:fadeIn 0.35s ease}
-.screen.active{display:block}
-
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
-/* ── HEADER ── */
-h1{
-  font-family:'Orbitron',sans-serif;
-  font-size:clamp(1.8rem,6vw,2.8rem);
-  font-weight:900;
-  text-align:center;
-  letter-spacing:0.08em;
-  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 45%,var(--yellow) 100%);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-  margin-bottom:0.2rem;
-  text-shadow:none;
-}
-
-.subtitle{
-  text-align:center;
-  color:var(--muted);
-  font-size:0.72rem;
-  letter-spacing:0.3em;
-  margin-bottom:2rem;
-  text-transform:uppercase;
-}
-
-/* ── CARDS ── */
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:1.4rem 1.5rem;
-  margin-bottom:1rem;
-  backdrop-filter:blur(4px);
-}
-
-.card-title{
-  font-family:'Orbitron',sans-serif;
-  font-size:0.65rem;
-  letter-spacing:0.25em;
-  color:var(--muted);
-  margin-bottom:1rem;
-  text-transform:uppercase;
-}
-
-/* ── INPUTS ── */
-label{
-  display:block;
-  font-size:0.7rem;
-  color:var(--muted);
-  margin-bottom:0.4rem;
-  letter-spacing:0.12em;
-  text-transform:uppercase;
-}
-
-input[type="text"],input[type="number"],select{
-  width:100%;
-  background:rgba(255,255,255,0.05);
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:0.7rem 1rem;
-  color:var(--text);
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.95rem;
-  margin-bottom:1rem;
-  outline:none;
-  transition:border-color 0.2s,box-shadow 0.2s;
-}
-
-input:focus,select:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(200,75,49,0.15);
-}
-
-select option{background:#1a2235;color:var(--text)}
-
-/* ── BUTTONS ── */
-.btn{
-  display:block;
-  width:100%;
-  padding:0.85rem;
-  border:none;
-  border-radius:10px;
-  font-family:'Orbitron',sans-serif;
-  font-size:0.75rem;
-  font-weight:700;
-  letter-spacing:0.18em;
-  cursor:pointer;
-  transition:all 0.18s;
-  margin-bottom:0.65rem;
-  text-transform:uppercase;
-}
-
-.btn-primary{
-  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
-  color:#fff;
-  box-shadow:0 4px 20px rgba(200,75,49,0.25);
-}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(200,75,49,0.4)}
-.btn-primary:active{transform:translateY(0)}
-
-.btn-secondary{
-  background:transparent;
-  color:var(--muted);
-  border:1px solid var(--border);
-}
-.btn-secondary:hover{border-color:var(--accent);color:var(--text)}
-
-.btn-danger{
-  background:rgba(200,75,49,0.12);
-  color:var(--accent);
-  border:1px solid rgba(200,75,49,0.35);
-}
-.btn-danger:hover{background:rgba(200,75,49,0.25)}
-
-.btn-green{
-  background:linear-gradient(135deg,#1a6e3a,#4bc87a);
-  color:#fff;
-  box-shadow:0 4px 20px rgba(75,200,122,0.2);
-}
-.btn-green:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(75,200,122,0.35)}
-
-.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none !important;box-shadow:none !important}
-
-.two-cols{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
-.two-cols .btn{margin-bottom:0}
-
-/* ── ROOM CODE ── */
-.room-code{
-  font-family:'Orbitron',sans-serif;
-  font-size:clamp(2rem,8vw,3rem);
-  font-weight:900;
-  text-align:center;
-  letter-spacing:0.4em;
-  color:var(--accent2);
-  padding:0.75rem 0;
-  text-shadow:0 0 30px rgba(232,101,42,0.4);
-}
-
-/* ── PLAYERS ── */
-.players-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-  gap:0.5rem;
-  margin:0.75rem 0;
-}
-
-.player-chip{
-  background:rgba(255,255,255,0.05);
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:0.5rem 0.8rem;
-  font-size:0.78rem;
-  display:flex;
-  align-items:center;
-  gap:0.45rem;
-  overflow:hidden;
-  transition:border-color 0.2s;
-}
-
-.player-chip.you{border-color:var(--accent2);background:rgba(232,101,42,0.07)}
-.player-chip .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-
-/* ── ROLE BADGE ── */
-.role-badge{
-  display:inline-block;
-  padding:0.45rem 1.5rem;
-  border-radius:999px;
-  font-family:'Orbitron',sans-serif;
-  font-size:0.7rem;
-  font-weight:700;
-  letter-spacing:0.2em;
-}
-
-.role-crew{background:rgba(75,200,122,0.15);color:var(--green);border:1.5px solid var(--green)}
-.role-impostor{background:rgba(200,75,49,0.15);color:var(--accent);border:1.5px solid var(--accent)}
-
-/* ── CHAT ── */
-.chat-box{
-  height:240px;
-  overflow-y:auto;
-  background:rgba(0,0,0,0.35);
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:0.8rem;
-  margin-bottom:0.75rem;
-  scroll-behavior:smooth;
-}
-
-.chat-box::-webkit-scrollbar{width:4px}
-.chat-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
-.msg{
-  margin-bottom:0.5rem;
-  font-size:0.8rem;
-  line-height:1.55;
-  animation:fadeIn 0.2s ease;
-  word-break:break-word;
-}
-
-.msg .sender{font-weight:700;margin-right:0.4rem}
-.msg.system{color:var(--muted);font-style:italic}
-.msg.vote-msg{color:var(--yellow)}
-.msg.ai{color:var(--blue)}
-
-.chat-input-row{display:flex;gap:0.5rem}
-.chat-input-row input{flex:1;margin-bottom:0}
-.chat-input-row button{
-  padding:0.7rem 1.2rem;
-  border-radius:9px;
-  background:var(--accent);
-  color:#fff;
-  border:none;
-  cursor:pointer;
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.9rem;
-  transition:opacity 0.2s,transform 0.15s;
-  white-space:nowrap;
-}
-.chat-input-row button:hover{opacity:0.85;transform:scale(1.04)}
-
-/* ── VOTE ── */
-.vote-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
-  gap:0.5rem;
-  margin-top:0.75rem;
-}
-
-.vote-btn{
-  background:rgba(255,255,255,0.04);
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:0.65rem 0.75rem;
-  cursor:pointer;
-  color:var(--text);
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.78rem;
-  display:flex;
-  align-items:center;
-  gap:0.5rem;
-  transition:all 0.18s;
-}
-
-.vote-btn:hover{border-color:var(--accent);background:rgba(200,75,49,0.1)}
-.vote-btn.voted{border-color:var(--accent);background:rgba(200,75,49,0.2);pointer-events:none}
-.vote-btn.skip-btn:hover{border-color:var(--yellow);background:rgba(200,184,75,0.1)}
-.vote-btn:disabled{opacity:0.5;cursor:not-allowed}
-
-/* ── TIMER ── */
-.timer{
-  font-family:'Orbitron',sans-serif;
-  font-size:2rem;
-  font-weight:700;
-  text-align:center;
-  color:var(--yellow);
-  letter-spacing:0.1em;
-}
-.timer.urgent{color:var(--accent);animation:pulse 0.6s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-
-/* ── BANNERS ── */
-.phase-banner{
-  text-align:center;
-  font-family:'Orbitron',sans-serif;
-  font-size:0.65rem;
-  letter-spacing:0.3em;
-  padding:0.5rem;
-  border-radius:8px;
-  margin-bottom:1rem;
-  text-transform:uppercase;
-}
-.phase-play{background:rgba(75,140,200,0.12);color:var(--blue);border:1px solid rgba(75,140,200,0.3)}
-.phase-vote{background:rgba(200,184,75,0.12);color:var(--yellow);border:1px solid rgba(200,184,75,0.3)}
-
-/* ── RESULT ── */
-.result-banner{
-  font-family:'Orbitron',sans-serif;
-  font-size:clamp(1.2rem,5vw,1.8rem);
-  font-weight:900;
-  text-align:center;
-  padding:1.2rem;
-  border-radius:12px;
-  margin:1rem 0;
-  letter-spacing:0.1em;
-}
-.result-crew{background:rgba(75,200,122,0.12);color:var(--green);border:1.5px solid var(--green);box-shadow:0 0 30px rgba(75,200,122,0.15)}
-.result-impostor{background:rgba(200,75,49,0.12);color:var(--accent);border:1.5px solid var(--accent);box-shadow:0 0 30px rgba(200,75,49,0.2)}
-
-/* ── TASKS ── */
-.progress-bar-wrap{
-  background:rgba(255,255,255,0.07);
-  border-radius:999px;
-  height:6px;
-  margin:0.75rem 0;
-  overflow:hidden;
-}
-.progress-bar{
-  height:100%;
-  background:linear-gradient(90deg,var(--green),#a8ff78);
-  border-radius:999px;
-  transition:width 0.5s ease;
-  min-width:0%;
-}
-
-.task-list{list-style:none;margin-top:0.25rem}
-.task-item{
-  display:flex;
-  align-items:center;
-  gap:0.65rem;
-  padding:0.55rem 0;
-  border-bottom:1px solid rgba(255,255,255,0.05);
-  font-size:0.8rem;
-  cursor:pointer;
-  transition:color 0.2s,background 0.2s;
-  border-radius:4px;
-  padding-left:0.25rem;
-}
-.task-item:hover{color:var(--blue);background:rgba(75,140,200,0.05)}
-.task-item.done{color:var(--muted);text-decoration:line-through;cursor:default}
-.task-item.done:hover{color:var(--muted);background:transparent}
-.task-icon{width:10px;height:10px;border-radius:50%;border:2px solid currentColor;flex-shrink:0;transition:background 0.2s}
-.task-item.done .task-icon{background:currentColor}
-
-/* ── MISC ── */
-.sep{height:1px;background:var(--border);margin:1rem 0}
-
-.info-row{
-  display:flex;
-  justify-content:space-between;
-  font-size:0.78rem;
-  color:var(--muted);
-  margin-bottom:0.5rem;
-  padding:0.25rem 0;
-  border-bottom:1px solid rgba(255,255,255,0.04);
-}
-.info-row:last-child{border-bottom:none}
-.info-row span:last-child{color:var(--text)}
-
-.copy-btn{
-  background:rgba(255,255,255,0.06);
-  border:1px solid var(--border);
-  border-radius:7px;
-  padding:0.35rem 1rem;
-  color:var(--muted);
-  cursor:pointer;
-  font-size:0.7rem;
-  font-family:'Share Tech Mono',monospace;
-  transition:all 0.2s;
-}
-.copy-btn:hover{border-color:var(--accent2);color:var(--accent2)}
-
-.spaceship{
-  text-align:center;
-  font-size:2.5rem;
-  margin:0.5rem 0 1.5rem;
-  display:block;
-  animation:float 3s ease-in-out infinite;
-  filter:drop-shadow(0 0 20px rgba(200,75,49,0.3));
-}
-@keyframes float{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-8px) rotate(5deg)}}
-
-.impostor-list{
-  color:var(--accent);
-  font-family:'Orbitron',sans-serif;
-  font-size:1.1rem;
-  font-weight:700;
-  text-align:center;
-  padding:0.75rem 0;
-  letter-spacing:0.1em;
-}
-
-.voted-count{
-  font-size:0.75rem;
-  color:var(--muted);
-  text-align:center;
-  margin-top:0.5rem;
-}
-
-.notification{
-  position:fixed;
-  bottom:1.5rem;
-  left:50%;
-  transform:translateX(-50%);
-  background:var(--bg3);
-  border:1px solid var(--accent);
-  color:var(--text);
-  padding:0.65rem 1.5rem;
-  border-radius:10px;
-  font-size:0.8rem;
-  z-index:9999;
-  animation:slideUp 0.3s ease;
-  pointer-events:none;
-  white-space:nowrap;
-  box-shadow:0 4px 20px rgba(0,0,0,0.4);
-}
-@keyframes slideUp{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
-
-.ejection-entry{
-  display:flex;
-  align-items:center;
-  gap:0.6rem;
-  padding:0.4rem 0;
-  font-size:0.8rem;
-  border-bottom:1px solid rgba(255,255,255,0.05);
-}
-.ejection-entry:last-child{border-bottom:none}
-
-.settings-row{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
-.settings-row>div select{margin-bottom:0.5rem}
-
-/* Firebase-like shared storage using BroadcastChannel for local multiplayer */
-/* Falls back to polling window.storage if available */
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arabs vs Terrorist</title>
+    <style>
+        body { margin: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #ui-layer { text-align: center; background: #333; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 10; }
+        canvas { background: #111; border: 2px solid #555; display: none; cursor: none; }
+        input { padding: 10px; margin: 10px; border-radius: 5px; border: none; width: 200px; }
+        button { padding: 10px 20px; cursor: pointer; background: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold; }
+        button:hover { background: #c0392b; }
+        .hidden { display: none; }
+        #status-bar { position: absolute; top: 10px; left: 10px; display: none; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
+    </style>
 </head>
 <body>
-<div class="container">
 
-  <!-- ════════════════ HOME ════════════════ -->
-  <div class="screen active" id="screen-home">
-    <h1>AMONG US</h1>
-    <p class="subtitle">Space Deduction · Multiplayer</p>
-    <span class="spaceship">🚀</span>
-    <div class="card">
-      <p class="card-title">Your Identity</p>
-      <label>Your Name</label>
-      <input type="text" id="home-name" placeholder="Enter crewmate name..." maxlength="16" autocomplete="off"/>
-      <div class="two-cols">
-        <button class="btn btn-primary" onclick="goCreate()">Create Room</button>
-        <button class="btn btn-secondary" onclick="goJoin()">Join Room</button>
-      </div>
-    </div>
-    <div class="card" style="border-color:rgba(75,140,200,0.2)">
-      <p class="card-title" style="color:var(--blue)">How to Play</p>
-      <p style="font-size:0.78rem;color:var(--muted);line-height:1.8">
-        1. Create a room and share the code with friends<br>
-        2. Everyone joins with the 4-letter code<br>
-        3. Host starts the game — roles are assigned secretly<br>
-        4. Crewmates complete tasks · Impostors sabotage & kill<br>
-        5. Call meetings to debate and vote out suspects!
-      </p>
-    </div>
-  </div>
-
-  <!-- ════════════════ CREATE ════════════════ -->
-  <div class="screen" id="screen-create">
-    <h1>AMONG US</h1>
-    <p class="subtitle">Configure Room</p>
-    <div class="card">
-      <p class="card-title">Game Settings</p>
-      <div class="settings-row">
-        <div>
-          <label>Impostors</label>
-          <select id="cfg-impostors">
-            <option value="1">1 Impostor</option>
-            <option value="2">2 Impostors</option>
-            <option value="3">3 Impostors</option>
-          </select>
+    <!-- LOBBY UI -->
+    <div id="ui-layer">
+        <h1 id="title">ARABS</h1>
+        <div id="name-screen">
+            <input type="text" id="username" placeholder="Enter Your Name..." maxlength="12">
+            <br>
+            <button onclick="showLobby()">Continue</button>
         </div>
-        <div>
-          <label>Discussion Time</label>
-          <select id="cfg-discuss">
-            <option value="30">30 seconds</option>
-            <option value="60" selected>60 seconds</option>
-            <option value="90">90 seconds</option>
-            <option value="120">120 seconds</option>
-          </select>
+
+        <div id="lobby-screen" class="hidden">
+            <p>Welcome, <span id="display-name"></span></p>
+            <input type="text" id="room-code" placeholder="Enter Room Code...">
+            <br>
+            <button onclick="startGame('create')">Create Room</button>
+            <button onclick="startGame('join')">Join Room</button>
         </div>
-      </div>
-      <div class="settings-row">
-        <div>
-          <label>Voting Time</label>
-          <select id="cfg-vote">
-            <option value="30">30 seconds</option>
-            <option value="60" selected>60 seconds</option>
-            <option value="90">90 seconds</option>
-          </select>
-        </div>
-        <div>
-          <label>Tasks Per Player</label>
-          <select id="cfg-tasks">
-            <option value="3">3 tasks</option>
-            <option value="5" selected>5 tasks</option>
-            <option value="7">7 tasks</option>
-          </select>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
-      <button class="btn btn-secondary" onclick="showScreen('home')">← Back</button>
     </div>
-  </div>
 
-  <!-- ════════════════ JOIN ════════════════ -->
-  <div class="screen" id="screen-join">
-    <h1>AMONG US</h1>
-    <p class="subtitle">Join a Game</p>
-    <div class="card">
-      <label>Room Code</label>
-      <input type="text" id="join-code" placeholder="XXXX" maxlength="4"
-        style="text-transform:uppercase;font-size:1.6rem;letter-spacing:0.5em;text-align:center;font-family:'Orbitron',sans-serif"/>
-      <button class="btn btn-primary" onclick="joinRoom()">Join Room</button>
-      <button class="btn btn-secondary" onclick="showScreen('home')">← Back</button>
+    <!-- GAMEPLAY -->
+    <div id="status-bar">
+        Role: <span id="role-text">Arabs</span> | Room: <span id="room-id-text">None</span>
     </div>
-  </div>
-
-  <!-- ════════════════ LOBBY ════════════════ -->
-  <div class="screen" id="screen-lobby">
-    <h1>AMONG US</h1>
-    <p class="subtitle">Waiting for Players</p>
-    <div class="card">
-      <p class="card-title">Room Code</p>
-      <div class="room-code" id="lobby-code">????</div>
-      <div style="text-align:center;margin-bottom:0.5rem">
-        <button class="copy-btn" onclick="copyCode()">📋 Copy Code</button>
-      </div>
-      <div class="sep"></div>
-      <div class="info-row"><span>Impostors</span><span id="lobby-cfg-imp">—</span></div>
-      <div class="info-row"><span>Discussion</span><span id="lobby-cfg-disc">—</span></div>
-      <div class="info-row"><span>Voting</span><span id="lobby-cfg-vote">—</span></div>
-      <div class="info-row"><span>Tasks/Player</span><span id="lobby-cfg-tasks">—</span></div>
-    </div>
-    <div class="card">
-      <p class="card-title">Players (<span id="player-count">0</span>)</p>
-      <div class="players-grid" id="players-grid"></div>
-      <div id="lobby-msg" style="color:var(--muted);font-size:0.78rem;text-align:center;margin-top:0.5rem">Need at least 4 players</div>
-    </div>
-    <button class="btn btn-green" id="btn-start" style="display:none" onclick="startGame()">🚀 Start Game</button>
-    <button class="btn btn-danger" onclick="leaveRoom()">Leave Room</button>
-  </div>
-
-  <!-- ════════════════ GAME ════════════════ -->
-  <div class="screen" id="screen-game">
-    <div class="phase-banner phase-play" id="phase-banner">Free Roam</div>
-    <div class="card" id="role-card">
-      <div style="text-align:center">
-        <div class="role-badge" id="role-badge">CREWMATE</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem" id="impostor-hint"></p>
-      </div>
-    </div>
-    <div class="card" id="task-card">
-      <p class="card-title">Tasks</p>
-      <div class="progress-bar-wrap"><div class="progress-bar" id="task-progress" style="width:0%"></div></div>
-      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:0.5rem" id="task-count-label">0 / 0 completed</p>
-      <ul class="task-list" id="task-list"></ul>
-    </div>
-    <div class="card">
-      <p class="card-title">Players Alive</p>
-      <div class="players-grid" id="game-players-grid"></div>
-    </div>
-    <button class="btn btn-danger" onclick="callMeeting('emergency')" id="btn-meeting">🚨 Emergency Meeting</button>
-    <button class="btn btn-secondary" onclick="reportBody()" id="btn-report">💀 Report Body</button>
-  </div>
-
-  <!-- ════════════════ DISCUSSION ════════════════ -->
-  <div class="screen" id="screen-discussion">
-    <div class="phase-banner phase-vote" id="disc-banner">Emergency Meeting</div>
-    <div class="card" style="text-align:center;padding:1rem">
-      <div class="timer" id="disc-timer">60</div>
-      <p style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem" id="disc-phase-label">discussion time remaining</p>
-    </div>
-    <div class="card">
-      <p class="card-title">Discussion</p>
-      <div class="chat-box" id="chat-box"></div>
-      <div class="chat-input-row">
-        <input type="text" id="chat-input" placeholder="Say something..." maxlength="120" autocomplete="off"/>
-        <button onclick="sendChat()">Send</button>
-      </div>
-    </div>
-    <div id="vote-section" class="card" style="display:none">
-      <p class="card-title">Vote — Who Is The Impostor?</p>
-      <div class="vote-grid" id="vote-grid"></div>
-      <div class="voted-count" id="voted-count"></div>
-    </div>
-  </div>
-
-  <!-- ════════════════ END ════════════════ -->
-  <div class="screen" id="screen-end">
-    <h1>AMONG US</h1>
-    <div class="result-banner" id="result-banner">CREWMATES WIN</div>
-    <div class="card">
-      <p class="card-title">The Impostors Were</p>
-      <div class="impostor-list" id="impostor-reveal"></div>
-    </div>
-    <div class="card">
-      <p class="card-title">Ejection Log</p>
-      <div id="ejection-log"></div>
-    </div>
-    <button class="btn btn-primary" onclick="backToLobby()">🔄 Play Again</button>
-    <button class="btn btn-secondary" onclick="showScreen('home')">Main Menu</button>
-  </div>
-
-</div>
-
-<script>
-// ═══════════════════════════════════════════════
-//  AMONG US — Multiplayer Logic
-//  Storage: window.storage (claude.ai artifact API)
-//  Falls back to a mock in-memory store for local testing
-// ═══════════════════════════════════════════════
-
-const COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#8bc34a','#ff5722','#607d8b'];
-
-const TASK_NAMES = [
-  'Fix wiring in Electrical','Empty cafeteria trash','Calibrate distributor',
-  'Submit scan in MedBay','Clear asteroids','Align engine output',
-  'Stabilize steering','Prime shields','Download data','Upload data',
-  'Divert power to shields','Inspect sample','Monitor O₂ levels',
-  'Fill gas tank','Fuel engines at storage','Chart course','Start reactor',
-  'Unlock manifolds','Swipe card at security','Enter ID code',
-  'Fix lights in hallway','Test communications','Reboot Wi-Fi router',
-  'Replace filter in vents','Polish navigation panel',
-];
-
-// ── In-memory fallback storage ──
-const memStore = {};
-const mockStorage = {
-  async get(key){ return memStore[key] ? {value: memStore[key]} : null },
-  async set(key, val){ memStore[key] = val; return {key,value:val} },
-  async delete(key){ delete memStore[key]; return {key,deleted:true} },
-};
-
-function getStorage(){
-  try{ return window.storage || mockStorage }
-  catch(e){ return mockStorage }
-}
-
-// ── State ──
-let G = {
-  myName:'', myId:'', roomCode:'', isHost:false,
-  role:'', cfg:{}, tasks:[], doneTasks:new Set(),
-  phase:'lobby', hasVoted:false,
-  timerInterval:null, pollInterval:null, aiThinking:false,
-};
-
-// ── Utilities ──
-function genId(){ return Math.random().toString(36).substr(2,9) }
-
-function genCode(){
-  const c='ABCDEFGHJKLMNPQRSTUVWXYZ';
-  return Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join('');
-}
-
-function getColor(name){
-  let h=0;
-  for(let ch of name) h=(h*31+ch.charCodeAt(0))&0xffff;
-  return COLORS[h%COLORS.length];
-}
-
-function showScreen(name){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('screen-'+name).classList.add('active');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-let notifTimer=null;
-function notify(msg){
-  const old=document.querySelector('.notification');
-  if(old) old.remove();
-  const el=document.createElement('div');
-  el.className='notification';
-  el.textContent=msg;
-  document.body.appendChild(el);
-  if(notifTimer) clearTimeout(notifTimer);
-  notifTimer=setTimeout(()=>el.remove(), 2800);
-}
-
-// ── Storage helpers ──
-async function getRoomData(){
-  const s=getStorage();
-  try{
-    const r=await s.get('room:'+G.roomCode, true);
-    return r ? JSON.parse(r.value) : null;
-  }catch(e){ return null }
-}
-
-async function setRoomData(data){
-  const s=getStorage();
-  try{ await s.set('room:'+G.roomCode, JSON.stringify(data), true) }
-  catch(e){}
-}
-
-// ── HOME ──
-function goCreate(){
-  const name=document.getElementById('home-name').value.trim();
-  if(!name){ notify('Please enter your name!'); return }
-  G.myName=name;
-  showScreen('create');
-}
-
-function goJoin(){
-  const name=document.getElementById('home-name').value.trim();
-  if(!name){ notify('Please enter your name!'); return }
-  G.myName=name;
-  showScreen('join');
-}
-
-// ── CREATE ROOM ──
-async function createRoom(){
-  G.cfg={
-    impostors: parseInt(document.getElementById('cfg-impostors').value),
-    discuss:   parseInt(document.getElementById('cfg-discuss').value),
-    vote:      parseInt(document.getElementById('cfg-vote').value),
-    tasks:     parseInt(document.getElementById('cfg-tasks').value),
-  };
-  G.roomCode=genCode();
-  G.myId=genId();
-  G.isHost=true;
-
-  const roomData={
-    code:G.roomCode, cfg:G.cfg, phase:'lobby', hostId:G.myId,
-    players:{ [G.myId]:{ name:G.myName, id:G.myId, alive:true } },
-    impostors:[], votes:{}, messages:[], ejections:[],
-    tasksDone:0, tasksTotal:0,
-  };
-
-  await setRoomData(roomData);
-  enterLobby();
-}
-
-// ── JOIN ROOM ──
-async function joinRoom(){
-  const code=document.getElementById('join-code').value.trim().toUpperCase();
-  if(code.length!==4){ notify('Enter the 4-letter room code!'); return }
-
-  G.roomCode=code;
-  G.myId=genId();
-  G.isHost=false;
-
-  const room=await getRoomData();
-  if(!room){ notify('❌ Room not found! Check the code.'); return }
-  if(room.phase!=='lobby'){ notify('❌ Game already started!'); return }
-
-  G.cfg=room.cfg;
-  room.players[G.myId]={ name:G.myName, id:G.myId, alive:true };
-  await setRoomData(room);
-  enterLobby();
-}
-
-// ── LOBBY ──
-function enterLobby(){
-  showScreen('lobby');
-  document.getElementById('lobby-code').textContent=G.roomCode;
-  document.getElementById('lobby-cfg-imp').textContent=G.cfg.impostors+' impostor(s)';
-  document.getElementById('lobby-cfg-disc').textContent=G.cfg.discuss+'s';
-  document.getElementById('lobby-cfg-vote').textContent=G.cfg.vote+'s';
-  document.getElementById('lobby-cfg-tasks').textContent=G.cfg.tasks+' tasks';
-  pollLobby();
-}
-
-function pollLobby(){
-  clearInterval(G.pollInterval);
-  G.pollInterval=setInterval(async()=>{
-    const room=await getRoomData();
-    if(!room) return;
-    renderLobbyPlayers(room.players);
-    if(room.phase==='game'){
-      clearInterval(G.pollInterval);
-      enterGame(room);
-    }
-  }, 1500);
-}
-
-function renderLobbyPlayers(players){
-  const grid=document.getElementById('players-grid');
-  const list=Object.values(players);
-  document.getElementById('player-count').textContent=list.length;
-  grid.innerHTML='';
-  list.forEach(p=>{
-    const chip=document.createElement('div');
-    chip.className='player-chip'+(p.id===G.myId?' you':'');
-    chip.innerHTML=`<span class="dot" style="background:${getColor(p.name)}"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}${p.id===G.myId?' (you)':''}</span>`;
-    grid.appendChild(chip);
-  });
-  const startBtn=document.getElementById('btn-start');
-  const msg=document.getElementById('lobby-msg');
-  const n=list.length;
-  if(G.isHost && n>=4){
-    startBtn.style.display='block';
-    msg.textContent=`${n} players ready — let's go!`;
-  } else if(G.isHost){
-    startBtn.style.display='none';
-    msg.textContent=`Need ${4-n} more player(s) to start`;
-  } else {
-    startBtn.style.display='none';
-    msg.textContent=n>=4?'Waiting for host to start...':'Waiting for more players... ('+n+'/4)';
-  }
-}
-
-function copyCode(){
-  navigator.clipboard.writeText(G.roomCode).then(()=>notify('📋 Copied: '+G.roomCode));
-}
-
-async function leaveRoom(){
-  clearAll();
-  const room=await getRoomData();
-  if(room && room.players[G.myId]){
-    delete room.players[G.myId];
-    await setRoomData(room);
-  }
-  showScreen('home');
-}
-
-// ── ASSIGN TASKS ──
-function assignTasks(){
-  return [...TASK_NAMES].sort(()=>Math.random()-0.5).slice(0,G.cfg.tasks);
-}
-
-// ── START GAME ──
-async function startGame(){
-  const room=await getRoomData();
-  if(!room) return;
-
-  const playerIds=Object.keys(room.players);
-  const shuffled=[...playerIds].sort(()=>Math.random()-0.5);
-  room.impostors=shuffled.slice(0,G.cfg.impostors);
-
-  playerIds.forEach(id=>{
-    room.players[id].tasks=assignTasks();
-    room.players[id].doneTasks=0;
-    room.players[id].alive=true;
-  });
-  room.tasksTotal=playerIds.length*G.cfg.tasks;
-  room.tasksDone=0;
-  room.phase='game';
-  room.messages=[{type:'system',text:'Game started! Complete tasks and find the impostors!',time:Date.now()}];
-  room.votes={};
-  room.ejections=[];
-
-  await setRoomData(room);
-}
-
-// ── ENTER GAME ──
-function enterGame(room){
-  G.role=room.impostors.includes(G.myId)?'impostor':'crewmate';
-  G.tasks=room.players[G.myId]?.tasks||[];
-  G.doneTasks=new Set();
-  G.phase='game';
-  G.hasVoted=false;
-
-  // Role badge
-  const badge=document.getElementById('role-badge');
-  badge.textContent=G.role==='impostor'?'IMPOSTOR':'CREWMATE';
-  badge.className='role-badge '+(G.role==='impostor'?'role-impostor':'role-crew');
-
-  if(G.role==='impostor'){
-    const names=room.impostors.map(id=>room.players[id]?.name||'?').join(', ');
-    document.getElementById('impostor-hint').textContent='Fellow impostors: '+names;
-    document.getElementById('task-card').style.display='none';
-  } else {
-    document.getElementById('impostor-hint').textContent='Complete tasks — stay alive!';
-    document.getElementById('task-card').style.display='block';
-    renderTasks(room);
-  }
-
-  showScreen('game');
-  renderGamePlayers(room);
-  pollGame();
-}
-
-// ── TASKS ──
-function renderTasks(room){
-  const list=document.getElementById('task-list');
-  list.innerHTML='';
-  const done=G.doneTasks.size;
-  const total=G.tasks.length;
-  document.getElementById('task-progress').style.width=(total>0?done/total*100:0)+'%';
-  document.getElementById('task-count-label').textContent=`${done} / ${total} completed`;
-
-  G.tasks.forEach((task,i)=>{
-    const li=document.createElement('li');
-    const isDone=G.doneTasks.has(i);
-    li.className='task-item'+(isDone?' done':'');
-    li.innerHTML=`<span class="task-icon"></span>${task}`;
-    if(!isDone) li.onclick=()=>completeTask(i);
-    list.appendChild(li);
-  });
-}
-
-async function completeTask(idx){
-  if(G.doneTasks.has(idx)) return;
-  G.doneTasks.add(idx);
-  const room=await getRoomData();
-  if(!room) return;
-  room.tasksDone=(room.tasksDone||0)+1;
-  if(room.players[G.myId]) room.players[G.myId].doneTasks=(room.players[G.myId].doneTasks||0)+1;
-  await setRoomData(room);
-  renderTasks(room);
-  notify('✅ Task complete!');
-}
-
-// ── GAME PLAYERS ──
-function renderGamePlayers(room){
-  const grid=document.getElementById('game-players-grid');
-  grid.innerHTML='';
-  Object.values(room.players).filter(p=>p.alive).forEach(p=>{
-    const chip=document.createElement('div');
-    chip.className='player-chip'+(p.id===G.myId?' you':'');
-    chip.innerHTML=`<span class="dot" style="background:${getColor(p.name)}"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}${p.id===G.myId?' (you)':''}</span>`;
-    grid.appendChild(chip);
-  });
-}
-
-// ── POLL GAME ──
-function pollGame(){
-  clearInterval(G.pollInterval);
-  G.pollInterval=setInterval(async()=>{
-    const room=await getRoomData();
-    if(!room) return;
-
-    renderGamePlayers(room);
-
-    // Task win
-    if(room.tasksDone>=room.tasksTotal && room.tasksTotal>0 && room.phase==='game'){
-      clearAll();
-      showEndScreen(room,'crew');
-      return;
-    }
-
-    if(room.phase==='meeting' && G.phase==='game'){
-      clearAll();
-      enterMeeting(room);
-      return;
-    }
-
-    if(room.phase==='end'){
-      clearAll();
-      showEndScreen(room,room.winner);
-    }
-  },1500);
-}
-
-// ── MEETING ──
-async function callMeeting(type){
-  const room=await getRoomData();
-  if(!room || room.phase!=='game') return;
-  room.phase='meeting';
-  room.meetingType=type;
-  room.meetingCaller=G.myId;
-  room.votes={};
-  room.messages=[...(room.messages||[]),{
-    type:'system',
-    text:`${G.myName} called an emergency meeting!`,
-    time:Date.now()
-  }];
-  await setRoomData(room);
-  clearAll();
-  enterMeeting(room);
-}
-
-async function reportBody(){
-  notify('🚨 Body reported! Calling meeting...');
-  await callMeeting('report');
-}
-
-// ── DISCUSSION ──
-function enterMeeting(room){
-  G.phase='meeting';
-  G.hasVoted=false;
-  showScreen('discussion');
-
-  const banner=document.getElementById('disc-banner');
-  banner.textContent=room.meetingType==='report'?'Body Reported!':'Emergency Meeting';
-  document.getElementById('vote-section').style.display='none';
-  document.getElementById('disc-phase-label').textContent='discussion time remaining';
-
-  renderChat(room.messages||[]);
-  startDiscussionTimer(room);
-  pollDiscussion();
-}
-
-function startDiscussionTimer(room){
-  let t=G.cfg.discuss;
-  const el=()=>document.getElementById('disc-timer');
-  if(el()) el().textContent=t;
-
-  G.timerInterval=setInterval(async()=>{
-    t--;
-    const e=el();
-    if(e){ e.textContent=t; e.className='timer'+(t<=10?' urgent':'') }
-
-    const r=await getRoomData();
-    if(r && r.messages) renderChat(r.messages);
-
-    if(t<=0){
-      clearInterval(G.timerInterval);
-      showVotePhase(r||room);
-    }
-  },1000);
-}
-
-function pollDiscussion(){
-  clearInterval(G.pollInterval);
-  G.pollInterval=setInterval(async()=>{
-    const r=await getRoomData();
-    if(!r) return;
-    renderChat(r.messages||[]);
-    updateVotedCount(r);
-    if(r.phase==='voting' && G.phase==='meeting'){ G.phase='voting'; showVotePhase(r) }
-    if(r.phase==='game'){ clearAll(); G.phase='game'; showScreen('game'); renderGamePlayers(r); pollGame() }
-    if(r.phase==='end'){ clearAll(); showEndScreen(r,r.winner) }
-  },1200);
-}
-
-function renderChat(msgs){
-  const box=document.getElementById('chat-box');
-  if(!box) return;
-  const atBottom=box.scrollTop+box.clientHeight>=box.scrollHeight-10;
-  box.innerHTML='';
-  (msgs||[]).forEach(m=>{
-    const div=document.createElement('div');
-    div.className='msg '+(m.type||'');
-    if(m.type==='system'){
-      div.textContent='[ '+m.text+' ]';
-    } else {
-      div.innerHTML=`<span class="sender" style="color:${getColor(m.sender)}">${m.sender}:</span>${escHtml(m.text)}`;
-    }
-    box.appendChild(div);
-  });
-  if(atBottom) box.scrollTop=box.scrollHeight;
-}
-
-function escHtml(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-async function sendChat(){
-  const input=document.getElementById('chat-input');
-  const text=input.value.trim();
-  if(!text) return;
-  input.value='';
-  const room=await getRoomData();
-  if(!room) return;
-  room.messages=[...(room.messages||[]),{type:'chat',sender:G.myName,text,time:Date.now()}];
-  await setRoomData(room);
-  renderChat(room.messages);
-
-  // AI game master (occasional)
-  if(Math.random()<0.25 && !G.aiThinking){
-    G.aiThinking=true;
-    const players=Object.values(room.players).map(p=>p.name);
-    setTimeout(async()=>{
-      const comment=await getAIComment(text,G.myName,players);
-      if(comment){
-        const r2=await getRoomData();
-        if(r2 && (r2.phase==='meeting'||r2.phase==='voting')){
-          r2.messages=[...(r2.messages||[]),{type:'ai',sender:'🤖 GameMaster',text:comment,time:Date.now()}];
-          await setRoomData(r2);
-          renderChat(r2.messages);
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const ui = document.getElementById('ui-layer');
+        let playerName = "";
+        let role = "Arab";
+        let players = []; 
+        let isPlaying = false;
+
+        // Player Object
+        const player = {
+            x: 400,
+            y: 300,
+            size: 30,
+            speed: 4,
+            color: '#3498db',
+            name: ""
+        };
+
+        const keys = {};
+
+        function showLobby() {
+            playerName = document.getElementById('username').value;
+            if (playerName.trim() === "") return alert("Please enter a name");
+            
+            document.getElementById('name-screen').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+            document.getElementById('display-name').innerText = playerName;
         }
-      }
-      G.aiThinking=false;
-    },1500);
-  }
-}
 
-async function getAIComment(lastMsg, sender, players){
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:80,
-        messages:[{role:'user',content:`You are a witty Among Us game master commentator. Players: ${players.join(', ')}. Last message from ${sender}: "${lastMsg}". Write 1 short sentence (max 20 words) that's funny and stirs up suspicion. No quotes, no preamble.`}]
-      })
-    });
-    const data=await res.json();
-    return data.content?.[0]?.text||null;
-  }catch(e){ return null }
-}
+        function startGame(type) {
+            const code = document.getElementById('room-code').value;
+            if (type === 'join' && code.trim() === "") return alert("Enter a room code");
+            
+            // Logic for Role Assignment
+            role = Math.random() > 0.8 ? "Terrorist" : "Arab";
+            
+            // UI Transition
+            ui.style.display = "none";
+            canvas.style.display = "block";
+            document.getElementById('status-bar').style.display = "block";
+            document.getElementById('role-text').innerText = role;
+            document.getElementById('role-text').style.color = (role === "Terrorist") ? "red" : "#3498db";
+            document.getElementById('room-id-text').innerText = type === 'create' ? "HOST-123" : code;
 
-function updateVotedCount(room){
-  const alive=Object.values(room.players).filter(p=>p.alive).length;
-  const voted=Object.keys(room.votes||{}).length;
-  const el=document.getElementById('voted-count');
-  if(el) el.textContent=`${voted} / ${alive} players voted`;
-}
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            isPlaying = true;
+            gameLoop();
+        }
 
-// ── VOTING ──
-async function showVotePhase(room){
-  clearInterval(G.timerInterval);
-  G.phase='voting';
-  document.getElementById('disc-phase-label').textContent='voting time remaining';
-  document.getElementById('vote-section').style.display='block';
+        // Input Listeners
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
 
-  const r=await getRoomData();
-  if(r){ r.phase='voting'; await setRoomData(r) }
+        function update() {
+            if (keys['ArrowUp'] || keys['KeyW']) player.y -= player.speed;
+            if (keys['ArrowDown'] || keys['KeyS']) player.y += player.speed;
+            if (keys['ArrowLeft'] || keys['KeyA']) player.x -= player.speed;
+            if (keys['ArrowRight'] || keys['KeyD']) player.x += player.speed;
 
-  renderVoteGrid(room);
+            // Boundaries
+            if (player.x < 0) player.x = 0;
+            if (player.y < 0) player.y = 0;
+            if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
+            if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
+        }
 
-  let t=G.cfg.vote;
-  const el=()=>document.getElementById('disc-timer');
-  if(el()) el().textContent=t;
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  G.timerInterval=setInterval(async()=>{
-    t--;
-    const e=el();
-    if(e){ e.textContent=t; e.className='timer'+(t<=10?' urgent':'') }
+            // Draw Map Grid (Simple)
+            ctx.strokeStyle = "#333";
+            for(let i=0; i<canvas.width; i+=50) {
+                ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+            for(let i=0; i<canvas.height; i+=50) {
+                ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width, i); ctx.stroke();
+            }
 
-    const r2=await getRoomData();
-    if(r2) updateVotedCount(r2);
+            // Draw Player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+            
+            // Draw Name Label
+            ctx.fillStyle = "white";
+            ctx.font = "14px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(playerName, player.x + player.size/2, player.y - 10);
+            
+            // Instructions for Prototype
+            ctx.globalAlpha = 0.5;
+            ctx.fillText("WASD to Move", 100, canvas.height - 20);
+            ctx.globalAlpha = 1.0;
+        }
 
-    if(t<=0){
-      clearInterval(G.timerInterval);
-      clearInterval(G.pollInterval);
-      await resolveVotes();
-    }
-  },1000);
-}
+        function gameLoop() {
+            if (!isPlaying) return;
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
 
-function renderVoteGrid(room){
-  const grid=document.getElementById('vote-grid');
-  if(!grid) return;
-  grid.innerHTML='';
+        window.addEventListener('resize', () => {
+            if(isPlaying) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
 
-  Object.values(room.players).filter(p=>p.alive).forEach(p=>{
-    const btn=document.createElement('button');
-    btn.className='vote-btn';
-    btn.id='vote-'+p.id;
-    btn.innerHTML=`<span class="dot" style="background:${getColor(p.name)}"></span>${escHtml(p.name)}${p.id===G.myId?' (you)':''}`;
-    if(!G.hasVoted) btn.onclick=()=>castVote(p.id,p.name);
-    grid.appendChild(btn);
-  });
-
-  const skip=document.createElement('button');
-  skip.className='vote-btn skip-btn';
-  skip.innerHTML='⏭ Skip Vote';
-  if(!G.hasVoted) skip.onclick=()=>castVote('skip','Skip');
-  grid.appendChild(skip);
-}
-
-async function castVote(targetId, targetName){
-  if(G.hasVoted) return;
-  G.hasVoted=true;
-
-  const btn=document.getElementById('vote-'+targetId)||document.querySelector('.skip-btn');
-  if(btn) btn.classList.add('voted');
-
-  const room=await getRoomData();
-  if(!room) return;
-  room.votes=room.votes||{};
-  room.votes[G.myId]=targetId;
-  await setRoomData(room);
-  notify('🗳 Voted for '+targetName+'!');
-  updateVotedCount(room);
-
-  const alive=Object.values(room.players).filter(p=>p.alive).length;
-  if(Object.keys(room.votes).length>=alive){
-    clearInterval(G.timerInterval);
-    await resolveVotes();
-  }
-}
-
-// ── RESOLVE VOTES ──
-async function resolveVotes(){
-  const room=await getRoomData();
-  if(!room || room.phase==='end' || room.phase==='game') return;
-
-  const tally={};
-  Object.values(room.votes||{}).forEach(v=>{ tally[v]=(tally[v]||0)+1 });
-
-  let maxV=0, ejected='skip', tie=false;
-  Object.entries(tally).forEach(([id,c])=>{
-    if(c>maxV){ maxV=c; ejected=id; tie=false }
-    else if(c===maxV){ tie=true }
-  });
-
-  if(tie||ejected==='skip'||maxV===0){
-    room.messages=[...(room.messages||[]),{type:'system',text:'No one was ejected. (Skipped or tied)',time:Date.now()}];
-    room.ejections=[...(room.ejections||[]),{name:'Nobody',wasImpostor:null}];
-  } else {
-    const ep=room.players[ejected];
-    const wasImp=room.impostors.includes(ejected);
-    ep.alive=false;
-    room.messages=[...(room.messages||[]),{type:'system',text:`${ep.name} was ejected. They were ${wasImp?'an IMPOSTOR!':'a crewmate.'}`,time:Date.now()}];
-    room.ejections=[...(room.ejections||[]),{name:ep.name,wasImpostor:wasImp}];
-  }
-
-  room.votes={};
-
-  // Check win conditions
-  const alive=Object.values(room.players).filter(p=>p.alive);
-  const aliveImp=alive.filter(p=>room.impostors.includes(p.id));
-  const aliveCrew=alive.filter(p=>!room.impostors.includes(p.id));
-
-  if(aliveImp.length===0){ room.phase='end'; room.winner='crew' }
-  else if(aliveImp.length>=aliveCrew.length){ room.phase='end'; room.winner='impostors' }
-  else { room.phase='game' }
-
-  await setRoomData(room);
-
-  clearAll();
-  if(room.phase==='end'){
-    showEndScreen(room,room.winner);
-  } else {
-    G.phase='game';
-    showScreen('game');
-    renderGamePlayers(room);
-    pollGame();
-  }
-}
-
-// ── END SCREEN ──
-function showEndScreen(room, winner){
-  clearAll();
-  G.phase='end';
-
-  const banner=document.getElementById('result-banner');
-  if(winner==='crew'){
-    banner.textContent='CREWMATES WIN! 🎉';
-    banner.className='result-banner result-crew';
-  } else {
-    banner.textContent='IMPOSTORS WIN! 😈';
-    banner.className='result-banner result-impostor';
-  }
-
-  const names=(room.impostors||[]).map(id=>room.players[id]?.name||'?').join(', ');
-  document.getElementById('impostor-reveal').textContent=names||'???';
-
-  const log=document.getElementById('ejection-log');
-  log.innerHTML='';
-  (room.ejections||[]).forEach(e=>{
-    const div=document.createElement('div');
-    div.className='ejection-entry';
-    if(e.wasImpostor===null){
-      div.innerHTML='<span style="color:var(--muted)">⬛</span><span style="color:var(--muted)">Nobody ejected</span>';
-    } else if(e.wasImpostor){
-      div.innerHTML=`<span style="color:var(--accent)">✔</span><span style="color:var(--accent)">${escHtml(e.name)} — was Impostor</span>`;
-    } else {
-      div.innerHTML=`<span style="color:var(--muted)">✘</span><span style="color:var(--muted)">${escHtml(e.name)} — was Crewmate</span>`;
-    }
-    log.appendChild(div);
-  });
-
-  showScreen('end');
-}
-
-async function backToLobby(){
-  clearAll();
-  if(G.isHost){
-    const room=await getRoomData();
-    if(room){
-      room.phase='lobby';
-      room.impostors=[];
-      room.votes={};
-      room.messages=[];
-      room.ejections=[];
-      room.tasksDone=0;
-      Object.values(room.players).forEach(p=>{ p.alive=true; p.tasks=[]; p.doneTasks=0 });
-      await setRoomData(room);
-    }
-  }
-  G.phase='lobby';
-  G.doneTasks=new Set();
-  G.tasks=[];
-  G.hasVoted=false;
-  enterLobby();
-}
-
-function clearAll(){
-  clearInterval(G.timerInterval);
-  clearInterval(G.pollInterval);
-}
-
-// ── KEYBOARD ──
-document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){
-    const active=document.activeElement?.id;
-    if(active==='chat-input') sendChat();
-    if(active==='join-code') joinRoom();
-    if(active==='home-name') goCreate();
-  }
-});
-
-// ── Auto-uppercase join code ──
-const joinInput=document.getElementById('join-code');
-if(joinInput) joinInput.addEventListener('input',function(){ this.value=this.value.toUpperCase() });
-</script>
+    </script>
 </body>
 </html>
