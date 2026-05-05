@@ -1,157 +1,1202 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arabs vs Terrorist</title>
-    <style>
-        body { margin: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #ui-layer { text-align: center; background: #333; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 10; }
-        canvas { background: #111; border: 2px solid #555; display: none; cursor: none; }
-        input { padding: 10px; margin: 10px; border-radius: 5px; border: none; width: 200px; }
-        button { padding: 10px 20px; cursor: pointer; background: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold; }
-        button:hover { background: #c0392b; }
-        .hidden { display: none; }
-        #status-bar { position: absolute; top: 10px; left: 10px; display: none; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arabs - Find The Terrorist</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #F0D080;
+    --red: #C0392B;
+    --green: #1A6B3C;
+    --sand: #F5E6C8;
+    --dark: #1a1208;
+    --panel: #2a1f0e;
+    --panel2: #3a2e1a;
+    --border: #8B6914;
+    --text: #F5E6C8;
+    --muted: #b09a6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(192,57,43,0.06) 0%, transparent 50%);
+  }
+
+  .screen { display: none; min-height: 100vh; padding: 20px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* TITLE SCREEN */
+  .game-logo {
+    font-family: 'Tajawal', sans-serif;
+    font-size: clamp(52px, 10vw, 90px);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(201,168,76,0.5), 2px 2px 0 #8B6914;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .game-subtitle {
+    font-size: 16px;
+    color: var(--muted);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 50px;
+    text-align: center;
+  }
+  .ornament {
+    color: var(--gold);
+    font-size: 24px;
+    margin: 0 12px;
+    opacity: 0.6;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .panel-title {
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    text-align: center;
+    opacity: 0.8;
+  }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    margin-bottom: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--gold); }
+  input::placeholder { color: var(--muted); }
+
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-gold {
+    background: linear-gradient(135deg, #C9A84C, #8B6914);
+    color: #1a1208;
+  }
+  .btn-gold:hover { background: linear-gradient(135deg, #F0D080, #C9A84C); }
+  .btn-red {
+    background: linear-gradient(135deg, #C0392B, #7B241C);
+    color: #fff;
+  }
+  .btn-red:hover { background: linear-gradient(135deg, #E74C3C, #C0392B); }
+  .btn-green {
+    background: linear-gradient(135deg, #1A6B3C, #0d3d22);
+    color: #fff;
+  }
+  .btn-green:hover { background: linear-gradient(135deg, #27AE60, #1A6B3C); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0 14px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* LOBBY */
+  .room-code {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 12px;
+    text-align: center;
+    padding: 16px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .room-code:hover { background: #4a3e2a; }
+  .copy-hint { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 20px; }
+
+  .player-list {
+    list-style: none;
+    margin-bottom: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .player-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--panel2);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .player-item.host { border-color: var(--gold); }
+  .player-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .player-name { flex: 1; font-size: 15px; }
+  .player-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: rgba(201,168,76,0.2);
+    color: var(--gold);
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+  .player-badge.terror { background: rgba(192,57,43,0.2); color: #e74c3c; border-color: rgba(192,57,43,0.3); }
+
+  .status-bar {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    padding: 10px;
+    background: var(--panel2);
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .status-bar span { color: var(--gold); font-weight: 600; }
+
+  /* GAME SCREEN */
+  .game-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+    width: 100%;
+    max-width: 900px;
+    min-height: 80vh;
+    align-items: start;
+  }
+  @media (max-width: 680px) {
+    .game-layout { grid-template-columns: 1fr; }
+  }
+
+  .game-map {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    min-height: 400px;
+  }
+  .map-title {
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-bottom: 16px;
+  }
+
+  .task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+  .task-card {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+  }
+  .task-card:hover:not(.done):not(.doing) { border-color: var(--gold); transform: translateY(-2px); }
+  .task-card .task-icon { font-size: 26px; margin-bottom: 8px; }
+  .task-card.done { opacity: 0.4; border-color: var(--green); background: rgba(26,107,60,0.15); cursor: default; }
+  .task-card.doing { border-color: var(--gold); animation: pulse 1s infinite; cursor: default; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0.4)} 50%{box-shadow:0 0 0 8px rgba(201,168,76,0)} }
+
+  .task-progress {
+    background: var(--panel2);
+    border-radius: 6px;
+    height: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .task-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), #27AE60);
+    border-radius: 6px;
+    transition: width 0.4s;
+  }
+
+  .game-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .role-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .role-label { font-size: 12px; letter-spacing: 3px; color: var(--muted); margin-bottom: 8px; }
+  .role-name {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 26px;
+    font-weight: 900;
+  }
+  .role-name.arab { color: var(--gold); }
+  .role-name.terrorist { color: var(--red); }
+  .role-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .chat-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    flex: 1;
+  }
+  .chat-messages {
+    max-height: 180px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .chat-msg { margin-bottom: 4px; }
+  .chat-msg .msg-author { color: var(--gold); font-weight: 600; }
+  .chat-msg .msg-system { color: var(--muted); font-style: italic; }
+  .chat-msg .msg-terror-hint { color: #e74c3c; }
+
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input-row input { margin-bottom: 0; flex: 1; font-size: 13px; padding: 10px 12px; }
+  .chat-input-row button {
+    padding: 10px 14px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--gold);
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'Cairo',sans-serif;
+    transition: background 0.15s;
+  }
+  .chat-input-row button:hover { background: #4a3e2a; }
+
+  /* VOTE SCREEN */
+  .vote-timer {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 64px;
+    font-weight: 900;
+    color: var(--red);
+    text-align: center;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .vote-label { font-size: 13px; letter-spacing: 4px; color: var(--muted); text-align: center; margin-bottom: 24px; text-transform: uppercase; }
+  .vote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 20px;
+  }
+  .vote-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+  }
+  .vote-btn:hover:not(.voted-this) { border-color: var(--gold); transform: scale(1.03); }
+  .vote-btn.voted-this { border-color: var(--red); background: rgba(192,57,43,0.2); }
+  .vote-btn .vb-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; margin: 0 auto 10px;
+  }
+  .vote-btn .vb-name { font-size: 14px; font-weight: 600; }
+  .vote-btn .vb-votes { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .vote-skip {
+    background: transparent;
+    border: 1px solid var(--muted);
+    border-radius: 8px;
+    color: var(--muted);
+    padding: 12px 28px;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .vote-skip:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* RESULT SCREEN */
+  .result-big {
+    font-family: 'Tajawal', sans-serif;
+    font-size: clamp(36px, 8vw, 72px);
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .result-sub { font-size: 16px; color: var(--muted); text-align: center; margin-bottom: 32px; }
+
+  /* MEETING MODAL (overlay) */
+  .meeting-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .meeting-overlay.active { display: flex; }
+  .meeting-box {
+    background: var(--panel);
+    border: 2px solid var(--red);
+    border-radius: 14px;
+    padding: 36px;
+    text-align: center;
+    max-width: 380px;
+    animation: meetingPop 0.3s ease;
+  }
+  @keyframes meetingPop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .meeting-icon { font-size: 56px; margin-bottom: 12px; }
+  .meeting-title { font-family: 'Tajawal',sans-serif; font-size: 32px; font-weight: 900; color: var(--red); margin-bottom: 6px; }
+  .meeting-caller { font-size: 15px; color: var(--muted); }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--panel); border: 1px solid var(--gold);
+    padding: 12px 24px; border-radius: 8px; font-size: 14px;
+    color: var(--gold); z-index: 200; opacity: 0;
+    transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  .sabotage-banner {
+    background: rgba(192,57,43,0.2);
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #e74c3c;
+    margin-bottom: 12px;
+    display: none;
+    text-align: center;
+  }
+  .sabotage-banner.active { display: block; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .loader { 
+    width: 36px; height: 36px; border: 3px solid var(--border);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 20px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .setting-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .setting-row label { flex: 1; font-size: 14px; color: var(--muted); }
+  .setting-row input[type="number"] { width: 70px; margin: 0; text-align: center; }
+</style>
 </head>
 <body>
 
-    <!-- LOBBY UI -->
-    <div id="ui-layer">
-        <h1 id="title">ARABS</h1>
-        <div id="name-screen">
-            <input type="text" id="username" placeholder="Enter Your Name..." maxlength="12">
-            <br>
-            <button onclick="showLobby()">Continue</button>
-        </div>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
-        <div id="lobby-screen" class="hidden">
-            <p>Welcome, <span id="display-name"></span></p>
-            <input type="text" id="room-code" placeholder="Enter Room Code...">
-            <br>
-            <button onclick="startGame('create')">Create Room</button>
-            <button onclick="startGame('join')">Join Room</button>
-        </div>
+<!-- MEETING OVERLAY -->
+<div class="meeting-overlay" id="meetingOverlay">
+  <div class="meeting-box">
+    <div class="meeting-icon">🚨</div>
+    <div class="meeting-title">EMERGENCY!</div>
+    <div class="meeting-caller" id="meetingCaller">A body was reported!</div>
+  </div>
+</div>
+
+<!-- SCREEN 1: HOME -->
+<div class="screen active" id="screenHome">
+  <div class="game-logo">عرب</div>
+  <div class="game-subtitle"><span class="ornament">✦</span> Arabs <span class="ornament">✦</span></div>
+  <div class="panel">
+    <div class="panel-title">Enter Your Name</div>
+    <input type="text" id="playerName" placeholder="Your name..." maxlength="18" autocomplete="off">
+    <div class="divider">Choose</div>
+    <button class="btn btn-gold" onclick="goToCreate()">🏠 Create Room</button>
+    <button class="btn btn-outline" onclick="goToJoin()">🚪 Join Room</button>
+  </div>
+</div>
+
+<!-- SCREEN 2: CREATE -->
+<div class="screen" id="screenCreate">
+  <div style="font-family:'Tajawal',sans-serif;font-size:28px;font-weight:900;color:var(--gold);margin-bottom:24px;">Create Room</div>
+  <div class="panel">
+    <div class="panel-title">Room Settings</div>
+    <div class="setting-row">
+      <label>Terrorists (impostors)</label>
+      <input type="number" id="numTerrorists" value="1" min="1" max="3">
     </div>
-
-    <!-- GAMEPLAY -->
-    <div id="status-bar">
-        Role: <span id="role-text">Arabs</span> | Room: <span id="room-id-text">None</span>
+    <div class="setting-row">
+      <label>Tasks per Arab</label>
+      <input type="number" id="numTasks" value="4" min="2" max="8">
     </div>
-    <canvas id="gameCanvas"></canvas>
+    <div class="setting-row">
+      <label>Vote time (seconds)</label>
+      <input type="number" id="voteTime" value="60" min="20" max="120">
+    </div>
+    <button class="btn btn-gold" onclick="createRoom()">Create & Start Lobby</button>
+    <button class="btn btn-outline" onclick="showScreen('screenHome')">← Back</button>
+  </div>
+</div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const ui = document.getElementById('ui-layer');
-        let playerName = "";
-        let role = "Arab";
-        let players = []; 
-        let isPlaying = false;
+<!-- SCREEN 3: JOIN -->
+<div class="screen" id="screenJoin">
+  <div style="font-family:'Tajawal',sans-serif;font-size:28px;font-weight:900;color:var(--gold);margin-bottom:24px;">Join Room</div>
+  <div class="panel">
+    <div class="panel-title">Enter Room Code</div>
+    <input type="text" id="joinCode" placeholder="6-digit code..." maxlength="6" style="letter-spacing:8px;font-size:24px;text-align:center;text-transform:uppercase" autocomplete="off">
+    <button class="btn btn-gold" onclick="joinRoom()">Join Room</button>
+    <button class="btn btn-outline" onclick="showScreen('screenHome')">← Back</button>
+  </div>
+</div>
 
-        // Player Object
-        const player = {
-            x: 400,
-            y: 300,
-            size: 30,
-            speed: 4,
-            color: '#3498db',
-            name: ""
-        };
+<!-- SCREEN 4: LOBBY -->
+<div class="screen" id="screenLobby">
+  <div style="font-family:'Tajawal',sans-serif;font-size:24px;font-weight:900;color:var(--gold);margin-bottom:20px;">Waiting Room</div>
+  <div class="panel" style="max-width:500px;">
+    <div class="panel-title">Room Code (click to copy)</div>
+    <div class="room-code" id="lobbyCode" onclick="copyCode()">------</div>
+    <div class="copy-hint" id="copyHint">Click code to copy</div>
+    <div class="status-bar">Players: <span id="lobbyCount">0</span> / 10 &nbsp;·&nbsp; Need at least <span>4</span> to start</div>
+    <ul class="player-list" id="lobbyPlayerList"></ul>
+    <div id="hostControls" style="display:none">
+      <button class="btn btn-green" id="startBtn" onclick="hostStartGame()" disabled>Start Game (need 4+)</button>
+    </div>
+    <div id="guestWait" style="display:none;color:var(--muted);font-size:13px;text-align:center;padding:10px;">
+      Waiting for host to start...
+    </div>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="leaveRoom()">Leave Room</button>
+  </div>
+</div>
 
-        const keys = {};
+<!-- SCREEN 5: GAME -->
+<div class="screen" id="screenGame" style="padding:16px;align-items:flex-start;justify-content:flex-start;">
+  <div class="game-layout">
+    <div>
+      <div class="game-map">
+        <div class="map-title">🗺 Mission Area</div>
+        <div class="task-progress"><div class="task-progress-bar" id="taskProgressBar" style="width:0%"></div></div>
+        <div id="sabBanner" class="sabotage-banner">⚠ Sabotage Active! Fix it fast!</div>
+        <div class="task-grid" id="taskGrid"></div>
+      </div>
+    </div>
+    <div class="game-sidebar">
+      <div class="role-card">
+        <div class="role-label">YOUR ROLE</div>
+        <div class="role-name" id="roleDisplay">Arab</div>
+        <div class="role-hint" id="roleHint">Complete your tasks</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-red" style="margin:0;padding:12px 8px;font-size:13px" onclick="callMeeting()">🚨 Meeting</button>
+        <button class="btn btn-outline" style="margin:0;padding:12px 8px;font-size:13px" id="sabBtn" onclick="terrorSabotage()" style="display:none">💣 Sabotage</button>
+      </div>
+      <div class="chat-panel">
+        <div class="panel-title" style="margin-bottom:10px;">Chat</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Message..." maxlength="80" onkeydown="if(event.key==='Enter')sendChat()">
+          <button onclick="sendChat()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-        function showLobby() {
-            playerName = document.getElementById('username').value;
-            if (playerName.trim() === "") return alert("Please enter a name");
-            
-            document.getElementById('name-screen').classList.add('hidden');
-            document.getElementById('lobby-screen').classList.remove('hidden');
-            document.getElementById('display-name').innerText = playerName;
-        }
+<!-- SCREEN 6: VOTE -->
+<div class="screen" id="screenVote">
+  <div class="vote-timer" id="voteTimer">60</div>
+  <div class="vote-label">Vote Out The Terrorist</div>
+  <div class="vote-grid" id="voteGrid"></div>
+  <button class="vote-skip" onclick="castVote('skip')">Skip Vote</button>
+  <div style="margin-top:16px;font-size:13px;color:var(--muted)" id="voteStatus">Waiting for votes...</div>
+</div>
 
-        function startGame(type) {
-            const code = document.getElementById('room-code').value;
-            if (type === 'join' && code.trim() === "") return alert("Enter a room code");
-            
-            // Logic for Role Assignment
-            role = Math.random() > 0.8 ? "Terrorist" : "Arab";
-            
-            // UI Transition
-            ui.style.display = "none";
-            canvas.style.display = "block";
-            document.getElementById('status-bar').style.display = "block";
-            document.getElementById('role-text').innerText = role;
-            document.getElementById('role-text').style.color = (role === "Terrorist") ? "red" : "#3498db";
-            document.getElementById('room-id-text').innerText = type === 'create' ? "HOST-123" : code;
+<!-- SCREEN 7: RESULT -->
+<div class="screen" id="screenResult">
+  <div class="result-big" id="resultTitle">Arabs Win!</div>
+  <div class="result-sub" id="resultSub">The terrorists were found.</div>
+  <div class="panel" style="max-width:400px;margin-bottom:20px;">
+    <div class="panel-title">Roles Revealed</div>
+    <ul class="player-list" id="resultPlayerList"></ul>
+  </div>
+  <button class="btn btn-gold" style="max-width:300px" onclick="backToLobby()">Play Again (Back to Lobby)</button>
+</div>
 
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            
-            isPlaying = true;
-            gameLoop();
-        }
+<script>
+// ═══════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════
+const COLORS = ['#C9A84C','#C0392B','#1A6B3C','#2980B9','#8E44AD','#E67E22','#16A085','#D35400','#7F8C8D','#2C3E50'];
+const TASK_ICONS = ['🏗','💧','⚡','📡','🔧','🛢','📦','🔩','🗝','🧪','🧰','🛡'];
+const TASK_NAMES = ['Build Wall','Pump Water','Fix Power','Send Signal','Fix Engine','Refuel','Pack Supplies','Tighten Bolts','Find Key','Mix Chemicals','Repair Kit','Secure Gate'];
 
-        // Input Listeners
-        window.addEventListener('keydown', e => keys[e.code] = true);
-        window.addEventListener('keyup', e => keys[e.code] = false);
+let G = {
+  roomCode: null,
+  myName: null,
+  myId: null,
+  isHost: false,
+  settings: { terrorists:1, tasksPerArab:4, voteTime:60 },
+  players: [],
+  myRole: null,
+  myTasks: [],
+  tasksTotal: 0,
+  tasksDone: 0,
+  phase: 'lobby', // lobby, game, vote, result
+  votes: {},
+  voteInterval: null,
+  voteTimeLeft: 60,
+  myVote: null,
+  ejected: [],
+  gameOver: false,
+  saboActive: false,
+  saboFixCount: 0,
+};
 
-        function update() {
-            if (keys['ArrowUp'] || keys['KeyW']) player.y -= player.speed;
-            if (keys['ArrowDown'] || keys['KeyS']) player.y += player.speed;
-            if (keys['ArrowLeft'] || keys['KeyA']) player.x -= player.speed;
-            if (keys['ArrowRight'] || keys['KeyD']) player.x += player.speed;
+let bc; // BroadcastChannel
 
-            // Boundaries
-            if (player.x < 0) player.x = 0;
-            if (player.y < 0) player.y = 0;
-            if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
-            if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
-        }
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function genCode() { return Math.random().toString(36).substring(2,8).toUpperCase(); }
+function genId() { return Math.random().toString(36).substring(2,10); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showToast(msg, dur=2400) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function getAvatar(name) { return name.charAt(0).toUpperCase(); }
+function getColor(name) {
+  let h = 0; for(let c of name) h += c.charCodeAt(0);
+  return COLORS[h % COLORS.length];
+}
+function broadcastState() {
+  if (!bc) return;
+  bc.postMessage({ type:'STATE', roomCode: G.roomCode, state: {
+    players: G.players, phase: G.phase, votes: G.votes,
+    settings: G.settings, ejected: G.ejected, saboActive: G.saboActive,
+    saboFixCount: G.saboFixCount
+  }});
+}
+function broadcastMsg(obj) {
+  if (!bc) return;
+  bc.postMessage({ ...obj, roomCode: G.roomCode });
+}
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function goToCreate() {
+  if (!getMyName()) return;
+  showScreen('screenCreate');
+}
+function goToJoin() {
+  if (!getMyName()) return;
+  showScreen('screenJoin');
+}
+function getMyName() {
+  const n = document.getElementById('playerName').value.trim();
+  if (!n) { showToast('Enter your name first!'); return false; }
+  G.myName = n;
+  G.myId = genId();
+  return true;
+}
 
-            // Draw Map Grid (Simple)
-            ctx.strokeStyle = "#333";
-            for(let i=0; i<canvas.width; i+=50) {
-                ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); ctx.stroke();
-            }
-            for(let i=0; i<canvas.height; i+=50) {
-                ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width, i); ctx.stroke();
-            }
+// ═══════════════════════════════════════════════════════
+// CREATE ROOM
+// ═══════════════════════════════════════════════════════
+function createRoom() {
+  G.settings.terrorists = parseInt(document.getElementById('numTerrorists').value);
+  G.settings.tasksPerArab = parseInt(document.getElementById('numTasks').value);
+  G.settings.voteTime = parseInt(document.getElementById('voteTime').value);
+  G.roomCode = genCode();
+  G.isHost = true;
+  G.players = [{ id: G.myId, name: G.myName, isHost: true, alive: true, tasksDone: 0 }];
+  setupBC();
+  openLobby();
+}
 
-            // Draw Player
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.size, player.size);
-            
-            // Draw Name Label
-            ctx.fillStyle = "white";
-            ctx.font = "14px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(playerName, player.x + player.size/2, player.y - 10);
-            
-            // Instructions for Prototype
-            ctx.globalAlpha = 0.5;
-            ctx.fillText("WASD to Move", 100, canvas.height - 20);
-            ctx.globalAlpha = 1.0;
-        }
+// ═══════════════════════════════════════════════════════
+// JOIN ROOM
+// ═══════════════════════════════════════════════════════
+function joinRoom() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (code.length < 4) { showToast('Enter a valid code'); return; }
+  G.roomCode = code;
+  G.isHost = false;
+  setupBC();
+  // Request current state
+  broadcastMsg({ type: 'JOIN_REQUEST', from: G.myId, name: G.myName });
+  showToast('Looking for room...');
+  setTimeout(() => {
+    if (G.players.length < 1) {
+      showToast('Room not found. Make sure someone has it open!', 3000);
+    }
+  }, 2500);
+}
 
-        function gameLoop() {
-            if (!isPlaying) return;
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
+// ═══════════════════════════════════════════════════════
+// BROADCAST CHANNEL SETUP
+// ═══════════════════════════════════════════════════════
+function setupBC() {
+  if (bc) bc.close();
+  bc = new BroadcastChannel('arabs_' + G.roomCode);
+  bc.onmessage = handleMessage;
+}
 
-        window.addEventListener('resize', () => {
-            if(isPlaying) {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-        });
+function handleMessage(e) {
+  const d = e.data;
+  if (d.roomCode && d.roomCode !== G.roomCode) return;
 
-    </script>
+  if (d.type === 'JOIN_REQUEST') {
+    if (!G.isHost) return;
+    if (G.phase !== 'lobby') { broadcastMsg({ type:'ROOM_BUSY', to: d.from }); return; }
+    if (G.players.find(p => p.id === d.from)) return;
+    G.players.push({ id: d.from, name: d.name, isHost: false, alive: true, tasksDone: 0 });
+    broadcastState();
+    broadcastMsg({ type:'SYSTEM_MSG', text: `${d.name} joined the room!` });
+    renderLobby();
+  }
+
+  if (d.type === 'STATE') {
+    const s = d.state;
+    const wasInLobby = G.phase === 'lobby';
+    G.players = s.players;
+    G.settings = s.settings;
+    G.ejected = s.ejected || [];
+    G.saboActive = s.saboActive || false;
+    G.saboFixCount = s.saboFixCount || 0;
+    if (!G.isHost) {
+      if (s.phase === 'lobby' && wasInLobby) {
+        G.phase = 'lobby';
+        openLobby();
+      } else if (s.phase === 'game' && G.phase !== 'game') {
+        G.phase = 'game';
+        startGameForMe();
+      } else if (s.phase === 'vote' && G.phase !== 'vote') {
+        G.votes = s.votes;
+        G.phase = 'vote';
+        openVoteScreen();
+      } else if (s.phase === 'result') {
+        G.phase = 'result';
+        endGame(s.resultTitle, s.resultSub);
+      } else if (s.phase === 'game') {
+        G.votes = s.votes;
+        updateSabotageUI();
+      }
+    } else {
+      if (G.phase === 'vote') {
+        G.votes = s.votes;
+        renderVoteGrid();
+        checkAllVoted();
+      }
+      updateSabotageUI();
+    }
+    if (G.phase === 'lobby') renderLobby();
+  }
+
+  if (d.type === 'CHAT') {
+    appendChat(d.author, d.text, false);
+  }
+  if (d.type === 'SYSTEM_MSG') {
+    appendChat(null, d.text, true);
+  }
+  if (d.type === 'MEETING') {
+    showMeetingOverlay(d.caller);
+    setTimeout(() => {
+      hideMeetingOverlay();
+      G.phase = 'vote';
+      G.votes = {};
+      G.myVote = null;
+      openVoteScreen();
+    }, 2500);
+  }
+  if (d.type === 'VOTE_CAST') {
+    if (G.isHost) {
+      G.votes[d.from] = d.target;
+      broadcastState();
+      renderVoteGrid();
+      checkAllVoted();
+    }
+  }
+  if (d.type === 'VOTE_RESULT') {
+    clearInterval(G.voteInterval);
+    handleVoteResult(d.ejected);
+  }
+  if (d.type === 'ROOM_BUSY') {
+    if (d.to === G.myId) showToast('Game already in progress!', 3000);
+  }
+  if (d.type === 'GAME_OVER') {
+    G.gameOver = true;
+    endGame(d.title, d.sub);
+  }
+  if (d.type === 'TASK_DONE') {
+    // Host tracks overall progress
+    if (G.isHost) {
+      const p = G.players.find(x => x.id === d.pid);
+      if (p) p.tasksDone = (p.tasksDone||0) + 1;
+      const total = G.players.filter(p=>!isPlayerTerror(p)).length * G.settings.tasksPerArab;
+      const done = G.players.filter(p=>!isPlayerTerror(p)).reduce((a,p)=>a+(p.tasksDone||0),0);
+      if (done >= total) {
+        broadcastMsg({ type:'GAME_OVER', title:'Arabs Win! 🕌', sub:'All tasks completed. The city is safe!' });
+        broadcastState();
+      }
+    }
+  }
+  if (d.type === 'SABOTAGE') {
+    G.saboActive = true;
+    G.saboFixCount = 0;
+    updateSabotageUI();
+    appendChat(null, '⚠ SABOTAGE! A system has been damaged!', true);
+  }
+  if (d.type === 'SABO_FIX') {
+    G.saboFixCount = (G.saboFixCount||0) + 1;
+    if (G.saboFixCount >= 2) {
+      G.saboActive = false;
+      G.saboFixCount = 0;
+      updateSabotageUI();
+      appendChat(null, '✅ Sabotage fixed!', true);
+    }
+    if (G.isHost) broadcastState();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// LOBBY
+// ═══════════════════════════════════════════════════════
+function openLobby() {
+  showScreen('screenLobby');
+  G.phase = 'lobby';
+  document.getElementById('lobbyCode').textContent = G.roomCode;
+  document.getElementById('hostControls').style.display = G.isHost ? 'block' : 'none';
+  document.getElementById('guestWait').style.display = G.isHost ? 'none' : 'block';
+  renderLobby();
+  if (G.isHost) broadcastState();
+}
+function renderLobby() {
+  const list = document.getElementById('lobbyPlayerList');
+  list.innerHTML = '';
+  G.players.forEach(p => {
+    const li = document.createElement('li');
+    li.className = 'player-item' + (p.isHost ? ' host' : '');
+    li.innerHTML = `
+      <div class="player-avatar" style="background:${getColor(p.name)};color:#fff">${getAvatar(p.name)}</div>
+      <span class="player-name">${p.name}${p.id===G.myId?' (you)':''}</span>
+      ${p.isHost ? '<span class="player-badge">Host</span>' : ''}
+    `;
+    list.appendChild(li);
+  });
+  document.getElementById('lobbyCount').textContent = G.players.length;
+  const startBtn = document.getElementById('startBtn');
+  if (startBtn) {
+    const enough = G.players.length >= 4;
+    startBtn.disabled = !enough;
+    startBtn.textContent = enough ? 'Start Game!' : `Start Game (need ${4-G.players.length} more)`;
+  }
+}
+function copyCode() {
+  navigator.clipboard.writeText(G.roomCode).catch(()=>{});
+  document.getElementById('copyHint').textContent = 'Copied! ✓';
+  setTimeout(()=> document.getElementById('copyHint').textContent='Click code to copy', 2000);
+}
+function leaveRoom() {
+  if (bc) bc.close();
+  G = { roomCode:null,myName:null,myId:null,isHost:false,settings:{terrorists:1,tasksPerArab:4,voteTime:60},players:[],myRole:null,myTasks:[],tasksTotal:0,tasksDone:0,phase:'lobby',votes:{},voteInterval:null,voteTimeLeft:60,myVote:null,ejected:[],gameOver:false,saboActive:false,saboFixCount:0 };
+  showScreen('screenHome');
+}
+
+// ═══════════════════════════════════════════════════════
+// START GAME (HOST)
+// ═══════════════════════════════════════════════════════
+function hostStartGame() {
+  // Assign roles
+  const ids = G.players.map(p=>p.id);
+  const shuffled = ids.sort(()=>Math.random()-0.5);
+  const terrorIds = shuffled.slice(0, Math.min(G.settings.terrorists, Math.floor(G.players.length/2)));
+  G.players.forEach(p => {
+    p.role = terrorIds.includes(p.id) ? 'terrorist' : 'arab';
+    p.tasksDone = 0;
+    p.alive = true;
+  });
+  G.ejected = [];
+  G.phase = 'game';
+  G.gameOver = false;
+  G.saboActive = false;
+  G.saboFixCount = 0;
+  broadcastState();
+  broadcastMsg({ type: 'SYSTEM_MSG', text: 'Game started! Roles have been assigned.' });
+  startGameForMe();
+}
+function isPlayerTerror(p) { return p.role === 'terrorist'; }
+
+// ═══════════════════════════════════════════════════════
+// GAME SCREEN
+// ═══════════════════════════════════════════════════════
+function startGameForMe() {
+  G.phase = 'game';
+  G.gameOver = false;
+  const me = G.players.find(p => p.id === G.myId);
+  if (!me) return;
+  G.myRole = me.role;
+
+  // Assign tasks
+  const n = G.settings.tasksPerArab;
+  G.myTasks = [];
+  const taskIndices = [];
+  while(taskIndices.length < n) {
+    const i = Math.floor(Math.random()*TASK_NAMES.length);
+    if(!taskIndices.includes(i)) taskIndices.push(i);
+  }
+  taskIndices.forEach((ti, idx) => {
+    G.myTasks.push({ id: idx, taskIdx: ti, done: false, doing: false });
+  });
+  G.tasksDone = 0;
+
+  const roleDisp = document.getElementById('roleDisplay');
+  const roleHint = document.getElementById('roleHint');
+  if (G.myRole === 'terrorist') {
+    roleDisp.textContent = 'Terrorist';
+    roleDisp.className = 'role-name terrorist';
+    roleHint.textContent = 'Fake tasks. Eliminate Arabs. Win!';
+    document.getElementById('sabBtn').style.display = 'block';
+  } else {
+    roleDisp.textContent = 'Arab';
+    roleDisp.className = 'role-name arab';
+    roleHint.textContent = 'Complete tasks. Find terrorists!';
+    document.getElementById('sabBtn').style.display = 'none';
+  }
+
+  renderTaskGrid();
+  updateTaskProgress();
+  updateSabotageUI();
+  showScreen('screenGame');
+  document.getElementById('chatMessages').innerHTML = '';
+  appendChat(null, 'Game started! Complete your tasks and find the terrorist.', true);
+}
+function renderTaskGrid() {
+  const grid = document.getElementById('taskGrid');
+  grid.innerHTML = '';
+  G.myTasks.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'task-card' + (t.done?' done':t.doing?' doing':'');
+    div.id = 'task_'+i;
+    div.innerHTML = `<div class="task-icon">${TASK_ICONS[t.taskIdx]}</div><div>${TASK_NAMES[t.taskIdx]}</div>`;
+    if (!t.done && !t.doing) div.onclick = () => doTask(i);
+    grid.appendChild(div);
+  });
+}
+function doTask(i) {
+  if (G.saboActive && G.myRole !== 'terrorist') { showToast('Fix the sabotage first!'); return; }
+  const t = G.myTasks[i];
+  if (t.done || t.doing) return;
+  t.doing = true;
+  renderTaskGrid();
+  setTimeout(() => {
+    t.doing = false;
+    t.done = true;
+    G.tasksDone++;
+    renderTaskGrid();
+    updateTaskProgress();
+    broadcastMsg({ type:'TASK_DONE', pid: G.myId });
+    appendChat(null, `You completed: ${TASK_NAMES[t.taskIdx]}`, true);
+  }, 2200 + Math.random()*1800);
+}
+function updateTaskProgress() {
+  const total = G.myTasks.length;
+  const done = G.myTasks.filter(t=>t.done).length;
+  const pct = total > 0 ? (done/total)*100 : 0;
+  document.getElementById('taskProgressBar').style.width = pct + '%';
+}
+function updateSabotageUI() {
+  const b = document.getElementById('sabBanner');
+  if (G.saboActive) { b.classList.add('active'); }
+  else { b.classList.remove('active'); }
+  // Arabs can fix sabotage
+  if (G.saboActive && G.myRole === 'arab') {
+    b.textContent = '⚠ Sabotage! Click here to help fix it! (Need 2 Arabs)';
+    b.style.cursor = 'pointer';
+    b.onclick = fixSabotage;
+  } else {
+    b.style.cursor = 'default';
+    b.onclick = null;
+  }
+}
+function fixSabotage() {
+  if (!G.saboActive) return;
+  broadcastMsg({ type:'SABO_FIX' });
+  showToast('You helped fix the sabotage!');
+  document.getElementById('sabBanner').onclick = null;
+}
+function terrorSabotage() {
+  if (G.myRole !== 'terrorist') return;
+  if (G.saboActive) { showToast('Sabotage already active!'); return; }
+  broadcastMsg({ type:'SABOTAGE' });
+  showToast('Sabotage triggered!');
+}
+function callMeeting() {
+  if (G.phase !== 'game') return;
+  broadcastMsg({ type:'MEETING', caller: G.myName });
+  showMeetingOverlay(G.myName + ' called a meeting!');
+  setTimeout(() => {
+    hideMeetingOverlay();
+    G.phase = 'vote';
+    G.votes = {};
+    G.myVote = null;
+    if (G.isHost) broadcastState();
+    openVoteScreen();
+  }, 2500);
+}
+function showMeetingOverlay(msg) {
+  document.getElementById('meetingCaller').textContent = msg;
+  document.getElementById('meetingOverlay').classList.add('active');
+}
+function hideMeetingOverlay() {
+  document.getElementById('meetingOverlay').classList.remove('active');
+}
+function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value = '';
+  appendChat(G.myName, txt, false);
+  broadcastMsg({ type:'CHAT', author: G.myName, text: txt });
+}
+function appendChat(author, text, isSystem) {
+  const box = document.getElementById('chatMessages');
+  if (!box) return;
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  if (isSystem) {
+    div.innerHTML = `<span class="msg-system">${text}</span>`;
+  } else {
+    div.innerHTML = `<span class="msg-author">${author}:</span> ${text}`;
+  }
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════
+// VOTING
+// ═══════════════════════════════════════════════════════
+function openVoteScreen() {
+  showScreen('screenVote');
+  G.voteTimeLeft = G.settings.voteTime;
+  renderVoteGrid();
+  clearInterval(G.voteInterval);
+  G.voteInterval = setInterval(() => {
+    G.voteTimeLeft--;
+    document.getElementById('voteTimer').textContent = G.voteTimeLeft;
+    if (G.voteTimeLeft <= 0) {
+      clearInterval(G.voteInterval);
+      if (G.isHost) resolveVotes();
+    }
+  }, 1000);
+}
+function renderVoteGrid() {
+  const grid = document.getElementById('voteGrid');
+  grid.innerHTML = '';
+  const alivePlayers = G.players.filter(p => p.alive && !G.ejected.includes(p.id) && p.id !== G.myId);
+  alivePlayers.forEach(p => {
+    const voteCount = Object.values(G.votes).filter(v=>v===p.id).length;
+    const div = document.createElement('div');
+    div.className = 'vote-btn' + (G.myVote===p.id?' voted-this':'');
+    div.innerHTML = `
+      <div class="vb-avatar" style="background:${getColor(p.name)};color:#fff">${getAvatar(p.name)}</div>
+      <div class="vb-name">${p.name}</div>
+      <div class="vb-votes">${voteCount} vote${voteCount!==1?'s':''}</div>
+    `;
+    div.onclick = () => castVote(p.id);
+    grid.appendChild(div);
+  });
+}
+function castVote(target) {
+  if (G.myVote) return;
+  G.myVote = target;
+  broadcastMsg({ type:'VOTE_CAST', from: G.myId, target });
+  if (G.isHost) {
+    G.votes[G.myId] = target;
+    broadcastState();
+    renderVoteGrid();
+    checkAllVoted();
+  }
+  renderVoteGrid();
+}
+function checkAllVoted() {
+  const alive = G.players.filter(p => p.alive && !G.ejected.includes(p.id));
+  if (Object.keys(G.votes).length >= alive.length) {
+    clearInterval(G.voteInterval);
+    resolveVotes();
+  }
+}
+function resolveVotes() {
+  if (!G.isHost) return;
+  // Count votes
+  const counts = {};
+  Object.values(G.votes).forEach(v => { if(v!=='skip') counts[v]=(counts[v]||0)+1; });
+  let maxVotes = 0, ejected = null;
+  let tie = false;
+  for (const [id,cnt] of Object.entries(counts)) {
+    if (cnt > maxVotes) { maxVotes = cnt; ejected = id; tie = false; }
+    else if (cnt === maxVotes) { tie = true; }
+  }
+  if (tie) ejected = null;
+  broadcastMsg({ type:'VOTE_RESULT', ejected });
+  broadcastState();
+  handleVoteResult(ejected);
+}
+function handleVoteResult(ejectedId) {
+  clearInterval(G.voteInterval);
+  if (!ejectedId) {
+    showToast('No one ejected (tie or skip)!', 3000);
+    returnToGame();
+    return;
+  }
+  const p = G.players.find(x => x.id === ejectedId);
+  if (!p) { returnToGame(); return; }
+  G.ejected.push(ejectedId);
+  p.alive = false;
+  const wasTerror = p.role === 'terrorist';
+  const ejMsg = `${p.name} was ejected. They were ${wasTerror ? 'a TERRORIST! 💥' : 'an innocent Arab 😢'}`;
+  showToast(ejMsg, 3500);
+  setTimeout(() => {
+    if (G.isHost) checkWinConditions();
+    returnToGame();
+  }, 3200);
+}
+function returnToGame() {
+  G.phase = 'game';
+  G.votes = {};
+  G.myVote = null;
+  if (G.isHost) broadcastState();
+  showScreen('screenGame');
+  updateSabotageUI();
+}
+function checkWinConditions() {
+  if (!G.isHost) return;
+  const alive = G.players.filter(p => p.alive && !G.ejected.includes(p.id));
+  const aliveTerrors = alive.filter(p => p.role === 'terrorist');
+  const aliveArabs = alive.filter(p => p.role === 'arab');
+  if (aliveTerrors.length === 0) {
+    setTimeout(() => broadcastMsg({ type:'GAME_OVER', title:'Arabs Win! 🕌', sub:'All terrorists have been eliminated!' }), 400);
+  } else if (aliveTerrors.length >= aliveArabs.length) {
+    setTimeout(() => broadcastMsg({ type:'GAME_OVER', title:'Terrorists Win! 💣', sub:'The terrorists have taken over!' }), 400);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// END GAME
+// ═══════════════════════════════════════════════════════
+function endGame(title, sub) {
+  clearInterval(G.voteInterval);
+  G.phase = 'result';
+  G.gameOver = true;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultTitle').style.color = title.includes('Arab') ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('resultSub').textContent = sub;
+  const list = document.getElementById('resultPlayerList');
+  list.innerHTML = '';
+  G.players.forEach(p => {
+    const li = document.createElement('li');
+    li.className = 'player-item';
+    li.innerHTML = `
+      <div class="player-avatar" style="background:${getColor(p.name)};color:#fff">${getAvatar(p.name)}</div>
+      <span class="player-name">${p.name}</span>
+      <span class="player-badge ${p.role==='terrorist'?'terror':''}">${p.role==='terrorist'?'Terrorist':'Arab'}</span>
+    `;
+    list.appendChild(li);
+  });
+  showScreen('screenResult');
+}
+function backToLobby() {
+  G.phase = 'lobby';
+  G.ejected = [];
+  G.gameOver = false;
+  G.votes = {};
+  G.myVote = null;
+  G.saboActive = false;
+  if (G.isHost) {
+    G.players.forEach(p => { p.role = null; p.alive = true; p.tasksDone = 0; });
+    broadcastState();
+  }
+  openLobby();
+}
+</script>
 </body>
 </html>
