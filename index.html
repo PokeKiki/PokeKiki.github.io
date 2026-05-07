@@ -5,378 +5,414 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>D-Pad Overlay</title>
+<title>Subway Surfers 🛹</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-body {
-  background: #111;
-  color: #fff;
+html, body {
+  width: 100%; height: 100%;
+  background: #000;
+  overflow: hidden;
   font-family: -apple-system, sans-serif;
+}
+
+#game-frame {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* ── SPLASH SCREEN ── */
+#splash {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(160deg, #1a0a2e 0%, #0d1b3e 50%, #0a2a1a 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 24px;
   gap: 20px;
+  z-index: 100;
+  transition: opacity .5s;
 }
+#splash.hidden { opacity: 0; pointer-events: none; }
 
-.intro-card {
-  background: #1a1a1e;
-  border: 1px solid #2a2a30;
-  border-radius: 16px;
-  padding: 20px 24px;
-  max-width: 400px;
-  width: 100%;
+.splash-emoji { font-size: 64px; animation: bounce 1s infinite alternate; }
+@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+
+.splash-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -1px;
+  text-shadow: 0 0 30px rgba(255,180,0,0.5);
 }
-.intro-card h1 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-.intro-card p { font-size: 13px; color: #888; line-height: 1.5; margin-bottom: 14px; }
-.step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
-.step-num { background: #7c6dfa; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-.step p { font-size: 13px; color: #ccc; line-height: 1.45; margin: 0; }
-.step code { background: #2a2a30; border-radius: 4px; padding: 1px 6px; font-size: 11px; color: #7c6dfa; }
+.splash-title span { color: #ffb400; }
 
-.url-row { display: flex; gap: 8px; margin-top: 16px; }
-.url-input {
-  flex: 1; background: #111; border: 1px solid #2a2a30;
-  border-radius: 10px; padding: 10px 12px;
-  font-size: 13px; color: #fff; outline: none;
+.splash-sub { font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: .05em; }
+
+.play-btn {
+  margin-top: 8px;
+  background: #ffb400;
+  color: #000;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 40px;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: -.3px;
+  box-shadow: 0 4px 24px rgba(255,180,0,0.4);
+  animation: pulse 1.8s infinite;
   -webkit-appearance: none;
 }
-.url-input:focus { border-color: #7c6dfa; }
-.url-input::placeholder { color: #444; }
-.go-btn {
-  background: #7c6dfa; color: white; border: none;
-  border-radius: 10px; padding: 10px 16px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  white-space: nowrap; -webkit-appearance: none;
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 4px 24px rgba(255,180,0,0.4); }
+  50% { box-shadow: 0 4px 40px rgba(255,180,0,0.75); }
 }
-.go-btn:active { opacity: 0.8; }
+.play-btn:active { transform: scale(0.95); }
 
-.bm-box {
-  background: #1a1a1e; border: 1px solid #2a2a30;
-  border-radius: 16px; padding: 16px 20px;
-  max-width: 400px; width: 100%;
+.hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.25);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 260px;
 }
-.bm-box h2 { font-size: 13px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em; }
-.bm-code {
-  background: #111; border: 1px solid #2a2a30; border-radius: 8px;
-  padding: 10px 12px; font-size: 10px; color: #7c6dfa;
-  word-break: break-all; line-height: 1.5; font-family: monospace;
-  cursor: text;
-}
-.copy-btn {
-  margin-top: 10px; width: 100%; background: #2a2a30;
-  color: #ccc; border: none; border-radius: 8px;
-  padding: 10px; font-size: 13px; cursor: pointer;
-  -webkit-appearance: none;
-}
-.copy-btn:active { background: #333; }
 
-/* ---- THE OVERLAY WIDGET (injected into target page) ---- */
-#dpad-overlay {
+/* ── D-PAD OVERLAY ── */
+#dpad {
   position: fixed;
-  bottom: 30px;
-  right: 20px;
-  z-index: 2147483647;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: none;
   touch-action: none;
+  user-select: none;
+}
+
+#dpad.visible { display: block; }
+
+.dpad-inner {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  grid-template-rows: repeat(3, 72px);
+  gap: 5px;
   cursor: grab;
 }
-#dpad-overlay.dragging { cursor: grabbing; }
+.dpad-inner.dragging { cursor: grabbing; }
 
-.overlay-handle {
-  background: rgba(20,20,26,0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
-  padding: 10px 12px 12px;
+.db {
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  touch-action: manipulation;
+  transition: transform .06s, background .08s, border-color .08s;
+  color: rgba(255,255,255,0.8);
 }
 
-.drag-bar {
-  width: 32px; height: 4px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 2px;
-  margin-bottom: 2px;
-}
+.db .arrow { font-size: 22px; line-height: 1; }
+.db .hint-lbl { font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: .04em; }
 
-.dpad {
-  display: grid;
-  grid-template-columns: repeat(3, 52px);
-  grid-template-rows: repeat(3, 52px);
-  gap: 4px;
-}
+/* Direction-specific accent colors */
+#btn-up    { border-color: rgba(100,220,100,0.3); }
+#btn-down  { border-color: rgba(255,100,100,0.3); }
+#btn-left  { border-color: rgba(100,180,255,0.3); }
+#btn-right { border-color: rgba(100,180,255,0.3); }
 
-.db {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px; cursor: pointer; color: rgba(255,255,255,0.6);
-  transition: background .08s, transform .06s;
-  -webkit-appearance: none; touch-action: manipulation;
-}
-.db:active, .db.flash {
-  background: rgba(124,109,250,0.35);
-  border-color: rgba(124,109,250,0.6);
-  transform: scale(0.88);
-  color: #fff;
-}
-.db-center {
-  background: rgba(255,255,255,0.04) !important;
-  cursor: default;
-  font-size: 12px;
-  color: rgba(255,255,255,0.2) !important;
-}
+#btn-up:active,    #btn-up.flash    { background: rgba(80,200,80,0.4);  border-color: rgba(100,255,100,0.8); transform: scale(0.88); }
+#btn-down:active,  #btn-down.flash  { background: rgba(220,60,60,0.4);  border-color: rgba(255,100,100,0.8); transform: scale(0.88); }
+#btn-left:active,  #btn-left.flash  { background: rgba(60,140,255,0.4); border-color: rgba(100,180,255,0.8); transform: scale(0.88); }
+#btn-right:active, #btn-right.flash { background: rgba(60,140,255,0.4); border-color: rgba(100,180,255,0.8); transform: scale(0.88); }
+
 .db-empty { visibility: hidden; }
 
-.action-row {
-  display: grid;
-  grid-template-columns: repeat(3, 52px);
-  gap: 4px;
+.db-center {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.06) !important;
+  cursor: grab;
+  font-size: 16px;
+  color: rgba(255,255,255,0.15) !important;
 }
-.ab {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; height: 44px;
-  font-size: 14px; cursor: pointer; color: rgba(255,255,255,0.5);
-  transition: background .08s, transform .06s;
-  -webkit-appearance: none; touch-action: manipulation;
-}
-.ab:active, .ab.flash {
-  background: rgba(250,109,154,0.3);
-  border-color: rgba(250,109,154,0.5);
-  transform: scale(0.88);
-  color: #fff;
-}
-.ab span { font-size: 9px; }
 
-.close-btn {
-  font-size: 10px; color: rgba(255,255,255,0.25);
-  background: none; border: none; cursor: pointer;
-  padding: 2px 8px; letter-spacing: .05em;
-}
-.close-btn:active { color: rgba(255,255,255,0.6); }
-
-/* feedback toast */
-#dpad-toast {
+/* ── TOP BAR ── */
+#topbar {
   position: fixed;
-  bottom: 0; left: 50%;
-  transform: translateX(-50%) translateY(60px);
-  background: rgba(20,20,26,0.95);
-  border: 1px solid rgba(124,109,250,0.4);
+  top: 0; left: 0; right: 0;
+  height: 44px;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 998;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+#topbar.visible { display: flex; }
+#topbar .title { font-size: 13px; font-weight: 700; color: #ffb400; letter-spacing: -.3px; }
+#topbar .btns { display: flex; gap: 8px; }
+#topbar button {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.7);
+  font-size: 11px;
+  padding: 5px 10px;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+#topbar button:active { background: rgba(255,255,255,0.18); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 180px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(0,0,0,0.8);
+  border: 1px solid rgba(255,255,255,0.15);
   border-radius: 20px;
-  padding: 8px 18px;
-  font-size: 12px; color: #ccc;
-  z-index: 2147483646;
-  transition: transform .2s ease, opacity .2s;
+  padding: 7px 16px;
+  font-size: 12px;
+  color: #fff;
+  z-index: 1000;
   opacity: 0;
+  transition: opacity .15s, transform .15s;
   pointer-events: none;
   white-space: nowrap;
 }
-#dpad-toast.show {
-  transform: translateX(-50%) translateY(-20px);
+#toast.show {
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 </style>
 </head>
 <body>
 
-<div class="intro-card">
-  <h1>🕹️ D-Pad Overlay</h1>
-  <p>Un D-pad flottant qui se pose par-dessus n'importe quel site et lui envoie les événements clavier/touch.</p>
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-emoji">🛹</div>
+  <div class="splash-title">Subway <span>Surfers</span></div>
+  <div class="splash-sub">avec D-Pad intégré</div>
+  <button class="play-btn" onclick="startGame()">▶ Jouer</button>
+  <div class="hint">Le D-Pad apparaît automatiquement.<br>Glisse-le où tu veux sur l'écran.</div>
+</div>
 
-  <div class="step">
-    <div class="step-num">1</div>
-    <p>Ouvre ton site dans Safari</p>
-  </div>
-  <div class="step">
-    <div class="step-num">2</div>
-    <p>Copie le <strong>bookmarklet</strong> ci-dessous → ajoute-le à tes favoris Safari</p>
-  </div>
-  <div class="step">
-    <div class="step-num">3</div>
-    <p>Sur n'importe quelle page, tape sur le favori → le D-pad apparaît en overlay</p>
-  </div>
-  <div class="step">
-    <div class="step-num">4</div>
-    <p>Glisse le D-pad où tu veux. Il envoie <code>ArrowUp/Down/Left/Right</code> + événements touch à la page.</p>
-  </div>
-
-  <div class="url-row">
-    <input class="url-input" id="url-in" type="url" placeholder="Tester ici : https://monsite.com">
-    <button class="go-btn" onclick="openSite()">Ouvrir</button>
+<!-- TOP BAR -->
+<div id="topbar">
+  <span class="title">🛹 Subway Surfers</span>
+  <div class="btns">
+    <button onclick="toggleDpad()">🕹 D-Pad</button>
+    <button onclick="goHome()">⟵ Menu</button>
   </div>
 </div>
 
-<div class="bm-box">
-  <h2>Bookmarklet — colle dans un favori Safari</h2>
-  <div class="bm-code" id="bm-code">Génération…</div>
-  <button class="copy-btn" onclick="copyBm()">📋 Copier le bookmarklet</button>
-</div>
+<!-- GAME IFRAME -->
+<iframe id="game-frame"
+  src="about:blank"
+  allow="autoplay; fullscreen"
+  allowfullscreen>
+</iframe>
 
-<!-- LIVE PREVIEW of the overlay (for this page) -->
-<div id="dpad-overlay">
-  <div class="overlay-handle" id="handle">
-    <div class="drag-bar"></div>
-    <div class="dpad">
-      <div class="db-empty"></div>
-      <button class="db" id="btn-up"    onpointerdown="act('ArrowUp','↑')"   ontouchstart="act('ArrowUp','↑')">↑</button>
-      <div class="db-empty"></div>
-      <button class="db" id="btn-left"  onpointerdown="act('ArrowLeft','←')" ontouchstart="act('ArrowLeft','←')">←</button>
-      <div class="db db-center">✦</div>
-      <button class="db" id="btn-right" onpointerdown="act('ArrowRight','→')"ontouchstart="act('ArrowRight','→')">→</button>
-      <div class="db-empty"></div>
-      <button class="db" id="btn-down"  onpointerdown="act('ArrowDown','↓')" ontouchstart="act('ArrowDown','↓')">↓</button>
-      <div class="db-empty"></div>
-    </div>
-    <div class="action-row">
-      <button class="ab" onpointerdown="act('Enter','OK')"  ontouchstart="act('Enter','OK')">↵<span>OK</span></button>
-      <button class="ab" onpointerdown="act('Escape','ESC')"ontouchstart="act('Escape','ESC')">✕<span>ESC</span></button>
-      <button class="ab" onpointerdown="act(' ','Espace')"  ontouchstart="act(' ','Espace')">⎵<span>Space</span></button>
-    </div>
-    <button class="close-btn" onclick="document.getElementById('dpad-overlay').style.display='none'">FERMER ✕</button>
+<!-- D-PAD -->
+<div id="dpad">
+  <div class="dpad-inner" id="dpad-inner">
+    <div class="db-empty"></div>
+    <button class="db" id="btn-up"
+      ontouchstart="pressKey('ArrowUp','↑ Sauter')"
+      onclick="pressKey('ArrowUp','↑ Sauter')">
+      <span class="arrow">↑</span>
+      <span class="hint-lbl">SAUTER</span>
+    </button>
+    <div class="db-empty"></div>
+
+    <button class="db" id="btn-left"
+      ontouchstart="pressKey('ArrowLeft','← Gauche')"
+      onclick="pressKey('ArrowLeft','← Gauche')">
+      <span class="arrow">←</span>
+      <span class="hint-lbl">GAUCHE</span>
+    </button>
+    <div class="db db-center" id="dpad-handle">✦</div>
+    <button class="db" id="btn-right"
+      ontouchstart="pressKey('ArrowRight','→ Droite')"
+      onclick="pressKey('ArrowRight','→ Droite')">
+      <span class="arrow">→</span>
+      <span class="hint-lbl">DROITE</span>
+    </button>
+
+    <div class="db-empty"></div>
+    <button class="db" id="btn-down"
+      ontouchstart="pressKey('ArrowDown','↓ Glisser')"
+      onclick="pressKey('ArrowDown','↓ Glisser')">
+      <span class="arrow">↓</span>
+      <span class="hint-lbl">GLISSER</span>
+    </button>
+    <div class="db-empty"></div>
   </div>
 </div>
 
-<div id="dpad-toast"></div>
+<!-- TOAST -->
+<div id="toast"></div>
 
 <script>
-/* ── DRAG ── */
-const overlay = document.getElementById('dpad-overlay');
-const handle  = document.getElementById('handle');
-let dragging = false, startX, startY, origX, origY;
+const GAME_URL = 'https://yell0wsuit.page/assets/games/subway-surfers/index.html?theme=1106-bali#google_vignette';
 
-function getPos() {
-  const s = overlay.style;
-  return {
-    x: s.right  ? window.innerWidth  - overlay.offsetWidth  - parseInt(s.right)  : parseInt(s.left)  || (window.innerWidth  - overlay.offsetWidth  - 20),
-    y: s.bottom ? window.innerHeight - overlay.offsetHeight - parseInt(s.bottom) : parseInt(s.top)   || (window.innerHeight - overlay.offsetHeight - 30),
-  };
+function startGame() {
+  document.getElementById('game-frame').src = GAME_URL;
+  const splash = document.getElementById('splash');
+  splash.classList.add('hidden');
+  setTimeout(() => { splash.style.display = 'none'; }, 500);
+  document.getElementById('dpad').classList.add('visible');
+  document.getElementById('topbar').classList.add('visible');
 }
 
-handle.addEventListener('pointerdown', e => {
-  if (e.target.closest('button')) return;
-  dragging = true;
-  overlay.classList.add('dragging');
-  handle.setPointerCapture(e.pointerId);
-  const p = getPos();
-  origX = p.x; origY = p.y;
-  startX = e.clientX; startY = e.clientY;
-  overlay.style.right  = '';
-  overlay.style.bottom = '';
-  overlay.style.left   = origX + 'px';
-  overlay.style.top    = origY + 'px';
-});
-handle.addEventListener('pointermove', e => {
-  if (!dragging) return;
-  let nx = origX + (e.clientX - startX);
-  let ny = origY + (e.clientY - startY);
-  nx = Math.max(0, Math.min(window.innerWidth  - overlay.offsetWidth,  nx));
-  ny = Math.max(0, Math.min(window.innerHeight - overlay.offsetHeight, ny));
-  overlay.style.left = nx + 'px';
-  overlay.style.top  = ny + 'px';
-});
-handle.addEventListener('pointerup',   () => { dragging = false; overlay.classList.remove('dragging'); });
-handle.addEventListener('pointercancel',()=> { dragging = false; overlay.classList.remove('dragging'); });
+function goHome() {
+  document.getElementById('game-frame').src = 'about:blank';
+  document.getElementById('splash').style.display = '';
+  requestAnimationFrame(() => document.getElementById('splash').classList.remove('hidden'));
+  document.getElementById('dpad').classList.remove('visible');
+  document.getElementById('topbar').classList.remove('visible');
+}
 
-/* ── ACTIONS ── */
+function toggleDpad() {
+  document.getElementById('dpad').classList.toggle('visible');
+}
+
+/* ── KEY DISPATCH ── */
 let toastTimer;
 function toast(msg) {
-  const t = document.getElementById('dpad-toast');
+  const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 900);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 700);
 }
 
-function act(key, label) {
+const KC = { ArrowUp:38, ArrowDown:40, ArrowLeft:37, ArrowRight:39, Enter:13, Escape:27, ' ':32 };
+
+function pressKey(key, label) {
   toast(label);
-  // Flash button
-  const map = { ArrowUp:'btn-up', ArrowDown:'btn-down', ArrowLeft:'btn-left', ArrowRight:'btn-right' };
-  const el = document.getElementById(map[key]);
+  const btnMap = { ArrowUp:'btn-up', ArrowDown:'btn-down', ArrowLeft:'btn-left', ArrowRight:'btn-right' };
+  const el = document.getElementById(btnMap[key]);
   if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 180); }
 
-  // Send keyboard event to whatever is focused / body
-  const target = document.activeElement && document.activeElement !== document.body
-    ? document.activeElement : document.body;
+  // 1) Send to iframe contentWindow if accessible (same-origin would work)
+  const frame = document.getElementById('game-frame');
+  let sent = false;
+  try {
+    const fw = frame.contentWindow;
+    if (fw) {
+      ['keydown','keyup'].forEach(type => {
+        fw.document.dispatchEvent(new KeyboardEvent(type, {
+          key, code: key, keyCode: KC[key]||0, which: KC[key]||0,
+          bubbles: true, cancelable: true
+        }));
+        fw.dispatchEvent(new KeyboardEvent(type, {
+          key, code: key, keyCode: KC[key]||0, which: KC[key]||0,
+          bubbles: true, cancelable: true
+        }));
+      });
+      sent = true;
+    }
+  } catch(e) { /* cross-origin — fallback */ }
 
-  ['keydown','keypress','keyup'].forEach(type => {
-    target.dispatchEvent(new KeyboardEvent(type, {
-      key, code: key === ' ' ? 'Space' : key,
-      keyCode: keyCodeFor(key), which: keyCodeFor(key),
+  // 2) Swipe simulation on the iframe element itself
+  sendSwipeOnFrame(frame, key);
+
+  // 3) Also dispatch on current window (focus hack)
+  ['keydown','keyup'].forEach(type => {
+    window.dispatchEvent(new KeyboardEvent(type, {
+      key, code: key, keyCode: KC[key]||0, which: KC[key]||0,
+      bubbles: true, cancelable: true
+    }));
+    document.dispatchEvent(new KeyboardEvent(type, {
+      key, code: key, keyCode: KC[key]||0, which: KC[key]||0,
       bubbles: true, cancelable: true
     }));
   });
 
-  // Also send swipe touch for games that use touch
-  const swipes = { ArrowUp:[0,-80], ArrowDown:[0,80], ArrowLeft:[-80,0], ArrowRight:[80,0] };
-  if (swipes[key]) sendSwipe(...swipes[key]);
+  // 4) Click iframe to ensure it has focus, then re-send
+  frame.focus();
+  frame.click();
 }
 
-function keyCodeFor(k) {
-  return { ArrowUp:38, ArrowDown:40, ArrowLeft:37, ArrowRight:39, Enter:13, Escape:27, ' ':32 }[k] || 0;
-}
-
-function sendSwipe(dx, dy) {
-  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-  const el = document.elementFromPoint(cx, cy) || document.body;
-  const steps = 8; let i = 0;
-  function mkT(id, x, y) {
-    return new Touch({ identifier: id, target: el, clientX: x, clientY: y, screenX: x, screenY: y, pageX: x, pageY: y, radiusX:1, radiusY:1, rotationAngle:0, force:1 });
+function sendSwipeOnFrame(frame, key) {
+  const r = frame.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  const vecs = { ArrowUp:[0,-120], ArrowDown:[0,120], ArrowLeft:[-120,0], ArrowRight:[120,0] };
+  if (!vecs[key]) return;
+  const [dx, dy] = vecs[key];
+  const steps = 10; let i = 0;
+  function mk(id, x, y) {
+    return new Touch({ identifier: id, target: frame, clientX: x, clientY: y,
+      screenX: x, screenY: y, pageX: x, pageY: y, radiusX:2, radiusY:2, rotationAngle:0, force:1 });
   }
-  function fire(type, touches, changed) {
-    try { el.dispatchEvent(new TouchEvent(type, { touches, changedTouches: changed, bubbles:true, cancelable:true })); } catch(e) {}
+  function fe(type, tl, cl) {
+    try { frame.dispatchEvent(new TouchEvent(type, { touches:tl, changedTouches:cl, bubbles:true, cancelable:true })); } catch(e) {}
   }
-  const t0 = mkT(9, cx, cy);
-  fire('touchstart', [t0], [t0]);
+  const t0 = mk(7, cx, cy); fe('touchstart',[t0],[t0]);
   const iv = setInterval(() => {
     i++;
-    const tm = mkT(9, cx + dx*(i/steps), cy + dy*(i/steps));
-    fire('touchmove', [tm], [tm]);
-    if (i >= steps) { clearInterval(iv); const te = mkT(9, cx+dx, cy+dy); fire('touchend', [], [te]); }
-  }, 14);
+    const tm = mk(7, cx+dx*(i/steps), cy+dy*(i/steps));
+    fe('touchmove',[tm],[tm]);
+    if (i >= steps) {
+      clearInterval(iv);
+      const te = mk(7, cx+dx, cy+dy); fe('touchend',[],[te]);
+    }
+  }, 12);
 }
 
-/* ── BOOKMARKLET GENERATOR ── */
-const bm = `javascript:(function(){if(document.getElementById('__dpad__'))return;var s=document.createElement('style');s.textContent='#__dpad__{position:fixed;bottom:28px;right:16px;z-index:2147483647;touch-action:none;font-family:-apple-system,sans-serif}#__dpad__ .h{background:rgba(15,15,20,0.93);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:10px 11px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}#__dpad__ .drag{width:30px;height:3px;background:rgba(255,255,255,0.12);border-radius:2px}#__dpad__ .grid{display:grid;grid-template-columns:repeat(3,50px);grid-template-rows:repeat(3,50px);gap:4px}#__dpad__ .grid .e{visibility:hidden}#__dpad__ button{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:rgba(255,255,255,0.65);font-size:19px;display:flex;align-items:center;justify-content:center;cursor:pointer;width:100%;height:100%;transition:background .07s,transform .06s;-webkit-appearance:none;touch-action:manipulation}#__dpad__ button:active{background:rgba(124,109,250,0.4);border-color:rgba(124,109,250,0.7);transform:scale(0.87);color:#fff}#__dpad__ .cx{background:rgba(255,255,255,0.03)!important;cursor:default;font-size:11px;color:rgba(255,255,255,0.15)!important}#__dpad__ .ar{display:grid;grid-template-columns:repeat(3,50px);gap:4px}#__dpad__ .ar button{height:42px;flex-direction:column;gap:2px;font-size:13px}#__dpad__ .ar button span{font-size:8px;color:rgba(255,255,255,0.35)}#__dpad__ .cl{font-size:9px;color:rgba(255,255,255,0.2);background:none;border:none;cursor:pointer;padding:2px 8px;letter-spacing:.05em;width:auto;height:auto;border-radius:0}#__dpad-toast__{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(50px);background:rgba(15,15,20,0.95);border:1px solid rgba(124,109,250,0.4);border-radius:20px;padding:7px 16px;font-size:11px;color:#ccc;z-index:2147483646;transition:transform .18s,opacity .18s;opacity:0;pointer-events:none;white-space:nowrap;font-family:-apple-system,sans-serif}#__dpad-toast__.s{transform:translateX(-50%) translateY(-16px);opacity:1}';document.head.appendChild(s);var d=document.createElement('div');d.id='__dpad__';d.innerHTML='<div class="h" id="__dph__"><div class="drag"></div><div class="grid"><div class="e"></div><button id="__u__">↑</button><div class="e"></div><button id="__l__">←</button><button class="cx">✦</button><button id="__r__">→</button><div class="e"></div><button id="__d__">↓</button><div class="e"></div></div><div class="ar"><button onclick="__da__(\\'Enter\\',\\'OK\\')">↵<span>OK</span></button><button onclick="__da__(\\'Escape\\',\\'ESC\\')">✕<span>ESC</span></button><button onclick="__da__(\\' \\',\\'Space\\')">⎵<span>Space</span></button></div><button class="cl" onclick="document.getElementById(\\'__dpad__\\').remove();document.getElementById(\\'__dpad-toast__\\').remove()">FERMER ✕</button></div>';document.body.appendChild(d);var toast=document.createElement('div');toast.id='__dpad-toast__';document.body.appendChild(toast);var tt;window.__da__=function(k,l){toast.textContent=l;toast.classList.add('s');clearTimeout(tt);tt=setTimeout(function(){toast.classList.remove('s');},900);var t=document.activeElement&&document.activeElement!==document.body?document.activeElement:document.body;['keydown','keypress','keyup'].forEach(function(type){t.dispatchEvent(new KeyboardEvent(type,{key:k,code:k===' '?'Space':k,keyCode:{ArrowUp:38,ArrowDown:40,ArrowLeft:37,ArrowRight:39,Enter:13,Escape:27,' ':32}[k]||0,bubbles:true,cancelable:true}))});var sw={ArrowUp:[0,-80],ArrowDown:[0,80],ArrowLeft:[-80,0],ArrowRight:[80,0]};if(sw[k]){var dx=sw[k][0],dy=sw[k][1],cx=window.innerWidth/2,cy=window.innerHeight/2,el=document.elementFromPoint(cx,cy)||document.body,i=0;function mT(id,x,y){return new Touch({identifier:id,target:el,clientX:x,clientY:y,screenX:x,screenY:y,pageX:x,pageY:y,radiusX:1,radiusY:1,rotationAngle:0,force:1})}function fE(type,tl,cl){try{el.dispatchEvent(new TouchEvent(type,{touches:tl,changedTouches:cl,bubbles:true,cancelable:true}))}catch(e){}}var t0=mT(9,cx,cy);fE('touchstart',[t0],[t0]);var iv=setInterval(function(){i++;var tm=mT(9,cx+dx*(i/8),cy+dy*(i/8));fE('touchmove',[tm],[tm]);if(i>=8){clearInterval(iv);var te=mT(9,cx+dx,cy+dy);fE('touchend',[],[te])}},14)}};document.getElementById('__u__').onclick=function(){__da__('ArrowUp','↑')};document.getElementById('__d__').onclick=function(){__da__('ArrowDown','↓')};document.getElementById('__l__').onclick=function(){__da__('ArrowLeft','←')};document.getElementById('__r__').onclick=function(){__da__('ArrowRight','→')};var ov=document.getElementById('__dpad__'),hnd=document.getElementById('__dph__'),dr=false,sx,sy,ox,oy;hnd.addEventListener('pointerdown',function(e){if(e.target.tagName==='BUTTON')return;dr=true;ov.classList.add('dragging');hnd.setPointerCapture(e.pointerId);var cs=ov.style;ox=cs.right?window.innerWidth-ov.offsetWidth-parseInt(cs.right):parseInt(cs.left)||(window.innerWidth-ov.offsetWidth-16);oy=cs.bottom?window.innerHeight-ov.offsetHeight-parseInt(cs.bottom):parseInt(cs.top)||(window.innerHeight-ov.offsetHeight-28);sx=e.clientX;sy=e.clientY;ov.style.right='';ov.style.bottom='';ov.style.left=ox+'px';ov.style.top=oy+'px'});hnd.addEventListener('pointermove',function(e){if(!dr)return;var nx=Math.max(0,Math.min(window.innerWidth-ov.offsetWidth,ox+(e.clientX-sx)));var ny=Math.max(0,Math.min(window.innerHeight-ov.offsetHeight,oy+(e.clientY-sy)));ov.style.left=nx+'px';ov.style.top=ny+'px'});hnd.addEventListener('pointerup',function(){dr=false});hnd.addEventListener('pointercancel',function(){dr=false});})();`;
+/* ── DRAG D-PAD ── */
+const dpad = document.getElementById('dpad');
+const handle = document.getElementById('dpad-handle');
+const inner = document.getElementById('dpad-inner');
+let drag = false, sx, sy, ox, oy;
 
-document.getElementById('bm-code').textContent = bm;
-
-function copyBm() {
-  navigator.clipboard.writeText(bm).then(() => {
-    document.querySelector('.copy-btn').textContent = '✅ Copié !';
-    setTimeout(() => document.querySelector('.copy-btn').textContent = '📋 Copier le bookmarklet', 2000);
-  }).catch(() => {
-    const el = document.getElementById('bm-code');
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    document.execCommand('copy');
-    document.querySelector('.copy-btn').textContent = '✅ Copié !';
-    setTimeout(() => document.querySelector('.copy-btn').textContent = '📋 Copier le bookmarklet', 2000);
-  });
+function getXY() {
+  const s = dpad.style;
+  const x = s.left ? parseInt(s.left) : (window.innerWidth/2 - dpad.offsetWidth/2);
+  const y = s.bottom ? (window.innerHeight - dpad.offsetHeight - parseInt(s.bottom))
+                     : (window.innerHeight - dpad.offsetHeight - 24);
+  return [x, y];
 }
 
-function openSite() {
-  let url = document.getElementById('url-in').value.trim();
-  if (!url) return;
-  if (!url.startsWith('http')) url = 'https://' + url;
-  window.open(url, '_blank');
-}
+handle.addEventListener('pointerdown', e => {
+  drag = true; inner.classList.add('dragging');
+  handle.setPointerCapture(e.pointerId);
+  [ox, oy] = getXY(); sx = e.clientX; sy = e.clientY;
+  dpad.style.bottom = ''; dpad.style.transform = 'none';
+  dpad.style.left = ox + 'px'; dpad.style.top = oy + 'px';
+});
+handle.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const nx = Math.max(0, Math.min(window.innerWidth  - dpad.offsetWidth,  ox + (e.clientX - sx)));
+  const ny = Math.max(0, Math.min(window.innerHeight - dpad.offsetHeight, oy + (e.clientY - sy)));
+  dpad.style.left = nx + 'px'; dpad.style.top = ny + 'px';
+});
+handle.addEventListener('pointerup',     () => { drag = false; inner.classList.remove('dragging'); });
+handle.addEventListener('pointercancel', () => { drag = false; inner.classList.remove('dragging'); });
+
+/* ── KEYBOARD PASSTHROUGH (physical keyboard on iPad) ── */
+document.addEventListener('keydown', e => {
+  const frame = document.getElementById('game-frame');
+  try { frame.contentWindow.document.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, keyCode: e.keyCode, bubbles: true, cancelable: true })); } catch(_) {}
+});
 </script>
 </body>
 </html>
