@@ -5,439 +5,377 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Gesture Controller</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<title>D-Pad Overlay</title>
 <style>
-  :root {
-    --bg: #0d0d0f;
-    --surface: #18181c;
-    --surface2: #222228;
-    --border: rgba(255,255,255,0.08);
-    --border-active: rgba(255,255,255,0.25);
-    --text: #f0f0f0;
-    --muted: #888;
-    --accent: #7c6dfa;
-    --accent2: #fa6d9a;
-    --green: #4ade80;
-    --r: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; overscroll-behavior: none; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  body { display: flex; flex-direction: column; align-items: center; padding: 16px; gap: 12px; min-height: 100vh; }
+body {
+  background: #111;
+  color: #fff;
+  font-family: -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  gap: 20px;
+}
 
-  header {
-    width: 100%; max-width: 420px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 0;
-  }
-  header h1 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -.5px; }
-  header h1 span { color: var(--accent); }
-  .tag { font-size: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; color: var(--muted); letter-spacing: .05em; }
+.intro-card {
+  background: #1a1a1e;
+  border: 1px solid #2a2a30;
+  border-radius: 16px;
+  padding: 20px 24px;
+  max-width: 400px;
+  width: 100%;
+}
+.intro-card h1 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.intro-card p { font-size: 13px; color: #888; line-height: 1.5; margin-bottom: 14px; }
+.step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.step-num { background: #7c6dfa; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.step p { font-size: 13px; color: #ccc; line-height: 1.45; margin: 0; }
+.step code { background: #2a2a30; border-radius: 4px; padding: 1px 6px; font-size: 11px; color: #7c6dfa; }
 
-  .feedback {
-    width: 100%; max-width: 420px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 12px 16px;
-    display: flex; align-items: center; gap: 10px;
-    transition: border-color .2s;
-    min-height: 48px;
-  }
-  .feedback.lit { border-color: var(--accent); }
-  .feedback .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--muted); flex-shrink: 0;
-    transition: background .2s;
-  }
-  .feedback.lit .dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-  .feedback span { font-size: 13px; color: var(--muted); transition: color .2s; }
-  .feedback.lit span { color: var(--text); }
+.url-row { display: flex; gap: 8px; margin-top: 16px; }
+.url-input {
+  flex: 1; background: #111; border: 1px solid #2a2a30;
+  border-radius: 10px; padding: 10px 12px;
+  font-size: 13px; color: #fff; outline: none;
+  -webkit-appearance: none;
+}
+.url-input:focus { border-color: #7c6dfa; }
+.url-input::placeholder { color: #444; }
+.go-btn {
+  background: #7c6dfa; color: white; border: none;
+  border-radius: 10px; padding: 10px 16px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; -webkit-appearance: none;
+}
+.go-btn:active { opacity: 0.8; }
 
-  .section { width: 100%; max-width: 420px; }
-  .section-label { font-size: 10px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+.bm-box {
+  background: #1a1a1e; border: 1px solid #2a2a30;
+  border-radius: 16px; padding: 16px 20px;
+  max-width: 400px; width: 100%;
+}
+.bm-box h2 { font-size: 13px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.bm-code {
+  background: #111; border: 1px solid #2a2a30; border-radius: 8px;
+  padding: 10px 12px; font-size: 10px; color: #7c6dfa;
+  word-break: break-all; line-height: 1.5; font-family: monospace;
+  cursor: text;
+}
+.copy-btn {
+  margin-top: 10px; width: 100%; background: #2a2a30;
+  color: #ccc; border: none; border-radius: 8px;
+  padding: 10px; font-size: 13px; cursor: pointer;
+  -webkit-appearance: none;
+}
+.copy-btn:active { background: #333; }
 
-  /* D-PAD */
-  .dpad-wrap { display: flex; justify-content: center; }
-  .dpad { display: grid; grid-template-columns: repeat(3, 76px); grid-template-rows: repeat(3, 76px); gap: 6px; }
-  .dpad-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 22px; color: var(--muted);
-    transition: background .1s, border-color .1s, transform .08s, color .1s;
-    -webkit-appearance: none;
-  }
-  .dpad-btn:active, .dpad-btn.flash {
-    background: var(--surface2);
-    border-color: var(--accent);
-    color: var(--accent);
-    transform: scale(0.92);
-  }
-  .dpad-center { background: var(--surface2) !important; cursor: default; }
-  .dpad-empty { visibility: hidden; }
+/* ---- THE OVERLAY WIDGET (injected into target page) ---- */
+#dpad-overlay {
+  position: fixed;
+  bottom: 30px;
+  right: 20px;
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  touch-action: none;
+  cursor: grab;
+}
+#dpad-overlay.dragging { cursor: grabbing; }
 
-  /* BUTTON GRIDS */
-  .btn-grid { display: grid; gap: 8px; }
-  .btn-grid.g2 { grid-template-columns: 1fr 1fr; }
-  .btn-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
-  .btn-grid.g4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.overlay-handle {
+  background: rgba(20,20,26,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
 
-  .gbtn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 12px 4px 10px;
-    cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-    -webkit-appearance: none;
-    transition: background .1s, border-color .1s, transform .08s;
-    color: var(--muted);
-  }
-  .gbtn:active, .gbtn.flash {
-    background: var(--surface2);
-    border-color: var(--accent2);
-    transform: scale(0.93);
-    color: var(--accent2);
-  }
-  .gbtn .ico { font-size: 20px; }
-  .gbtn .lbl { font-size: 10px; letter-spacing: .02em; }
+.drag-bar {
+  width: 32px; height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin-bottom: 2px;
+}
 
-  /* TARGET URL */
-  .url-row {
-    width: 100%; max-width: 420px;
-    display: flex; gap: 8px; align-items: center;
-  }
-  .url-input {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 10px 14px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--text);
-    outline: none;
-    -webkit-appearance: none;
-    transition: border-color .2s;
-  }
-  .url-input:focus { border-color: var(--accent); }
-  .url-input::placeholder { color: var(--muted); }
-  .go-btn {
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: var(--r);
-    padding: 10px 16px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    cursor: pointer;
-    white-space: nowrap;
-    -webkit-appearance: none;
-  }
-  .go-btn:active { opacity: 0.8; transform: scale(0.96); }
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  grid-template-rows: repeat(3, 52px);
+  gap: 4px;
+}
 
-  /* IFRAME */
-  .frame-wrap {
-    width: 100%; max-width: 420px;
-    border-radius: var(--r);
-    overflow: hidden;
-    border: 1px solid var(--border);
-    display: none;
-  }
-  .frame-wrap.visible { display: block; }
-  #target-frame { width: 100%; height: 300px; border: none; display: block; background: white; }
+.db {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; cursor: pointer; color: rgba(255,255,255,0.6);
+  transition: background .08s, transform .06s;
+  -webkit-appearance: none; touch-action: manipulation;
+}
+.db:active, .db.flash {
+  background: rgba(124,109,250,0.35);
+  border-color: rgba(124,109,250,0.6);
+  transform: scale(0.88);
+  color: #fff;
+}
+.db-center {
+  background: rgba(255,255,255,0.04) !important;
+  cursor: default;
+  font-size: 12px;
+  color: rgba(255,255,255,0.2) !important;
+}
+.db-empty { visibility: hidden; }
 
-  hr { width: 100%; max-width: 420px; border: none; border-top: 1px solid var(--border); }
+.action-row {
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  gap: 4px;
+}
+.ab {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; height: 44px;
+  font-size: 14px; cursor: pointer; color: rgba(255,255,255,0.5);
+  transition: background .08s, transform .06s;
+  -webkit-appearance: none; touch-action: manipulation;
+}
+.ab:active, .ab.flash {
+  background: rgba(250,109,154,0.3);
+  border-color: rgba(250,109,154,0.5);
+  transform: scale(0.88);
+  color: #fff;
+}
+.ab span { font-size: 9px; }
 
-  footer { font-size: 10px; color: #333; padding: 8px 0; }
+.close-btn {
+  font-size: 10px; color: rgba(255,255,255,0.25);
+  background: none; border: none; cursor: pointer;
+  padding: 2px 8px; letter-spacing: .05em;
+}
+.close-btn:active { color: rgba(255,255,255,0.6); }
 
-  /* Inline SVG icons since no CDN */
-  .ico-up::before    { content: '↑'; font-size: 20px; }
-  .ico-down::before  { content: '↓'; font-size: 20px; }
-  .ico-left::before  { content: '←'; font-size: 20px; }
-  .ico-right::before { content: '→'; font-size: 20px; }
-  .ico-center::before { content: '✦'; font-size: 14px; }
-  .ico-nw::before    { content: '↖'; }
-  .ico-ne::before    { content: '↗'; }
-  .ico-sw::before    { content: '↙'; }
-  .ico-se::before    { content: '↘'; }
-  .ico-zin::before   { content: '⊕'; }
-  .ico-zout::before  { content: '⊖'; }
-  .ico-rcw::before   { content: '↻'; }
-  .ico-rccw::before  { content: '↺'; }
-  .ico-hold::before  { content: '✋'; }
-  .ico-tap2::before  { content: '👆'; }
-  .ico-shake::before { content: '〜'; }
+/* feedback toast */
+#dpad-toast {
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: rgba(20,20,26,0.95);
+  border: 1px solid rgba(124,109,250,0.4);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 12px; color: #ccc;
+  z-index: 2147483646;
+  transition: transform .2s ease, opacity .2s;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#dpad-toast.show {
+  transform: translateX(-50%) translateY(-20px);
+  opacity: 1;
+}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Gesture<span>Ctrl</span></h1>
-  <span class="tag">iPad · Safari · Chrome</span>
-</header>
+<div class="intro-card">
+  <h1>🕹️ D-Pad Overlay</h1>
+  <p>Un D-pad flottant qui se pose par-dessus n'importe quel site et lui envoie les événements clavier/touch.</p>
 
-<div class="feedback" id="fb">
-  <div class="dot"></div>
-  <span id="fb-text">En attente d'un geste…</span>
-</div>
+  <div class="step">
+    <div class="step-num">1</div>
+    <p>Ouvre ton site dans Safari</p>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <p>Copie le <strong>bookmarklet</strong> ci-dessous → ajoute-le à tes favoris Safari</p>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <p>Sur n'importe quelle page, tape sur le favori → le D-pad apparaît en overlay</p>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <p>Glisse le D-pad où tu veux. Il envoie <code>ArrowUp/Down/Left/Right</code> + événements touch à la page.</p>
+  </div>
 
-<!-- URL TARGET -->
-<div class="section">
-  <div class="section-label">Page cible (optionnel)</div>
   <div class="url-row">
-    <input class="url-input" id="url-in" type="url" placeholder="https://exemple.com" autocomplete="off" autocorrect="off" spellcheck="false">
-    <button class="go-btn" onclick="loadFrame()">Charger</button>
+    <input class="url-input" id="url-in" type="url" placeholder="Tester ici : https://monsite.com">
+    <button class="go-btn" onclick="openSite()">Ouvrir</button>
   </div>
 </div>
 
-<div class="frame-wrap" id="frame-wrap">
-  <iframe id="target-frame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+<div class="bm-box">
+  <h2>Bookmarklet — colle dans un favori Safari</h2>
+  <div class="bm-code" id="bm-code">Génération…</div>
+  <button class="copy-btn" onclick="copyBm()">📋 Copier le bookmarklet</button>
 </div>
 
-<hr>
-
-<!-- D-PAD -->
-<div class="section">
-  <div class="section-label">Glissements directionnels</div>
-  <div class="dpad-wrap">
+<!-- LIVE PREVIEW of the overlay (for this page) -->
+<div id="dpad-overlay">
+  <div class="overlay-handle" id="handle">
+    <div class="drag-bar"></div>
     <div class="dpad">
-      <div class="dpad-empty"></div>
-      <button class="dpad-btn" id="g-up"    onclick="fire('up','↑ Glissement vers le haut')"><span class="ico-up"></span></button>
-      <div class="dpad-empty"></div>
-
-      <button class="dpad-btn" id="g-left"  onclick="fire('left','← Glissement vers la gauche')"><span class="ico-left"></span></button>
-      <div class="dpad-btn dpad-center"><span class="ico-center"></span></div>
-      <button class="dpad-btn" id="g-right" onclick="fire('right','→ Glissement vers la droite')"><span class="ico-right"></span></button>
-
-      <div class="dpad-empty"></div>
-      <button class="dpad-btn" id="g-down"  onclick="fire('down','↓ Glissement vers le bas')"><span class="ico-down"></span></button>
-      <div class="dpad-empty"></div>
+      <div class="db-empty"></div>
+      <button class="db" id="btn-up"    onpointerdown="act('ArrowUp','↑')"   ontouchstart="act('ArrowUp','↑')">↑</button>
+      <div class="db-empty"></div>
+      <button class="db" id="btn-left"  onpointerdown="act('ArrowLeft','←')" ontouchstart="act('ArrowLeft','←')">←</button>
+      <div class="db db-center">✦</div>
+      <button class="db" id="btn-right" onpointerdown="act('ArrowRight','→')"ontouchstart="act('ArrowRight','→')">→</button>
+      <div class="db-empty"></div>
+      <button class="db" id="btn-down"  onpointerdown="act('ArrowDown','↓')" ontouchstart="act('ArrowDown','↓')">↓</button>
+      <div class="db-empty"></div>
     </div>
+    <div class="action-row">
+      <button class="ab" onpointerdown="act('Enter','OK')"  ontouchstart="act('Enter','OK')">↵<span>OK</span></button>
+      <button class="ab" onpointerdown="act('Escape','ESC')"ontouchstart="act('Escape','ESC')">✕<span>ESC</span></button>
+      <button class="ab" onpointerdown="act(' ','Espace')"  ontouchstart="act(' ','Espace')">⎵<span>Space</span></button>
+    </div>
+    <button class="close-btn" onclick="document.getElementById('dpad-overlay').style.display='none'">FERMER ✕</button>
   </div>
 </div>
 
-<!-- DIAGONALS -->
-<div class="section">
-  <div class="section-label">Diagonales</div>
-  <div class="btn-grid g4">
-    <button class="gbtn" onclick="fire('nw','↖ Diagonale haut-gauche')"><span class="ico ico-nw"></span><span class="lbl">↖</span></button>
-    <button class="gbtn" onclick="fire('ne','↗ Diagonale haut-droite')"><span class="ico ico-ne"></span><span class="lbl">↗</span></button>
-    <button class="gbtn" onclick="fire('sw','↙ Diagonale bas-gauche')"><span class="ico ico-sw"></span><span class="lbl">↙</span></button>
-    <button class="gbtn" onclick="fire('se','↘ Diagonale bas-droite')"><span class="ico ico-se"></span><span class="lbl">↘</span></button>
-  </div>
-</div>
-
-<!-- ZOOM / ROTATE -->
-<div class="section">
-  <div class="section-label">Zoom &amp; Rotation (pinch simulé)</div>
-  <div class="btn-grid g2">
-    <button class="gbtn" onclick="fire('zin','⊕ Zoom avant (pinch out)')"><span class="ico ico-zin"></span><span class="lbl">Zoom avant</span></button>
-    <button class="gbtn" onclick="fire('zout','⊖ Zoom arrière (pinch in)')"><span class="ico ico-zout"></span><span class="lbl">Zoom arrière</span></button>
-    <button class="gbtn" onclick="fire('rcw','↻ Rotation horaire')"><span class="ico ico-rcw"></span><span class="lbl">Rot. ↻</span></button>
-    <button class="gbtn" onclick="fire('rccw','↺ Rotation anti-horaire')"><span class="ico ico-rccw"></span><span class="lbl">Rot. ↺</span></button>
-  </div>
-</div>
-
-<!-- SPECIAL -->
-<div class="section">
-  <div class="section-label">Actions spéciales</div>
-  <div class="btn-grid g3">
-    <button class="gbtn" onclick="fire('hold','✋ Appui long')"><span class="ico ico-hold"></span><span class="lbl">Maintenir</span></button>
-    <button class="gbtn" onclick="fire('tap2','👆 Double tap')"><span class="ico ico-tap2"></span><span class="lbl">Double tap</span></button>
-    <button class="gbtn" onclick="fire('shake','〜 Secouer')"><span class="ico ico-shake"></span><span class="lbl">Secouer</span></button>
-  </div>
-</div>
-
-<footer>GestureCtrl — fonctionne hors-ligne · pas d'installation</footer>
+<div id="dpad-toast"></div>
 
 <script>
-let fbTimer;
+/* ── DRAG ── */
+const overlay = document.getElementById('dpad-overlay');
+const handle  = document.getElementById('handle');
+let dragging = false, startX, startY, origX, origY;
 
-function show(msg, ok) {
-  const fb = document.getElementById('fb');
-  const txt = document.getElementById('fb-text');
-  txt.textContent = msg;
-  fb.classList.toggle('lit', ok);
-  clearTimeout(fbTimer);
-  fbTimer = setTimeout(() => {
-    txt.textContent = 'En attente d\'un geste…';
-    fb.classList.remove('lit');
-  }, 1800);
-}
-
-function flash(el) {
-  if (!el) return;
-  el.classList.add('flash');
-  setTimeout(() => el.classList.remove('flash'), 220);
-}
-
-function fire(id, label) {
-  show(label, true);
-  const btn = document.getElementById('g-' + id);
-  flash(btn);
-
-  const vectors = {
-    up:    [0, -1], down:  [0, 1],
-    left:  [-1, 0], right: [1, 0],
-    nw: [-1,-1], ne: [1,-1], sw: [-1,1], se: [1,1]
+function getPos() {
+  const s = overlay.style;
+  return {
+    x: s.right  ? window.innerWidth  - overlay.offsetWidth  - parseInt(s.right)  : parseInt(s.left)  || (window.innerWidth  - overlay.offsetWidth  - 20),
+    y: s.bottom ? window.innerHeight - overlay.offsetHeight - parseInt(s.bottom) : parseInt(s.top)   || (window.innerHeight - overlay.offsetHeight - 30),
   };
-
-  const frameEl = document.getElementById('target-frame');
-  const frameVisible = document.getElementById('frame-wrap').classList.contains('visible');
-  const target = frameVisible ? frameEl : null;
-
-  if (vectors[id]) {
-    const [dx, dy] = vectors[id];
-    const dist = 120;
-    doSwipe(dx * dist, dy * dist, target);
-    return;
-  }
-
-  if (id === 'hold') { doLongPress(target); return; }
-  if (id === 'tap2') { doDoubleTap(target); return; }
-  if (id === 'shake') { doShake(); return; }
-  if (id === 'zin')  { doPinch(true, target); return; }
-  if (id === 'zout') { doPinch(false, target); return; }
-  if (id === 'rcw')  { doRotate(true, target); return; }
-  if (id === 'rccw') { doRotate(false, target); return; }
 }
 
-function getCenter(target) {
-  if (target && target.getBoundingClientRect) {
-    const r = target.getBoundingClientRect();
-    return [r.left + r.width / 2, r.top + r.height / 2];
-  }
-  return [window.innerWidth / 2, window.innerHeight / 2];
+handle.addEventListener('pointerdown', e => {
+  if (e.target.closest('button')) return;
+  dragging = true;
+  overlay.classList.add('dragging');
+  handle.setPointerCapture(e.pointerId);
+  const p = getPos();
+  origX = p.x; origY = p.y;
+  startX = e.clientX; startY = e.clientY;
+  overlay.style.right  = '';
+  overlay.style.bottom = '';
+  overlay.style.left   = origX + 'px';
+  overlay.style.top    = origY + 'px';
+});
+handle.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  let nx = origX + (e.clientX - startX);
+  let ny = origY + (e.clientY - startY);
+  nx = Math.max(0, Math.min(window.innerWidth  - overlay.offsetWidth,  nx));
+  ny = Math.max(0, Math.min(window.innerHeight - overlay.offsetHeight, ny));
+  overlay.style.left = nx + 'px';
+  overlay.style.top  = ny + 'px';
+});
+handle.addEventListener('pointerup',   () => { dragging = false; overlay.classList.remove('dragging'); });
+handle.addEventListener('pointercancel',()=> { dragging = false; overlay.classList.remove('dragging'); });
+
+/* ── ACTIONS ── */
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('dpad-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 900);
 }
 
-function mkTouch(id, el, x, y) {
-  return new Touch({ identifier: id, target: el, clientX: x, clientY: y, screenX: x, screenY: y, pageX: x, pageY: y, radiusX: 1, radiusY: 1, rotationAngle: 0, force: 1 });
-}
+function act(key, label) {
+  toast(label);
+  // Flash button
+  const map = { ArrowUp:'btn-up', ArrowDown:'btn-down', ArrowLeft:'btn-left', ArrowRight:'btn-right' };
+  const el = document.getElementById(map[key]);
+  if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 180); }
 
-function dispatchTouchEvent(el, type, touches, changedTouches) {
-  try {
-    el.dispatchEvent(new TouchEvent(type, {
-      touches, changedTouches, bubbles: true, cancelable: true, view: window
+  // Send keyboard event to whatever is focused / body
+  const target = document.activeElement && document.activeElement !== document.body
+    ? document.activeElement : document.body;
+
+  ['keydown','keypress','keyup'].forEach(type => {
+    target.dispatchEvent(new KeyboardEvent(type, {
+      key, code: key === ' ' ? 'Space' : key,
+      keyCode: keyCodeFor(key), which: keyCodeFor(key),
+      bubbles: true, cancelable: true
     }));
-  } catch(e) {}
+  });
+
+  // Also send swipe touch for games that use touch
+  const swipes = { ArrowUp:[0,-80], ArrowDown:[0,80], ArrowLeft:[-80,0], ArrowRight:[80,0] };
+  if (swipes[key]) sendSwipe(...swipes[key]);
 }
 
-function doSwipe(dx, dy, frameEl) {
-  const [cx, cy] = getCenter(frameEl);
-  const el = document.elementFromPoint(cx, cy) || document.body;
-  const steps = 10;
-  let i = 0;
-  const t = mkTouch(1, el, cx, cy);
-  dispatchTouchEvent(el, 'touchstart', [t], [t]);
-  const iv = setInterval(() => {
-    i++;
-    const px = cx + dx * (i / steps);
-    const py = cy + dy * (i / steps);
-    const tm = mkTouch(1, el, px, py);
-    dispatchTouchEvent(el, 'touchmove', [tm], [tm]);
-    if (i >= steps) {
-      clearInterval(iv);
-      const te = mkTouch(1, el, cx + dx, cy + dy);
-      dispatchTouchEvent(el, 'touchend', [], [te]);
-    }
-  }, 16);
+function keyCodeFor(k) {
+  return { ArrowUp:38, ArrowDown:40, ArrowLeft:37, ArrowRight:39, Enter:13, Escape:27, ' ':32 }[k] || 0;
 }
 
-function doLongPress(frameEl) {
-  const [cx, cy] = getCenter(frameEl);
+function sendSwipe(dx, dy) {
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
   const el = document.elementFromPoint(cx, cy) || document.body;
-  const t = mkTouch(1, el, cx, cy);
-  dispatchTouchEvent(el, 'touchstart', [t], [t]);
-  setTimeout(() => { dispatchTouchEvent(el, 'touchend', [], [t]); }, 800);
-}
-
-function doDoubleTap(frameEl) {
-  const [cx, cy] = getCenter(frameEl);
-  const el = document.elementFromPoint(cx, cy) || document.body;
-  function singleTap() {
-    const t = mkTouch(1, el, cx, cy);
-    dispatchTouchEvent(el, 'touchstart', [t], [t]);
-    setTimeout(() => dispatchTouchEvent(el, 'touchend', [], [t]), 60);
+  const steps = 8; let i = 0;
+  function mkT(id, x, y) {
+    return new Touch({ identifier: id, target: el, clientX: x, clientY: y, screenX: x, screenY: y, pageX: x, pageY: y, radiusX:1, radiusY:1, rotationAngle:0, force:1 });
   }
-  singleTap();
-  setTimeout(singleTap, 150);
-}
-
-function doShake() {
-  if (window.DeviceMotionEvent) {
-    show('Secouer simulé (DeviceMotion)', true);
+  function fire(type, touches, changed) {
+    try { el.dispatchEvent(new TouchEvent(type, { touches, changedTouches: changed, bubbles:true, cancelable:true })); } catch(e) {}
   }
-  document.body.style.transition = 'transform .05s';
-  let s = 0;
-  const sh = setInterval(() => {
-    document.body.style.transform = `translateX(${s % 2 === 0 ? 6 : -6}px)`;
-    s++;
-    if (s > 6) {
-      clearInterval(sh);
-      document.body.style.transform = '';
-    }
-  }, 50);
-}
-
-function doPinch(zoomIn, frameEl) {
-  const [cx, cy] = getCenter(frameEl);
-  const el = document.elementFromPoint(cx, cy) || document.body;
-  const d = zoomIn ? 80 : -80;
-  const steps = 8;
-  let i = 0;
-  const t1 = mkTouch(1, el, cx - 40, cy);
-  const t2 = mkTouch(2, el, cx + 40, cy);
-  dispatchTouchEvent(el, 'touchstart', [t1, t2], [t1, t2]);
+  const t0 = mkT(9, cx, cy);
+  fire('touchstart', [t0], [t0]);
   const iv = setInterval(() => {
     i++;
-    const spread = 40 + d * (i / steps);
-    const a = mkTouch(1, el, cx - spread, cy);
-    const b = mkTouch(2, el, cx + spread, cy);
-    dispatchTouchEvent(el, 'touchmove', [a, b], [a, b]);
-    if (i >= steps) {
-      clearInterval(iv);
-      dispatchTouchEvent(el, 'touchend', [], [a, b]);
-    }
-  }, 20);
+    const tm = mkT(9, cx + dx*(i/steps), cy + dy*(i/steps));
+    fire('touchmove', [tm], [tm]);
+    if (i >= steps) { clearInterval(iv); const te = mkT(9, cx+dx, cy+dy); fire('touchend', [], [te]); }
+  }, 14);
 }
 
-function doRotate(clockwise, frameEl) {
-  const [cx, cy] = getCenter(frameEl);
-  const el = document.elementFromPoint(cx, cy) || document.body;
-  const steps = 12;
-  const r = 50;
-  let i = 0;
-  const dir = clockwise ? 1 : -1;
-  const t1 = mkTouch(1, el, cx + r, cy);
-  const t2 = mkTouch(2, el, cx - r, cy);
-  dispatchTouchEvent(el, 'touchstart', [t1, t2], [t1, t2]);
-  const iv = setInterval(() => {
-    i++;
-    const angle = (Math.PI * dir * i) / steps;
-    const a = mkTouch(1, el, cx + r * Math.cos(angle), cy + r * Math.sin(angle));
-    const b = mkTouch(2, el, cx - r * Math.cos(angle), cy - r * Math.sin(angle));
-    dispatchTouchEvent(el, 'touchmove', [a, b], [a, b]);
-    if (i >= steps) {
-      clearInterval(iv);
-      dispatchTouchEvent(el, 'touchend', [], [a, b]);
-    }
-  }, 20);
+/* ── BOOKMARKLET GENERATOR ── */
+const bm = `javascript:(function(){if(document.getElementById('__dpad__'))return;var s=document.createElement('style');s.textContent='#__dpad__{position:fixed;bottom:28px;right:16px;z-index:2147483647;touch-action:none;font-family:-apple-system,sans-serif}#__dpad__ .h{background:rgba(15,15,20,0.93);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:10px 11px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}#__dpad__ .drag{width:30px;height:3px;background:rgba(255,255,255,0.12);border-radius:2px}#__dpad__ .grid{display:grid;grid-template-columns:repeat(3,50px);grid-template-rows:repeat(3,50px);gap:4px}#__dpad__ .grid .e{visibility:hidden}#__dpad__ button{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:rgba(255,255,255,0.65);font-size:19px;display:flex;align-items:center;justify-content:center;cursor:pointer;width:100%;height:100%;transition:background .07s,transform .06s;-webkit-appearance:none;touch-action:manipulation}#__dpad__ button:active{background:rgba(124,109,250,0.4);border-color:rgba(124,109,250,0.7);transform:scale(0.87);color:#fff}#__dpad__ .cx{background:rgba(255,255,255,0.03)!important;cursor:default;font-size:11px;color:rgba(255,255,255,0.15)!important}#__dpad__ .ar{display:grid;grid-template-columns:repeat(3,50px);gap:4px}#__dpad__ .ar button{height:42px;flex-direction:column;gap:2px;font-size:13px}#__dpad__ .ar button span{font-size:8px;color:rgba(255,255,255,0.35)}#__dpad__ .cl{font-size:9px;color:rgba(255,255,255,0.2);background:none;border:none;cursor:pointer;padding:2px 8px;letter-spacing:.05em;width:auto;height:auto;border-radius:0}#__dpad-toast__{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(50px);background:rgba(15,15,20,0.95);border:1px solid rgba(124,109,250,0.4);border-radius:20px;padding:7px 16px;font-size:11px;color:#ccc;z-index:2147483646;transition:transform .18s,opacity .18s;opacity:0;pointer-events:none;white-space:nowrap;font-family:-apple-system,sans-serif}#__dpad-toast__.s{transform:translateX(-50%) translateY(-16px);opacity:1}';document.head.appendChild(s);var d=document.createElement('div');d.id='__dpad__';d.innerHTML='<div class="h" id="__dph__"><div class="drag"></div><div class="grid"><div class="e"></div><button id="__u__">↑</button><div class="e"></div><button id="__l__">←</button><button class="cx">✦</button><button id="__r__">→</button><div class="e"></div><button id="__d__">↓</button><div class="e"></div></div><div class="ar"><button onclick="__da__(\\'Enter\\',\\'OK\\')">↵<span>OK</span></button><button onclick="__da__(\\'Escape\\',\\'ESC\\')">✕<span>ESC</span></button><button onclick="__da__(\\' \\',\\'Space\\')">⎵<span>Space</span></button></div><button class="cl" onclick="document.getElementById(\\'__dpad__\\').remove();document.getElementById(\\'__dpad-toast__\\').remove()">FERMER ✕</button></div>';document.body.appendChild(d);var toast=document.createElement('div');toast.id='__dpad-toast__';document.body.appendChild(toast);var tt;window.__da__=function(k,l){toast.textContent=l;toast.classList.add('s');clearTimeout(tt);tt=setTimeout(function(){toast.classList.remove('s');},900);var t=document.activeElement&&document.activeElement!==document.body?document.activeElement:document.body;['keydown','keypress','keyup'].forEach(function(type){t.dispatchEvent(new KeyboardEvent(type,{key:k,code:k===' '?'Space':k,keyCode:{ArrowUp:38,ArrowDown:40,ArrowLeft:37,ArrowRight:39,Enter:13,Escape:27,' ':32}[k]||0,bubbles:true,cancelable:true}))});var sw={ArrowUp:[0,-80],ArrowDown:[0,80],ArrowLeft:[-80,0],ArrowRight:[80,0]};if(sw[k]){var dx=sw[k][0],dy=sw[k][1],cx=window.innerWidth/2,cy=window.innerHeight/2,el=document.elementFromPoint(cx,cy)||document.body,i=0;function mT(id,x,y){return new Touch({identifier:id,target:el,clientX:x,clientY:y,screenX:x,screenY:y,pageX:x,pageY:y,radiusX:1,radiusY:1,rotationAngle:0,force:1})}function fE(type,tl,cl){try{el.dispatchEvent(new TouchEvent(type,{touches:tl,changedTouches:cl,bubbles:true,cancelable:true}))}catch(e){}}var t0=mT(9,cx,cy);fE('touchstart',[t0],[t0]);var iv=setInterval(function(){i++;var tm=mT(9,cx+dx*(i/8),cy+dy*(i/8));fE('touchmove',[tm],[tm]);if(i>=8){clearInterval(iv);var te=mT(9,cx+dx,cy+dy);fE('touchend',[],[te])}},14)}};document.getElementById('__u__').onclick=function(){__da__('ArrowUp','↑')};document.getElementById('__d__').onclick=function(){__da__('ArrowDown','↓')};document.getElementById('__l__').onclick=function(){__da__('ArrowLeft','←')};document.getElementById('__r__').onclick=function(){__da__('ArrowRight','→')};var ov=document.getElementById('__dpad__'),hnd=document.getElementById('__dph__'),dr=false,sx,sy,ox,oy;hnd.addEventListener('pointerdown',function(e){if(e.target.tagName==='BUTTON')return;dr=true;ov.classList.add('dragging');hnd.setPointerCapture(e.pointerId);var cs=ov.style;ox=cs.right?window.innerWidth-ov.offsetWidth-parseInt(cs.right):parseInt(cs.left)||(window.innerWidth-ov.offsetWidth-16);oy=cs.bottom?window.innerHeight-ov.offsetHeight-parseInt(cs.bottom):parseInt(cs.top)||(window.innerHeight-ov.offsetHeight-28);sx=e.clientX;sy=e.clientY;ov.style.right='';ov.style.bottom='';ov.style.left=ox+'px';ov.style.top=oy+'px'});hnd.addEventListener('pointermove',function(e){if(!dr)return;var nx=Math.max(0,Math.min(window.innerWidth-ov.offsetWidth,ox+(e.clientX-sx)));var ny=Math.max(0,Math.min(window.innerHeight-ov.offsetHeight,oy+(e.clientY-sy)));ov.style.left=nx+'px';ov.style.top=ny+'px'});hnd.addEventListener('pointerup',function(){dr=false});hnd.addEventListener('pointercancel',function(){dr=false});})();`;
+
+document.getElementById('bm-code').textContent = bm;
+
+function copyBm() {
+  navigator.clipboard.writeText(bm).then(() => {
+    document.querySelector('.copy-btn').textContent = '✅ Copié !';
+    setTimeout(() => document.querySelector('.copy-btn').textContent = '📋 Copier le bookmarklet', 2000);
+  }).catch(() => {
+    const el = document.getElementById('bm-code');
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    document.querySelector('.copy-btn').textContent = '✅ Copié !';
+    setTimeout(() => document.querySelector('.copy-btn').textContent = '📋 Copier le bookmarklet', 2000);
+  });
 }
 
-function loadFrame() {
+function openSite() {
   let url = document.getElementById('url-in').value.trim();
   if (!url) return;
   if (!url.startsWith('http')) url = 'https://' + url;
-  const wrap = document.getElementById('frame-wrap');
-  const frame = document.getElementById('target-frame');
-  frame.src = url;
-  wrap.classList.add('visible');
-  show('Page chargée : ' + url, true);
+  window.open(url, '_blank');
 }
 </script>
 </body>
