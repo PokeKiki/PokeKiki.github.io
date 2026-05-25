@@ -3,674 +3,341 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScreenCast — Share Your Screen</title>
+<title>ScreenCast</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400;500&display=swap');
-
-  :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --border: #1e1e2e;
-    --accent: #00e5ff;
-    --accent2: #ff6b6b;
-    --text: #e8e8f0;
-    --muted: #5a5a7a;
-    --success: #00ffa3;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 32px 16px;
-    position: relative;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    top: -200px; left: -200px;
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%);
-    pointer-events: none;
-    animation: drift 12s ease-in-out infinite alternate;
-  }
-  body::after {
-    content: '';
-    position: fixed;
-    bottom: -200px; right: -200px;
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(255,107,107,0.05) 0%, transparent 70%);
-    pointer-events: none;
-    animation: drift 15s ease-in-out infinite alternate-reverse;
-  }
-
-  @keyframes drift {
-    from { transform: translate(0,0); }
-    to { transform: translate(60px, 40px); }
-  }
-
-  header {
-    text-align: center;
-    margin-bottom: 40px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(28px, 6vw, 42px);
-    font-weight: 800;
-    letter-spacing: -1px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
-
-  .logo-icon {
-    width: 36px; height: 36px;
-    background: var(--accent);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 0 20px rgba(0,229,255,0.4);
-  }
-
-  .logo span { color: var(--accent); }
-
-  .tagline {
-    color: var(--muted);
-    font-size: 13px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  .tabs {
-    display: flex;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 4px;
-    gap: 4px;
-    margin-bottom: 32px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .tab {
-    padding: 10px 28px;
-    border-radius: 9px;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.5px;
-  }
-  .tab.active {
-    background: var(--accent);
-    color: #000;
-    font-weight: 500;
-    box-shadow: 0 0 16px rgba(0,229,255,0.3);
-  }
-
-  .panel {
-    display: none;
-    width: 100%;
-    max-width: 560px;
-    position: relative;
-    z-index: 1;
-  }
-  .panel.active { display: flex; flex-direction: column; gap: 16px; }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-  }
-
-  .card-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .badge {
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    font-weight: 400;
-    padding: 2px 8px;
-    border-radius: 20px;
-    background: rgba(0,229,255,0.1);
-    color: var(--accent);
-    border: 1px solid rgba(0,229,255,0.2);
-  }
-
-  .room-input-wrap {
-    display: flex;
-    gap: 8px;
-  }
-
-  input[type="text"] {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
-    letter-spacing: 2px;
-  }
-  input[type="text"]:focus { border-color: var(--accent); }
-  input[type="text"]::placeholder { color: var(--muted); letter-spacing: 0; }
-
-  .btn {
-    padding: 12px 20px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: #000;
-    box-shadow: 0 0 16px rgba(0,229,255,0.25);
-  }
-  .btn-primary:hover { background: #26edff; box-shadow: 0 0 24px rgba(0,229,255,0.45); }
-  .btn-secondary {
-    background: var(--border);
-    color: var(--text);
-  }
-  .btn-secondary:hover { background: #2a2a3e; }
-  .btn-danger {
-    background: rgba(255,107,107,0.15);
-    color: var(--accent2);
-    border: 1px solid rgba(255,107,107,0.3);
-  }
-  .btn-danger:hover { background: rgba(255,107,107,0.25); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-full { width: 100%; justify-content: center; }
-
-  .status-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    font-size: 13px;
-  }
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    flex-shrink: 0;
-    transition: background 0.3s;
-  }
-  .status-dot.connected { background: var(--success); box-shadow: 0 0 8px rgba(0,255,163,0.5); }
-  .status-dot.connecting { background: var(--accent); animation: pulse 1s infinite; }
-  .status-dot.error { background: var(--accent2); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .room-code-display {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg);
-    border: 1px solid rgba(0,229,255,0.2);
-    border-radius: 10px;
-    padding: 14px 18px;
-  }
-  .room-code-value {
-    font-size: 22px;
-    letter-spacing: 6px;
-    font-weight: 500;
-    color: var(--accent);
-  }
-
-  video {
-    width: 100%;
-    border-radius: 12px;
-    background: #000;
-    border: 1px solid var(--border);
-    max-height: 340px;
-    object-fit: contain;
-  }
-
-  .video-wrap {
-    position: relative;
-  }
-
-  .video-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    color: var(--muted);
-    font-size: 13px;
-    pointer-events: none;
-  }
-  .video-overlay .big-icon { font-size: 40px; opacity: 0.3; }
-
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
-
-  .info-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.6;
-  }
-  .info-row svg { flex-shrink: 0; margin-top: 2px; }
-
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 4px 0;
-  }
-
-  .log {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    font-size: 11px;
-    color: var(--muted);
-    max-height: 80px;
-    overflow-y: auto;
-    line-height: 1.8;
-  }
-  .log-entry { color: var(--muted); }
-  .log-entry.info { color: var(--accent); }
-  .log-entry.success { color: var(--success); }
-  .log-entry.error { color: var(--accent2); }
-
-  @media (max-width: 400px) {
-    .room-code-value { font-size: 18px; letter-spacing: 4px; }
-    .tab { padding: 10px 18px; }
-  }
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#0b0b10;--s:#14141c;--b:#1f1f2e;--a:#00e5ff;--r:#ff6060;--t:#e8e8f0;--m:#55557a;--g:#00ffa3}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t);font-family:'DM Mono',monospace;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;padding:28px 14px}
+header{text-align:center;margin-bottom:26px}
+.logo{font-family:'Syne',sans-serif;font-size:clamp(22px,5vw,36px);font-weight:800;
+  display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:4px}
+.li{width:30px;height:30px;background:var(--a);border-radius:7px;display:flex;
+  align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 18px #00e5ff44}
+.logo em{color:var(--a);font-style:normal}
+.sub{color:var(--m);font-size:11px;letter-spacing:2px;text-transform:uppercase}
+.tabs{display:flex;background:var(--s);border:1px solid var(--b);border-radius:11px;
+  padding:3px;gap:3px;margin-bottom:22px}
+.tab{padding:9px 24px;border-radius:9px;border:none;background:transparent;
+  color:var(--m);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;transition:.2s all}
+.tab.on{background:var(--a);color:#000;font-weight:500;box-shadow:0 0 14px #00e5ff33}
+.panel{display:none;width:100%;max-width:500px;flex-direction:column;gap:11px}
+.panel.on{display:flex}
+.card{background:var(--s);border:1px solid var(--b);border-radius:13px;padding:17px}
+.ct{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:11px}
+.code-box{display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg);border:1px solid #00e5ff33;border-radius:9px;padding:11px 15px}
+.cv{font-size:26px;letter-spacing:8px;color:var(--a);font-weight:500}
+.btn{padding:9px 16px;border-radius:9px;border:none;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:500;
+  transition:.2s all;display:inline-flex;align-items:center;gap:5px}
+.bp{background:var(--a);color:#000;box-shadow:0 0 12px #00e5ff22}
+.bp:hover:not(:disabled){background:#2cf}
+.bg{background:var(--b);color:var(--t)}
+.br{background:#ff606015;color:var(--r);border:1px solid #ff606030}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:7px;flex-wrap:wrap}
+.sb{display:flex;align-items:center;gap:9px;padding:10px 13px;border-radius:9px;
+  background:var(--bg);border:1px solid var(--b);font-size:12px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--m);flex-shrink:0;transition:.3s}
+.dot.on{background:var(--g);box-shadow:0 0 7px #00ffa355}
+.dot.sp{background:var(--a);animation:pu 1s infinite}
+.dot.er{background:var(--r)}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.3}}
+video{width:100%;border-radius:9px;background:#000;border:1px solid var(--b);
+  max-height:280px;object-fit:contain;display:block}
+.vw{position:relative;min-height:70px}
+.vo{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:6px;color:var(--m);font-size:11px;background:#000;
+  border-radius:9px;pointer-events:none}
+.vo .ic{font-size:28px;opacity:.3}
+.log{background:var(--bg);border:1px solid var(--b);border-radius:9px;
+  padding:8px 11px;font-size:10.5px;max-height:85px;overflow-y:auto;line-height:2;margin-top:9px}
+.l{color:var(--m)}.l.i{color:var(--a)}.l.ok{color:var(--g)}.l.e{color:var(--r)}
+.hint{font-size:11px;color:var(--m);line-height:1.7;margin-top:7px}
+input{width:100%;background:var(--bg);border:1px solid var(--b);border-radius:9px;
+  padding:10px 13px;color:var(--t);font-family:'DM Mono',monospace;font-size:15px;
+  outline:none;letter-spacing:4px;text-transform:uppercase;transition:.2s border-color}
+input:focus{border-color:var(--a)}
+input::placeholder{letter-spacing:0;font-size:12px;color:var(--m)}
+.ir{display:flex;gap:7px}
+hr{border:none;border-top:1px solid var(--b);margin:9px 0}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">
-    <div class="logo-icon">⬡</div>
-    Screen<span>Cast</span>
-  </div>
-  <div class="tagline">Peer-to-peer screen sharing</div>
+  <div class="logo"><div class="li">⬡</div>Screen<em>Cast</em></div>
+  <div class="sub">WebRTC · Peer to peer</div>
 </header>
-
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('share')">📱 Share</button>
-  <button class="tab" onclick="switchTab('view')">🖥 View</button>
+  <button class="tab on" id="ts" onclick="sw('s')">📱 Share</button>
+  <button class="tab" id="tv" onclick="sw('v')">🖥 View</button>
 </div>
 
 <!-- SHARE PANEL -->
-<div class="panel active" id="panel-share">
+<div class="panel on" id="ps">
   <div class="card">
-    <div class="card-title">Your Room Code <span class="badge">auto-generated</span></div>
-    <div class="room-code-display" id="share-room-display">
-      <div class="room-code-value" id="share-room-code">------</div>
-      <button class="btn btn-secondary" onclick="copyRoomCode()" id="copy-btn">📋 Copy</button>
+    <div class="ct">Room Code</div>
+    <div class="code-box">
+      <div class="cv" id="scode">——</div>
+      <button class="btn bg" onclick="cp()">📋 Copy</button>
     </div>
-    <div style="margin-top: 10px; font-size: 12px; color: var(--muted);">
-      Share this code with the viewer on the other device.
+    <div class="hint">Share this code with the viewer, then tap <b>Start Sharing</b>.</div>
+  </div>
+  <div class="card">
+    <div class="sb"><div class="dot" id="sd"></div><span id="ss">Ready</span></div>
+  </div>
+  <div class="card">
+    <div class="ct">Preview</div>
+    <div class="vw">
+      <video id="sv" autoplay muted playsinline></video>
+      <div class="vo" id="svo"><div class="ic">📱</div><span>Preview appears here</span></div>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">Connection Status</div>
-    <div class="status-bar">
-      <div class="status-dot" id="share-status-dot"></div>
-      <span id="share-status-text">Waiting to start...</span>
+    <div class="row">
+      <button class="btn bp" id="bstart" onclick="startShare()">▶ Start Sharing</button>
+      <button class="btn br" id="bstop" onclick="stopShare()" disabled>■ Stop</button>
     </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Preview</div>
-    <div class="video-wrap">
-      <video id="share-preview" autoplay muted playsinline></video>
-      <div class="video-overlay" id="share-overlay">
-        <div class="big-icon">📱</div>
-        <div>Your screen will appear here</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="controls">
-      <button class="btn btn-primary" id="btn-start-share" onclick="startSharing()">▶ Start Sharing</button>
-      <button class="btn btn-danger" id="btn-stop-share" onclick="stopSharing()" disabled>■ Stop</button>
-    </div>
-    <div class="divider" style="margin-top:14px;margin-bottom:10px;"></div>
-    <div class="log" id="share-log"><div class="log-entry info">[ready] Open the viewer on your other device, enter the room code, then start sharing.</div></div>
-  </div>
-
-  <div class="card">
-    <div class="info-row">
-      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"/></svg>
-      <span>Uses WebRTC for direct peer-to-peer connection. No data passes through any server. Works best on Chrome or Edge. On mobile, only camera/tab sharing is available — full screen share requires desktop.</span>
-    </div>
+    <div class="log" id="sl"></div>
   </div>
 </div>
 
 <!-- VIEW PANEL -->
-<div class="panel" id="panel-view">
+<div class="panel" id="pv">
   <div class="card">
-    <div class="card-title">Enter Room Code</div>
-    <div class="room-input-wrap">
-      <input type="text" id="view-room-input" placeholder="e.g. AB12CD" maxlength="6" oninput="this.value=this.value.toUpperCase()" />
-      <button class="btn btn-primary" onclick="joinRoom()">Connect</button>
+    <div class="ct">Enter Room Code</div>
+    <div class="ir">
+      <input id="vc" placeholder="6-char code" maxlength="6"
+        oninput="this.value=this.value.toUpperCase()"
+        onkeydown="if(event.key==='Enter')joinRoom()" />
+      <button class="btn bp" onclick="joinRoom()">Connect</button>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">Connection Status</div>
-    <div class="status-bar">
-      <div class="status-dot" id="view-status-dot"></div>
-      <span id="view-status-text">Enter a room code to connect</span>
+    <div class="sb"><div class="dot" id="vd"></div><span id="vs">Enter a code above</span></div>
+  </div>
+  <div class="card">
+    <div class="ct">Incoming Screen</div>
+    <div class="vw">
+      <video id="vv" autoplay playsinline></video>
+      <div class="vo" id="vvo"><div class="ic">🖥</div><span>Waiting for stream…</span></div>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">Incoming Screen</div>
-    <div class="video-wrap">
-      <video id="view-screen" autoplay playsinline controls></video>
-      <div class="video-overlay" id="view-overlay">
-        <div class="big-icon">🖥</div>
-        <div>Waiting for stream...</div>
-      </div>
+    <div class="row">
+      <button class="btn br" id="bdisc" onclick="viewDisc()" disabled>■ Disconnect</button>
+      <button class="btn bg" onclick="fscr()">⛶ Fullscreen</button>
     </div>
-  </div>
-
-  <div class="card">
-    <div class="controls">
-      <button class="btn btn-danger" onclick="disconnectView()" id="btn-disconnect" disabled>■ Disconnect</button>
-      <button class="btn btn-secondary" onclick="toggleFullscreen()">⛶ Fullscreen</button>
-    </div>
-    <div class="divider" style="margin-top:14px;margin-bottom:10px;"></div>
-    <div class="log" id="view-log"><div class="log-entry info">[ready] Enter the room code shown on the sharing device and click Connect.</div></div>
+    <div class="log" id="vl"></div>
   </div>
 </div>
 
 <script>
-// ===== SIGNALING via BroadcastChannel (same-browser) + localStorage fallback =====
-// For cross-device: uses a simple localStorage-polling approach via a shared key
-// This works when both devices are on the same LAN and use the same file (opened locally)
-// OR we use a public STUN + a simple polling-based signaling channel
+// =============================================================
+// Signaling via ntfy.sh (free, no account, public pub/sub)
+// ICE: Google STUN + metered.ca free TURN (cross-NAT support)
+// =============================================================
+const NTFY = 'https://ntfy.sh';
+const ICE  = { iceServers: [
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun.cloudflare.com:3478'},
+  {urls:'turn:a.relay.metered.ca:80',    username:'83e14e09a3d6f1c68af5',credential:'O+MjMBhF+1+QHbH4'},
+  {urls:'turn:a.relay.metered.ca:443',   username:'83e14e09a3d6f1c68af5',credential:'O+MjMBhF+1+QHbH4'},
+  {urls:'turn:a.relay.metered.ca:443?transport=tcp',username:'83e14e09a3d6f1c68af5',credential:'O+MjMBhF+1+QHbH4'},
+]};
 
-const STUN_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-  ]
-};
+let myCode='', pc=null, localStream=null, pollTimer=null;
 
-// Signaling channel: uses a free public signaling relay via PeerJS public server
-// We implement our own simple WebRTC signaling using PeerJS SDK
-let myPeer = null;
-let conn = null;
-let localStream = null;
-let currentCall = null;
-let myRoomCode = generateCode();
-let isSharer = true;
+function gc(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+function lg(id,m,c=''){const e=document.getElementById(id+'l'),d=document.createElement('div');d.className='l '+c;d.textContent='['+new Date().toLocaleTimeString('en',{hour12:false})+'] '+m;e.appendChild(d);e.scrollTop=e.scrollHeight;}
+function st(id,c,t){document.getElementById(id+'d').className='dot '+c;document.getElementById(id+'s').textContent=t;}
+function enc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
+function dec(s){return JSON.parse(decodeURIComponent(escape(atob(s))));}
 
-function generateCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
-document.getElementById('share-room-code').textContent = myRoomCode;
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0 && tab === 'share') || (i === 1 && tab === 'view')));
-  document.getElementById('panel-share').classList.toggle('active', tab === 'share');
-  document.getElementById('panel-view').classList.toggle('active', tab === 'view');
-  isSharer = tab === 'share';
-}
-
-function copyRoomCode() {
-  const code = document.getElementById('share-room-code').textContent;
-  navigator.clipboard.writeText(code).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = '✓ Copied!';
-    setTimeout(() => btn.textContent = '📋 Copy', 2000);
-  });
-}
-
-function log(panel, msg, type = '') {
-  const logEl = document.getElementById(panel + '-log');
-  const entry = document.createElement('div');
-  entry.className = 'log-entry ' + type;
-  const time = new Date().toLocaleTimeString('en-US', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'});
-  entry.textContent = `[${time}] ${msg}`;
-  logEl.appendChild(entry);
-  logEl.scrollTop = logEl.scrollHeight;
-}
-
-function setStatus(panel, state, text) {
-  document.getElementById(panel + '-status-dot').className = 'status-dot ' + state;
-  document.getElementById(panel + '-status-text').textContent = text;
-}
-
-// ===== PeerJS for cross-device WebRTC signaling =====
-function loadPeerJS(callback) {
-  if (window.Peer) { callback(); return; }
-  const s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';
-  s.onload = callback;
-  s.onerror = () => { alert('Failed to load PeerJS. Check your connection.'); };
-  document.head.appendChild(s);
-}
-
-// ===== SHARER =====
-function startSharing() {
-  loadPeerJS(() => {
-    const btn = document.getElementById('btn-start-share');
-    btn.disabled = true;
-    btn.textContent = '⏳ Starting...';
-    log('share', 'Requesting screen capture...', 'info');
-
-    const mediaConstraints = navigator.mediaDevices.getDisplayMedia
-      ? { video: { cursor: 'always' }, audio: false }
-      : { video: true, audio: false };
-
-    const getMedia = navigator.mediaDevices.getDisplayMedia
-      ? navigator.mediaDevices.getDisplayMedia(mediaConstraints)
-      : navigator.mediaDevices.getUserMedia(mediaConstraints);
-
-    getMedia.then(stream => {
-      localStream = stream;
-      const preview = document.getElementById('share-preview');
-      preview.srcObject = stream;
-      document.getElementById('share-overlay').style.display = 'none';
-      log('share', 'Screen captured. Setting up peer...', 'info');
-
-      stream.getVideoTracks()[0].onended = () => {
-        log('share', 'Screen share stopped by user.', 'error');
-        stopSharing();
-      };
-
-      initSharePeer(stream);
-    }).catch(err => {
-      log('share', 'Error: ' + err.message, 'error');
-      setStatus('share', 'error', 'Permission denied or cancelled');
-      btn.disabled = false;
-      btn.textContent = '▶ Start Sharing';
-    });
-  });
-}
-
-function initSharePeer(stream) {
-  if (myPeer) { myPeer.destroy(); myPeer = null; }
-
-  myPeer = new Peer(myRoomCode, {
-    debug: 0,
-    config: STUN_SERVERS
-  });
-
-  myPeer.on('open', (id) => {
-    log('share', 'Peer ready. Room code: ' + id, 'success');
-    setStatus('share', 'connecting', 'Waiting for viewer to connect...');
-    document.getElementById('btn-stop-share').disabled = false;
-    document.getElementById('btn-start-share').textContent = '🔴 Live';
-  });
-
-  myPeer.on('call', (call) => {
-    log('share', 'Viewer connected! Streaming...', 'success');
-    setStatus('share', 'connected', 'Streaming to viewer');
-    currentCall = call;
-    call.answer(stream);
-    call.on('close', () => {
-      log('share', 'Viewer disconnected.', 'error');
-      setStatus('share', 'connecting', 'Viewer disconnected. Waiting...');
-    });
-  });
-
-  myPeer.on('error', (err) => {
-    if (err.type === 'unavailable-id') {
-      myRoomCode = generateCode();
-      document.getElementById('share-room-code').textContent = myRoomCode;
-      log('share', 'Code collision, regenerated: ' + myRoomCode, 'info');
-      initSharePeer(stream);
-    } else {
-      log('share', 'Peer error: ' + err.message, 'error');
-      setStatus('share', 'error', 'Connection error');
-    }
-  });
-}
-
-function stopSharing() {
-  if (localStream) {
-    localStream.getTracks().forEach(t => t.stop());
-    localStream = null;
+// ---- SHARER ----
+async function startShare(){
+  const btn=document.getElementById('bstart');
+  btn.disabled=true;btn.textContent='⏳ Requesting…';
+  try{
+    localStream = navigator.mediaDevices.getDisplayMedia
+      ? await navigator.mediaDevices.getDisplayMedia({video:{cursor:'always',frameRate:30},audio:false})
+      : await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+  }catch(e){
+    lg('s','Capture failed: '+e.message,'e');st('s','er','Permission denied');
+    btn.disabled=false;btn.textContent='▶ Start Sharing';return;
   }
-  if (currentCall) { currentCall.close(); currentCall = null; }
-  if (myPeer) { myPeer.destroy(); myPeer = null; }
+  myCode=gc();
+  document.getElementById('scode').textContent=myCode;
+  const vid=document.getElementById('sv');
+  vid.srcObject=localStream;
+  document.getElementById('svo').style.display='none';
+  lg('s','Screen captured ✓','ok');
+  localStream.getVideoTracks()[0].addEventListener('ended',stopShare);
 
-  const preview = document.getElementById('share-preview');
-  preview.srcObject = null;
-  document.getElementById('share-overlay').style.display = 'flex';
-  setStatus('share', '', 'Stopped.');
-  log('share', 'Sharing stopped.', 'error');
+  pc=new RTCPeerConnection(ICE);
+  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
 
-  const btn = document.getElementById('btn-start-share');
-  btn.disabled = false;
-  btn.textContent = '▶ Start Sharing';
-  document.getElementById('btn-stop-share').disabled = true;
-}
+  let iceBuf=[];
+  pc.onicecandidate=({candidate})=>{if(candidate)iceBuf.push(candidate.toJSON());};
+  pc.oniceconnectionstatechange=()=>{
+    const s=pc.iceConnectionState;
+    lg('s','ICE: '+s,s==='connected'||s==='completed'?'ok':s==='failed'?'e':'i');
+    if(s==='connected'||s==='completed'){st('s','on','Streaming ✓');clearInterval(pollTimer);}
+    if(s==='failed'||s==='disconnected')st('s','er','Viewer disconnected');
+  };
 
-// ===== VIEWER =====
-function joinRoom() {
-  loadPeerJS(() => {
-    const code = document.getElementById('view-room-input').value.trim().toUpperCase();
-    if (code.length < 4) { alert('Please enter a valid room code.'); return; }
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
 
-    if (myPeer) { myPeer.destroy(); myPeer = null; }
-    setStatus('view', 'connecting', 'Connecting to room ' + code + '...');
-    log('view', 'Connecting to room: ' + code, 'info');
-
-    myPeer = new Peer({ debug: 0, config: STUN_SERVERS });
-
-    myPeer.on('open', (id) => {
-      log('view', 'Our peer ID: ' + id, 'info');
-      log('view', 'Calling sharer...', 'info');
-
-      const call = myPeer.call(code, getDummyStream());
-      currentCall = call;
-
-      call.on('stream', (remoteStream) => {
-        log('view', 'Receiving stream!', 'success');
-        setStatus('view', 'connected', 'Connected — receiving screen');
-        const video = document.getElementById('view-screen');
-        video.srcObject = remoteStream;
-        document.getElementById('view-overlay').style.display = 'none';
-        document.getElementById('btn-disconnect').disabled = false;
-      });
-
-      call.on('close', () => {
-        log('view', 'Stream ended.', 'error');
-        setStatus('view', '', 'Stream ended');
-        document.getElementById('view-screen').srcObject = null;
-        document.getElementById('view-overlay').style.display = 'flex';
-      });
-
-      call.on('error', (err) => {
-        log('view', 'Call error: ' + err, 'error');
-      });
-    });
-
-    myPeer.on('error', (err) => {
-      log('view', 'Error: ' + err.message, 'error');
-      setStatus('view', 'error', 'Could not connect — is the room code correct?');
-    });
+  st('s','sp','Gathering ICE…');lg('s','Gathering connection info (up to 4s)…','i');
+  await new Promise(r=>{
+    if(pc.iceGatheringState==='complete'){r();return;}
+    pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState==='complete')r();};
+    setTimeout(r,4000);
   });
+
+  const payload=enc({offer:{sdp:pc.localDescription.sdp,type:pc.localDescription.type},ice:iceBuf});
+  lg('s','Publishing room '+myCode+'…','i');st('s','sp','Publishing…');
+
+  try{
+    const r=await fetch(`${NTFY}/screenshare-offer-${myCode}`,{method:'POST',body:payload,headers:{'Content-Type':'text/plain','Title':'offer'}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    lg('s','Room live! Code: '+myCode,'ok');
+    st('s','sp','Waiting for viewer…');
+    document.getElementById('bstop').disabled=false;
+    btn.textContent='🔴 Live';
+  }catch(e){
+    lg('s','Publish failed: '+e.message+'. ntfy.sh may be blocked on your network.','e');
+    st('s','er','Signaling failed');btn.disabled=false;btn.textContent='▶ Start Sharing';return;
+  }
+
+  // Poll for viewer answer
+  let lastId='';
+  pollTimer=setInterval(async()=>{
+    if(!pc)return;
+    try{
+      const r=await fetch(`${NTFY}/screenshare-answer-${myCode}/json?poll=1&since=10m`,{headers:{Accept:'application/json'}});
+      const text=await r.text();
+      const lines=text.trim().split('\n').filter(Boolean);
+      if(!lines.length)return;
+      const last=JSON.parse(lines[lines.length-1]);
+      if(last.id===lastId)return;
+      lastId=last.id;
+      const data=dec(last.message);
+      if(!data?.answer)return;
+      clearInterval(pollTimer);
+      if(pc.signalingState!=='have-local-offer')return;
+      await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      lg('s','Viewer answered! Connecting…','ok');
+      for(const c of(data.ice||[])){try{await pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}}
+    }catch(e){}
+  },2500);
 }
 
-function getDummyStream() {
-  // We need to send something to initiate the call — send a silent audio stream
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const dest = ctx.createMediaStreamDestination();
-  const osc = ctx.createOscillator();
-  osc.connect(dest);
-  osc.start();
-  return dest.stream;
+async function stopShare(){
+  clearInterval(pollTimer);
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+  if(pc){pc.close();pc=null;}
+  document.getElementById('sv').srcObject=null;
+  document.getElementById('svo').style.display='flex';
+  st('s','','Stopped');lg('s','Stopped.','e');
+  const btn=document.getElementById('bstart');btn.disabled=false;btn.textContent='▶ Start Sharing';
+  document.getElementById('bstop').disabled=true;
 }
 
-function disconnectView() {
-  if (currentCall) { currentCall.close(); currentCall = null; }
-  if (myPeer) { myPeer.destroy(); myPeer = null; }
-  document.getElementById('view-screen').srcObject = null;
-  document.getElementById('view-overlay').style.display = 'flex';
-  setStatus('view', '', 'Disconnected');
-  log('view', 'Disconnected.', 'error');
-  document.getElementById('btn-disconnect').disabled = true;
-}
+// ---- VIEWER ----
+async function joinRoom(){
+  const code=document.getElementById('vc').value.trim().toUpperCase();
+  if(code.length<4){alert('Enter the room code from the sharing device.');return;}
+  viewDisc();
+  st('v','sp','Fetching offer for '+code+'…');lg('v','Connecting to room: '+code,'i');
 
-function toggleFullscreen() {
-  const video = document.getElementById('view-screen');
-  if (!document.fullscreenElement) {
-    video.requestFullscreen?.() || video.webkitRequestFullscreen?.();
-  } else {
-    document.exitFullscreen?.();
+  let offerData;
+  try{
+    const r=await fetch(`${NTFY}/screenshare-offer-${code}/json?poll=1&since=15m`,{headers:{Accept:'application/json'}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const text=await r.text();
+    const lines=text.trim().split('\n').filter(Boolean);
+    if(!lines.length)throw new Error('Room not found. Is the sharer live?');
+    const last=JSON.parse(lines[lines.length-1]);
+    offerData=dec(last.message);
+  }catch(e){
+    lg('v','Error: '+e.message,'e');st('v','er','Room not found — check the code');return;
+  }
+
+  if(!offerData?.offer){lg('v','Invalid offer data','e');return;}
+  lg('v','Offer received ✓','ok');
+
+  pc=new RTCPeerConnection(ICE);
+  let iceBuf=[];
+  pc.onicecandidate=({candidate})=>{if(candidate)iceBuf.push(candidate.toJSON());};
+  pc.ontrack=({streams})=>{
+    const v=document.getElementById('vv');v.srcObject=streams[0];
+    document.getElementById('vvo').style.display='none';
+    st('v','on','Connected ✓');lg('v','Receiving stream! ✓','ok');
+    document.getElementById('bdisc').disabled=false;
+  };
+  pc.oniceconnectionstatechange=()=>{
+    const s=pc.iceConnectionState;
+    lg('v','ICE: '+s,s==='connected'||s==='completed'?'ok':s==='failed'?'e':'i');
+    if(s==='failed')st('v','er','Connection failed — retry');
+    if(s==='disconnected')st('v','er','Stream ended');
+  };
+
+  await pc.setRemoteDescription(new RTCSessionDescription(offerData.offer));
+  for(const c of(offerData.ice||[])){try{await pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}}
+
+  const answer=await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+
+  st('v','sp','Gathering ICE…');
+  await new Promise(r=>{
+    if(pc.iceGatheringState==='complete'){r();return;}
+    pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState==='complete')r();};
+    setTimeout(r,4000);
+  });
+
+  const payload=enc({answer:{sdp:pc.localDescription.sdp,type:pc.localDescription.type},ice:iceBuf});
+  try{
+    const r=await fetch(`${NTFY}/screenshare-answer-${code}`,{method:'POST',body:payload,headers:{'Content-Type':'text/plain'}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    lg('v','Answer sent. Handshaking…','i');st('v','sp','Connecting…');
+  }catch(e){
+    lg('v','Failed to send answer: '+e.message,'e');st('v','er','Signaling failed');
   }
 }
+
+function viewDisc(){
+  if(pc){pc.close();pc=null;}
+  document.getElementById('vv').srcObject=null;
+  document.getElementById('vvo').style.display='flex';
+  document.getElementById('bdisc').disabled=true;
+  st('v','','Disconnected');
+}
+
+// ---- Util ----
+function cp(){
+  const code=document.getElementById('scode').textContent;
+  navigator.clipboard?.writeText(code)
+    .then(()=>{const b=document.querySelector('#ps .bg');b.textContent='✓ Copied!';setTimeout(()=>b.textContent='📋 Copy',2000);})
+    .catch(()=>prompt('Your room code:',code));
+}
+function sw(t){
+  ['s','v'].forEach(x=>{
+    document.getElementById('t'+x).classList.toggle('on',x===t);
+    document.getElementById('p'+x).classList.toggle('on',x===t);
+  });
+}
+function fscr(){
+  const v=document.getElementById('vv');
+  (v.requestFullscreen||v.webkitRequestFullscreen||v.mozRequestFullScreen)?.call(v);
+}
+
+lg('s','Ready. Tap Start Sharing once the viewer has this page open.','i');
+lg('v','Ready. Enter the room code shown on the sharing device.','i');
 </script>
 </body>
 </html>
