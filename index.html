@@ -5,146 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Arrow Keypad</title>
+<title>Subway Surfers Keys</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
-    font-family: 'JetBrains Mono', monospace;
-    background: #0a0a0a;
+    background: #0d0d0d;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #e0e0e0;
-    overflow: hidden;
     touch-action: none;
+    overflow: hidden;
+    font-family: -apple-system, sans-serif;
   }
 
-  /* Grid background */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255,140,0,0.08) 0%, transparent 70%),
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: auto, 44px 44px, 44px 44px;
     pointer-events: none;
   }
 
-  .instructions {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: rgba(255,255,255,0.08);
-    font-size: 13px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    line-height: 2;
-    pointer-events: none;
-    user-select: none;
-  }
-
-  /* The floating pad */
   #pad {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(20, 20, 20, 0.92);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 20px;
-    padding: 16px;
-    width: 176px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    cursor: grab;
-    user-select: none;
+    background: rgba(18,18,18,0.97);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 28px;
+    padding: 20px;
+    width: 280px;
     touch-action: none;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.04),
-      0 24px 48px rgba(0,0,0,0.6),
-      inset 0 1px 0 rgba(255,255,255,0.08);
+    user-select: none;
+    box-shadow: 0 32px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.07);
+    transition: box-shadow 0.15s;
   }
 
   #pad.dragging {
-    cursor: grabbing;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.06),
-      0 40px 80px rgba(0,0,0,0.8),
-      inset 0 1px 0 rgba(255,255,255,0.1);
-    transform: scale(1.04);
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    box-shadow: 0 52px 80px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.1);
   }
 
   .pad-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    margin-bottom: 18px;
+    cursor: grab;
   }
+
+  #pad.dragging .pad-header { cursor: grabbing; }
 
   .pad-title {
-    font-size: 10px;
-    letter-spacing: 0.15em;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,140,0,0.7);
   }
 
-  .drag-handle {
-    display: flex;
+  .dots {
+    display: grid;
+    grid-template-columns: repeat(3, 5px);
+    grid-template-rows: repeat(2, 5px);
     gap: 3px;
-    align-items: center;
+    cursor: grab;
   }
-
-  .drag-handle span {
-    width: 3px;
-    height: 3px;
+  .dots span {
+    width: 5px; height: 5px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.15);
   }
 
   .key-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    gap: 10px;
   }
 
   .key {
     -webkit-appearance: none;
     appearance: none;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    background: rgba(255,255,255,0.05);
-    color: #e0e0e0;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.06);
+    color: #fff;
     font-family: inherit;
-    font-size: 22px;
     width: 100%;
     aspect-ratio: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     cursor: pointer;
-    transition: background 0.1s, transform 0.08s, border-color 0.1s;
+    touch-action: manipulation;
+    transition: background 0.08s, transform 0.08s, border-color 0.08s;
     position: relative;
     overflow: hidden;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
   }
 
-  .key:active,
-  .key.pressed {
-    background: rgba(255,255,255,0.15);
-    border-color: rgba(255,255,255,0.25);
-    transform: scale(0.91);
+  .key::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at center, rgba(255,140,0,0.3) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .key:active, .key.pressed {
+    background: rgba(255,140,0,0.18);
+    border-color: rgba(255,140,0,0.5);
+    transform: scale(0.88);
+  }
+
+  .key:active::after, .key.pressed::after {
+    opacity: 1;
   }
 
   .key.empty {
@@ -154,238 +139,229 @@
   }
 
   .key svg {
-    width: 22px;
-    height: 22px;
-    stroke: currentColor;
-    stroke-width: 2;
+    width: 36px;
+    height: 36px;
+    stroke: rgba(255,255,255,0.85);
+    stroke-width: 2.2;
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
     pointer-events: none;
+    transition: stroke 0.08s;
   }
 
-  .key-center svg {
-    width: 14px;
-    height: 14px;
-    fill: rgba(255,255,255,0.4);
-    stroke: none;
+  .key:active svg, .key.pressed svg {
+    stroke: #ff8c00;
+  }
+
+  .key-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    pointer-events: none;
+    transition: color 0.08s;
+    line-height: 1;
+  }
+
+  .key:active .key-label, .key.pressed .key-label {
+    color: rgba(255,140,0,0.8);
+  }
+
+  /* Special up/down bigger emphasis */
+  #btn-up { border-color: rgba(255,140,0,0.2); }
+  #btn-down { border-color: rgba(100,180,255,0.2); }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 18px 0;
   }
 
   .feedback {
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.07);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.25);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.2);
     text-align: center;
     text-transform: uppercase;
-    height: 18px;
+    height: 16px;
     transition: color 0.2s;
   }
 
-  .feedback.active {
-    color: rgba(255,255,255,0.6);
-  }
+  .feedback.active { color: rgba(255,140,0,0.7); }
 
-  /* Bookmarklet section */
-  .bookmarklet-box {
+  .tip {
     position: fixed;
-    bottom: 32px;
+    bottom: 28px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(20,20,20,0.85);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 14px 18px;
-    width: min(340px, 90vw);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    text-align: center;
-  }
-
-  .bookmarklet-box p {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.35);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-
-  .bookmarklet-box strong {
-    font-weight: 600;
-    color: rgba(255,255,255,0.6);
-  }
-
-  .steps {
     font-size: 12px;
-    color: rgba(255,255,255,0.4);
-    line-height: 1.9;
-    text-align: left;
-    list-style: none;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.08em;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
   }
 
-  .steps li::before {
-    content: attr(data-n) '. ';
-    color: rgba(255,255,255,0.2);
-  }
+  .tip strong { color: rgba(255,255,255,0.4); }
 </style>
 </head>
 <body>
 
-<div class="instructions">
-  drag the keypad<br>anywhere on screen
-</div>
-
-<!-- Floating keypad -->
 <div id="pad">
-  <div class="pad-header">
-    <span class="pad-title">Keys</span>
-    <div class="drag-handle">
-      <span></span><span></span><span></span><span></span><span></span><span></span>
+  <div class="pad-header" id="drag-handle">
+    <span class="pad-title">⚡ Subway Keys</span>
+    <div class="dots">
+      <span></span><span></span><span></span>
+      <span></span><span></span><span></span>
     </div>
   </div>
 
   <div class="key-grid">
-    <!-- Row 1: empty, up, empty -->
+    <!-- Row 1 -->
     <div class="key empty"></div>
-    <button class="key" id="btn-up" data-key="ArrowUp" aria-label="Up">
+    <button class="key" id="btn-up" data-key="ArrowUp" aria-label="Jump">
       <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+      <span class="key-label">Jump</span>
     </button>
     <div class="key empty"></div>
 
-    <!-- Row 2: left, center, right -->
+    <!-- Row 2 -->
     <button class="key" id="btn-left" data-key="ArrowLeft" aria-label="Left">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      <span class="key-label">Left</span>
     </button>
-    <button class="key key-center" id="btn-center" data-key="Enter" aria-label="Enter">
-      <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"/></svg>
-    </button>
+    <div class="key empty"></div>
     <button class="key" id="btn-right" data-key="ArrowRight" aria-label="Right">
       <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      <span class="key-label">Right</span>
     </button>
 
-    <!-- Row 3: empty, down, empty -->
+    <!-- Row 3 -->
     <div class="key empty"></div>
-    <button class="key" id="btn-down" data-key="ArrowDown" aria-label="Down">
+    <button class="key" id="btn-down" data-key="ArrowDown" aria-label="Roll">
       <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      <span class="key-label">Roll</span>
     </button>
     <div class="key empty"></div>
   </div>
 
-  <div class="feedback" id="feedback">tap a key</div>
+  <div class="divider"></div>
+  <div class="feedback" id="feedback">ready</div>
 </div>
 
-<!-- How to use on any website -->
-<div class="bookmarklet-box">
-  <p><strong>How to use on any website</strong></p>
-  <ol class="steps">
-    <li data-n="1">Open this file in Safari</li>
-    <li data-n="2">Tap Share → <strong>Add to Home Screen</strong></li>
-    <li data-n="3">Open it from your home screen — it'll open as a full app window</li>
-    <li data-n="4">Use iPad Split View or Slide Over to float it alongside any app</li>
-  </ol>
-</div>
+<div class="tip">Drag pad anywhere &nbsp;·&nbsp; <strong>Slide Over</strong> to float over Subway Surfers</div>
 
 <script>
   const pad = document.getElementById('pad');
   const feedback = document.getElementById('feedback');
+  const handle = document.getElementById('drag-handle');
   let feedbackTimer;
 
-  // ── Drag (mouse + touch) ──────────────────────────────
-  let dragging = false;
-  let startX, startY, padLeft, padTop;
+  // ── Drag ──────────────────────────────────────────────
+  let dragging = false, ox = 0, oy = 0;
 
-  function getPos(e) {
-    return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
-                     : { x: e.clientX, y: e.clientY };
+  function getXY(e) {
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX, y: src.clientY };
   }
-
-  pad.addEventListener('mousedown', startDrag);
-  pad.addEventListener('touchstart', startDrag, { passive: false });
 
   function startDrag(e) {
-    if (e.target.closest('button')) return;
-    e.preventDefault();
     dragging = true;
     pad.classList.add('dragging');
-
-    const pos = getPos(e);
-    const rect = pad.getBoundingClientRect();
-    startX = pos.x - rect.left;
-    startY = pos.y - rect.top;
-    padLeft = rect.left;
-    padTop  = rect.top;
-
+    const { x, y } = getXY(e);
+    const r = pad.getBoundingClientRect();
+    ox = x - r.left;
+    oy = y - r.top;
     pad.style.transform = 'none';
-    pad.style.left = padLeft + 'px';
-    pad.style.top  = padTop  + 'px';
+    pad.style.left = r.left + 'px';
+    pad.style.top  = r.top  + 'px';
+    e.preventDefault();
   }
 
-  document.addEventListener('mousemove', onDrag);
-  document.addEventListener('touchmove', onDrag, { passive: false });
+  handle.addEventListener('mousedown',  startDrag);
+  handle.addEventListener('touchstart', startDrag, { passive: false });
 
-  function onDrag(e) {
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    move(getXY(e));
+  });
+  document.addEventListener('touchmove', e => {
     if (!dragging) return;
     e.preventDefault();
-    const pos = getPos(e);
+    move(getXY(e));
+  }, { passive: false });
+
+  function move({ x, y }) {
     const vw = window.innerWidth, vh = window.innerHeight;
-    const w = pad.offsetWidth, h = pad.offsetHeight;
-    let nx = pos.x - startX;
-    let ny = pos.y - startY;
-    nx = Math.max(0, Math.min(nx, vw - w));
-    ny = Math.max(0, Math.min(ny, vh - h));
-    pad.style.left = nx + 'px';
-    pad.style.top  = ny + 'px';
+    const w = pad.offsetWidth,   h  = pad.offsetHeight;
+    pad.style.left = Math.max(0, Math.min(x - ox, vw - w)) + 'px';
+    pad.style.top  = Math.max(0, Math.min(y - oy, vh - h)) + 'px';
   }
 
-  document.addEventListener('mouseup',  endDrag);
-  document.addEventListener('touchend', endDrag);
-
-  function endDrag() {
-    if (!dragging) return;
-    dragging = false;
-    pad.classList.remove('dragging');
-  }
+  document.addEventListener('mouseup',  () => { dragging = false; pad.classList.remove('dragging'); });
+  document.addEventListener('touchend', () => { dragging = false; pad.classList.remove('dragging'); });
 
   // ── Key press ─────────────────────────────────────────
-  const keyLabels = {
-    ArrowUp: '↑  UP',
-    ArrowDown: '↓  DOWN',
-    ArrowLeft: '←  LEFT',
-    ArrowRight: '→  RIGHT',
-    Enter: '·  ENTER'
+  const labels = {
+    ArrowUp:    '↑  JUMP',
+    ArrowDown:  '↓  ROLL',
+    ArrowLeft:  '←  LEFT',
+    ArrowRight: '→  RIGHT'
   };
 
   document.querySelectorAll('.key[data-key]').forEach(btn => {
-    btn.addEventListener('pointerdown', e => {
-      e.stopPropagation();
-    });
+    // prevent drag from firing on buttons
+    btn.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+    btn.addEventListener('mousedown',  e => e.stopPropagation());
 
-    btn.addEventListener('click', () => {
+    function fire() {
       const key = btn.dataset.key;
-      // Show feedback
-      feedback.textContent = keyLabels[key] || key;
+
+      // Visual feedback
+      feedback.textContent = labels[key] || key;
       feedback.classList.add('active');
       clearTimeout(feedbackTimer);
       feedbackTimer = setTimeout(() => {
-        feedback.textContent = 'tap a key';
+        feedback.textContent = 'ready';
         feedback.classList.remove('active');
-      }, 1200);
+      }, 600);
 
-      // Flash button
       btn.classList.add('pressed');
-      setTimeout(() => btn.classList.remove('pressed'), 150);
+      setTimeout(() => btn.classList.remove('pressed'), 140);
 
-      // Dispatch real keyboard event to the parent page
+      // Fire keydown + keyup to the document (works in same-origin context)
+      const opts = { key, code: key, keyCode: keyCode(key), which: keyCode(key), bubbles: true, cancelable: true };
       try {
-        window.top.document.dispatchEvent(new KeyboardEvent('keydown', {
-          key, code: key, bubbles: true, cancelable: true
-        }));
-      } catch(err) {
-        // cross-origin blocked — normal when embedded on other sites
-      }
-    });
+        document.dispatchEvent(new KeyboardEvent('keydown', opts));
+        setTimeout(() => document.dispatchEvent(new KeyboardEvent('keyup', opts)), 80);
+      } catch(e) {}
+
+      // Also try firing on window and body for maximum compatibility
+      try {
+        window.dispatchEvent(new KeyboardEvent('keydown', opts));
+        window.dispatchEvent(new KeyboardEvent('keyup',   opts));
+      } catch(e) {}
+    }
+
+    btn.addEventListener('touchstart', fire, { passive: true });
+    btn.addEventListener('click', fire);
+  });
+
+  function keyCode(key) {
+    return { ArrowUp: 38, ArrowDown: 40, ArrowLeft: 37, ArrowRight: 39 }[key] || 0;
+  }
+
+  // ── Physical keyboard also works ──────────────────────
+  document.addEventListener('keydown', e => {
+    const btn = document.querySelector(`.key[data-key="${e.key}"]`);
+    if (btn) { btn.classList.add('pressed'); feedback.textContent = labels[e.key]; feedback.classList.add('active'); }
+  });
+  document.addEventListener('keyup', e => {
+    const btn = document.querySelector(`.key[data-key="${e.key}"]`);
+    if (btn) { btn.classList.remove('pressed'); clearTimeout(feedbackTimer); feedbackTimer = setTimeout(() => { feedback.textContent = 'ready'; feedback.classList.remove('active'); }, 400); }
   });
 </script>
 </body>
