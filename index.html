@@ -1,674 +1,1289 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Maze Runner: Glade & The Maze</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Courier New', monospace;
-            touch-action: none; /* Improves touch control on mobile */
-        }
-        /* UI Overlay */
-        #ui {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            pointer-events: none;
-        }
-        .status-bar {
-            background: rgba(0,0,0,0.7);
-            color: #ffd966;
-            padding: 8px 12px;
-            border-radius: 20px;
-            backdrop-filter: blur(5px);
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px;
-            pointer-events: auto;
-        }
-        .status-item {
-            background: #2c2c2c;
-            padding: 4px 12px;
-            border-radius: 16px;
-            color: #f5c542;
-        }
-        .camp-resources {
-            display: flex;
-            gap: 15px;
-            background: rgba(0,0,0,0.6);
-            padding: 5px 12px;
-            border-radius: 20px;
-        }
-        #message-area {
-            background: rgba(0,0,0,0.8);
-            color: #ffaa44;
-            padding: 8px;
-            margin-top: 5px;
-            border-radius: 12px;
-            font-size: 12px;
-            text-align: center;
-            pointer-events: none;
-            max-width: 90%;
-        }
-        .map-panel {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.75);
-            border-radius: 16px;
-            padding: 12px;
-            width: 140px;
-            backdrop-filter: blur(8px);
-            border: 1px solid #c9a03d;
-            pointer-events: auto;
-            font-size: 10px;
-            color: #eee;
-            text-align: center;
-            z-index: 200;
-        }
-        .map-panel h4 {
-            margin: 0 0 5px;
-            font-size: 12px;
-            color: #ffbb66;
-        }
-        .map-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 3px;
-            background: #1e2a1a;
-            padding: 6px;
-            border-radius: 8px;
-        }
-        .map-cell {
-            aspect-ratio: 1 / 1;
-            background: #3a2a1a;
-            border-radius: 2px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #bda46b;
-        }
-        .map-cell.discovered {
-            background: #5f7a3c;
-            color: #ffeaac;
-            box-shadow: 0 0 4px gold;
-        }
-        .map-cell.current {
-            background: #e09d32;
-            color: black;
-            font-weight: bold;
-        }
-        .action-buttons {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            display: flex;
-            gap: 12px;
-            pointer-events: auto;
-            z-index: 150;
-        }
-        .action-btn {
-            background: #3a2a1f;
-            border: none;
-            color: #f7d44a;
-            padding: 12px 18px;
-            border-radius: 40px;
-            font-weight: bold;
-            font-size: 16px;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 4px 12px black;
-            transition: 0.1s linear;
-            cursor: pointer;
-            touch-action: manipulation;
-        }
-        .action-btn:active {
-            transform: scale(0.96);
-            background: #1e3a1e;
-        }
-        #night-warning {
-            background: #aa2e1e;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-        @media (max-width: 700px) {
-            .action-btn { padding: 8px 14px; font-size: 12px; }
-            .map-panel { width: 110px; padding: 6px; }
-            .status-bar { font-size: 10px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>THE GLADE · Maze Runner</title>
+<style>
+  :root{
+    --ivy:#3a5a40; --ivy-dark:#1b2a1f; --stone:#7d8471; --stone-dark:#4a4f42;
+    --amber:#e9c46a; --blood:#9b2226; --bone:#e7dfca; --night:#0a0e14;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;touch-action:none;}
+  #game{position:fixed;inset:0;}
+  canvas{display:block;}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;}
+  .panel{position:absolute;background:rgba(10,14,12,.62);backdrop-filter:blur(6px);
+    border:1px solid rgba(231,223,202,.25);border-radius:14px;color:var(--bone);
+    padding:10px 14px;font-size:13px;line-height:1.45;box-shadow:0 6px 24px rgba(0,0,0,.5);}
+
+  #clock{top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translateX(-50%);
+    text-align:center;min-width:168px;}
+  #phase{font-size:20px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;}
+  #timer{font-size:13px;opacity:.85;margin-top:2px;}
+  #dayCount{font-size:11px;opacity:.6;margin-top:2px;letter-spacing:1px;}
+  .bar{height:7px;border-radius:4px;background:rgba(255,255,255,.12);margin-top:7px;overflow:hidden;}
+  .bar>span{display:block;height:100%;border-radius:4px;transition:width .25s;}
+
+  /* Minecraft-style health hearts */
+  #hearts{position:fixed;top:calc(env(safe-area-inset-top) + 14px);left:14px;z-index:11;
+    display:flex;gap:3px;flex-wrap:wrap;max-width:220px;}
+  .heart{width:24px;height:24px;position:relative;filter:drop-shadow(1.5px 1.5px 0 rgba(0,0,0,.6));}
+  .heart svg{width:100%;height:100%;display:block;}
+
+  /* Minecraft-style hotbar at bottom-center */
+  #hotbar{position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(env(safe-area-inset-bottom) + 14px);z-index:11;display:flex;gap:5px;
+    padding:5px;background:rgba(10,14,12,.55);border:2px solid rgba(0,0,0,.55);
+    border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,255,255,.06);pointer-events:none;}
+  .slot{position:relative;width:52px;height:52px;border-radius:4px;
+    background:linear-gradient(160deg,rgba(60,65,55,.85),rgba(28,32,26,.9));
+    border:2px solid rgba(0,0,0,.5);box-shadow:inset 2px 2px 0 rgba(255,255,255,.12),inset -2px -2px 0 rgba(0,0,0,.35);
+    display:flex;align-items:center;justify-content:center;}
+  .slotIcon{font-size:26px;filter:drop-shadow(1px 1px 1px rgba(0,0,0,.6));}
+  .slotCount{position:absolute;right:3px;bottom:1px;font-size:13px;font-weight:bold;color:#fff;
+    text-shadow:1.5px 1.5px 0 #000;font-family:'Trebuchet MS',monospace;}
+
+  /* ---------- joystick ---------- */
+  #joy{position:fixed;left:24px;bottom:calc(env(safe-area-inset-bottom) + 28px);
+    width:128px;height:128px;border-radius:50%;z-index:12;pointer-events:auto;
+    background:radial-gradient(circle,rgba(231,223,202,.10),rgba(231,223,202,.03));
+    border:2px solid rgba(231,223,202,.28);touch-action:none;}
+  #stick{position:absolute;left:50%;top:50%;width:54px;height:54px;border-radius:50%;
+    transform:translate(-50%,-50%);background:radial-gradient(circle,var(--bone),var(--stone));
+    border:2px solid rgba(0,0,0,.3);box-shadow:0 4px 12px rgba(0,0,0,.5);}
+
+  /* ---------- look pad (right) handled on canvas, but action buttons here ---------- */
+  #actions{position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom) + 28px);
+    z-index:12;display:flex;flex-direction:column;gap:12px;align-items:flex-end;pointer-events:none;}
+  .btn{pointer-events:auto;width:70px;height:70px;border-radius:50%;border:2px solid rgba(231,223,202,.3);
+    background:rgba(10,14,12,.55);color:var(--bone);font-size:11px;font-weight:bold;letter-spacing:.5px;
+    text-transform:uppercase;display:flex;align-items:center;justify-content:center;text-align:center;
+    backdrop-filter:blur(4px);box-shadow:0 4px 14px rgba(0,0,0,.5);transition:transform .08s,background .15s;}
+  .btn:active{transform:scale(.9);background:var(--ivy);}
+  #btnRun{width:58px;height:58px;font-size:10px;}
+  #btnAct{background:rgba(58,90,64,.7);border-color:var(--amber);}
+  #btnAct.hot{animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(233,196,106,.5);}50%{box-shadow:0 0 0 12px rgba(233,196,106,0);}}
+
+  /* ---------- map ---------- */
+  #mapBtn{font-size:24px;}
+  #mapOverlay{position:fixed;inset:0;z-index:30;background:rgba(5,8,6,.92);display:none;
+    flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+  #mapOverlay h2{color:var(--amber);letter-spacing:4px;margin-bottom:14px;font-size:20px;text-transform:uppercase;}
+  #mapCanvas{border:2px solid rgba(231,223,202,.3);border-radius:8px;background:#0d120e;max-width:90vw;max-height:64vh;}
+  #mapClose{margin-top:18px;pointer-events:auto;}
+  #mapHint{color:var(--bone);opacity:.6;font-size:12px;margin-top:10px;text-align:center;max-width:80vw;}
+
+  /* ---------- toast ---------- */
+  #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 180px);transform:translateX(-50%);
+    z-index:25;background:rgba(10,14,12,.85);color:var(--bone);padding:10px 18px;border-radius:30px;
+    border:1px solid rgba(231,223,202,.3);font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;
+    max-width:80vw;text-align:center;}
+  #toast.show{opacity:1;}
+
+  /* ---------- start / death ---------- */
+  .screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:30px;
+    background:radial-gradient(ellipse at center,#15201a,#05080696);}
+  .screen h1{font-size:clamp(34px,11vw,72px);letter-spacing:6px;color:var(--bone);
+    text-shadow:0 0 30px rgba(58,90,64,.8);margin-bottom:6px;line-height:.95;}
+  .screen .sub{color:var(--amber);letter-spacing:5px;font-size:13px;text-transform:uppercase;margin-bottom:24px;}
+  .screen p{color:var(--bone);opacity:.8;font-size:14px;line-height:1.7;max-width:440px;margin-bottom:8px;}
+  .screen .big{pointer-events:auto;margin-top:26px;padding:16px 46px;font-size:18px;letter-spacing:3px;
+    text-transform:uppercase;background:var(--ivy);color:var(--bone);border:2px solid var(--amber);
+    border-radius:40px;box-shadow:0 8px 30px rgba(0,0,0,.6);font-weight:bold;cursor:pointer;}
+  .screen .big:active{transform:scale(.96);}
+  #death{display:none;background:radial-gradient(ellipse at center,#2a0a0a,#05080699);}
+  #death h1{color:var(--blood);text-shadow:0 0 30px rgba(155,34,38,.9);}
+  .vignette{position:fixed;inset:0;z-index:8;pointer-events:none;
+    box-shadow:inset 0 0 200px 40px rgba(0,0,0,.55);}
+  #nightTint{position:fixed;inset:0;z-index:7;pointer-events:none;background:#04060c;opacity:0;transition:opacity 2s;}
+  #dmgFlash{position:fixed;inset:0;z-index:9;pointer-events:none;background:radial-gradient(ellipse,transparent 40%,rgba(155,34,38,.6));opacity:0;transition:opacity .15s;}
+  .loadwrap{color:var(--bone);letter-spacing:3px;}
+</style>
 </head>
 <body>
-    <div id="ui">
-        <div class="status-bar">
-            <div>🌞 DAY/NIGHT: <span id="time-status">DAY</span> | ⏱️ <span id="timer">5:00</span></div>
-            <div class="camp-resources">
-                <span>🍎 Food: <span id="food-count">5</span></span>
-                <span>💧 Water: <span id="water-count">3</span><span style="font-size:10px">/day</span></span>
-            </div>
-            <div>🚪 Maze Door: <span id="door-status">OPEN</span></div>
-        </div>
-        <div id="message-area">🌿 Welcome, Glader! Explore camp, grow food. Maze open in daytime. Night = monsters & maze changes!</div>
-    </div>
-    <div class="map-panel" id="mapPanel">
-        <h4>🗺️ DISCOVERED MAZE</h4>
-        <div class="map-grid" id="mapGrid"></div>
-        <div style="font-size:8px; margin-top:4px;">⬆️ forward = reveal</div>
-    </div>
-    <div class="action-buttons">
-        <button class="action-btn" id="harvestBtn">🌾 Harvest Plant</button>
-        <button class="action-btn" id="waterBtn">💧 Get Water</button>
-        <button class="action-btn" id="plantBtn">🌱 Plant Seeds</button>
-    </div>
+<div id="game"></div>
 
-    <!-- Import Three.js core and add-ons -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
-            }
-        }
-    </script>
+<!-- VFX layers -->
+<div class="vignette"></div>
+<div id="nightTint"></div>
+<div id="dmgFlash"></div>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+<!-- HUD -->
+<div id="hud">
+  <div id="clock" class="panel">
+    <div id="phase">DAY</div>
+    <div id="timer">5:00</div>
+    <div id="dayCount">DAY 1</div>
+    <div class="bar"><span id="cycleBar" style="width:100%;background:linear-gradient(90deg,#e9c46a,#f4a261)"></span></div>
+  </div>
 
-        // --- Game Setup ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x071a3b); // night sky default
-        scene.fog = new THREE.FogExp2(0x071a3b, 0.008);
-        
-        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(15, 8, 20);
-        camera.rotation.order = 'YXZ';
-        
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        document.body.appendChild(renderer.domElement);
-        
-        // CSS2 for simple labels
-        const labelRenderer = new CSS2DRenderer();
-        labelRenderer.setSize(window.innerWidth, window.innerHeight);
-        labelRenderer.domElement.style.position = 'absolute';
-        labelRenderer.domElement.style.top = '0px';
-        labelRenderer.domElement.style.left = '0px';
-        labelRenderer.domElement.style.pointerEvents = 'none';
-        document.body.appendChild(labelRenderer.domElement);
-        
-        // Controls with mobile touch support
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.rotateSpeed = 1.0;
-        controls.zoomSpeed = 1.2;
-        controls.panSpeed = 0.8;
-        controls.maxPolarAngle = Math.PI / 2.4;
-        controls.target.set(0, 2, 0);
-        
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404060);
-        scene.add(ambientLight);
-        const sunLight = new THREE.DirectionalLight(0xffdd99, 1.2);
-        sunLight.position.set(30, 25, 10);
-        sunLight.castShadow = true;
-        sunLight.receiveShadow = true;
-        sunLight.shadow.mapSize.width = 1024;
-        scene.add(sunLight);
-        const fillLight = new THREE.PointLight(0x5577aa, 0.4);
-        fillLight.position.set(0, 5, 0);
-        scene.add(fillLight);
-        
-        // Ground plane (camp area)
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x5a7645, roughness: 0.8 });
-        const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -0.2;
-        ground.receiveShadow = true;
-        scene.add(ground);
-        
-        // --- CAMP WALLS (HUGE)
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.4 });
-        function addWall(x, z, rx, rz, w, h, d) {
-            const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
-            wall.position.set(x, h/2, z);
-            wall.receiveShadow = true;
-            wall.castShadow = true;
-            scene.add(wall);
-        }
-        // Outer Camp Walls (square)
-        const campSize = 24;
-        const wallH = 6;
-        addWall(0, -campSize/2, 0,0, campSize, wallH, 1.2);
-        addWall(0, campSize/2, 0,0, campSize, wallH, 1.2);
-        addWall(-campSize/2, 0, 0,0, 1.2, wallH, campSize);
-        addWall(campSize/2, 0, 0,0, 1.2, wallH, campSize);
-        
-        // Maze Door (HUGE) at positive Z side
-        const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(5, 8, 1.5), new THREE.MeshStandardMaterial({ color: 0xbd7a3a, metalness: 0.7 }));
-        doorFrame.position.set(0, 4, campSize/2 - 0.8);
-        scene.add(doorFrame);
-        const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(4.2, 6.8, 0.3), new THREE.MeshStandardMaterial({ color: 0xac8e5a, emissive: 0x221100 }));
-        doorPanel.position.set(0, 3.4, campSize/2 - 0.2);
-        scene.add(doorPanel);
-        let doorOpen = true;
-        const doorClosedPosZ = campSize/2 - 0.2;
-        const doorOpenPosZ = campSize/2 + 1.5;
-        doorPanel.position.z = doorOpenPosZ;
-        
-        // --- Maze Generation (procedural block maze that changes at midnight)
-        const mazeSize = 45; // world extends from -25 to 25 approx
-        const cellSize = 3.2;
-        const mazeGridW = 15;
-        const mazeGridH = 15;
-        let mazeWalls = []; // store wall meshes
-        let currentMazeLayout = []; // 2d boolean (true = wall)
-        
-        function generateMazeLayout(seedOffset = 0) {
-            // simple randomized DFS-based maze with some variation each midnight
-            const width = mazeGridW, height = mazeGridH;
-            let grid = Array(height).fill().map(() => Array(width).fill(true));
-            // make paths: carve
-            const stack = [];
-            const startX = 1, startY = 1;
-            grid[startY][startX] = false;
-            stack.push([startX, startY]);
-            const dirs = [[0, -2],[2,0],[0,2],[-2,0]];
-            while(stack.length) {
-                const [cx, cy] = stack[stack.length-1];
-                const neighbours = [];
-                for(let [dx, dy] of dirs) {
-                    const nx = cx+dx, ny = cy+dy;
-                    if(nx>0 && nx<width-1 && ny>0 && ny<height-1 && grid[ny][nx] === true) neighbours.push([nx, ny, dx/2, dy/2]);
-                }
-                if(neighbours.length) {
-                    const [nx, ny, wx, wy] = neighbours[Math.floor(Math.random() * neighbours.length)];
-                    grid[ny][nx] = false;
-                    grid[cy+wy][cx+wx] = false;
-                    stack.push([nx, ny]);
-                } else stack.pop();
-            }
-            // add extra random walls for variation based on seed (time)
-            for(let i=0;i<40 + seedOffset % 70; i++) {
-                const rx = Math.floor(Math.random() * width);
-                const ry = Math.floor(Math.random() * height);
-                if(!(rx===1 && ry===1) && !(rx===width-2 && ry===height-2) && Math.random()>0.4) grid[ry][rx] = true;
-            }
-            // ensure entrance from camp: portal at grid coords (0,7) -> actual world
-            return grid;
-        }
-        
-        function rebuildMaze(layout) {
-            // remove old walls
-            mazeWalls.forEach(w => scene.remove(w));
-            mazeWalls = [];
-            const wallMatMaze = new THREE.MeshStandardMaterial({ color: 0xa5845e, roughness: 0.3 });
-            const startXOffset = - (mazeGridW * cellSize)/2 + cellSize/2;
-            const startZOffset = campSize/2 + 3; // just beyond door
-            for(let i=0; i<mazeGridH; i++) {
-                for(let j=0; j<mazeGridW; j++) {
-                    if(layout[i][j] === true) {
-                        const w = cellSize;
-                        const h = 4.5;
-                        const d = cellSize;
-                        const x = startXOffset + j * cellSize;
-                        const z = startZOffset + i * cellSize;
-                        const wallBlock = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMatMaze);
-                        wallBlock.position.set(x, h/2, z);
-                        wallBlock.castShadow = true;
-                        wallBlock.receiveShadow = true;
-                        scene.add(wallBlock);
-                        mazeWalls.push(wallBlock);
-                    }
-                }
-            }
-        }
-        
-        // initial maze
-        let currentLayout = generateMazeLayout(0);
-        rebuildMaze(currentLayout);
-        
-        // --- Monsters (simple orb + pursuit)
-        const monsters = [];
-        function createMonster(x, z) {
-            const group = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), new THREE.MeshStandardMaterial({ color: 0xaa3333, emissive: 0x441111 }));
-            body.castShadow = true;
-            const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffaa44 }));
-            eyeL.position.set(-0.3, 0.2, 0.7);
-            const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffaa44 }));
-            eyeR.position.set(0.3, 0.2, 0.7);
-            group.add(body, eyeL, eyeR);
-            group.position.set(x, 0.5, z);
-            scene.add(group);
-            return { mesh: group, speed: 1.8, active: false };
-        }
-        // spawn 4 monsters inside maze region
-        const monsterList = [];
-        for(let i=0;i<5;i++) {
-            const x = (Math.random() - 0.5) * 40 + 10;
-            const z = (Math.random() - 0.5) * 40 + 35;
-            monsterList.push(createMonster(x, z));
-        }
-        
-        // --- Camp resources
-        let food = 5;
-        let water = 3;
-        let waterUsedToday = 0;
-        let dayCounter = 0;
-        let plantedCount = 0; // each plant gives 2-3 food after harvest
-        
-        // Simple plant indicators (CSS2D)
-        const plantLabels = [];
-        function updateResourceUI() {
-            document.getElementById('food-count').innerText = food;
-            document.getElementById('water-count').innerText = water;
-        }
-        
-        // Garden patches
-        const gardenPositions = [[-5, 0.1, -6], [5, 0.1, -5], [0, 0.1, -7], [-3,0.1,-3]];
-        gardenPositions.forEach((pos) => {
-            const patch = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.2, 8), new THREE.MeshStandardMaterial({ color: 0x6b4c3b }));
-            patch.position.set(pos[0], pos[1], pos[2]);
-            patch.receiveShadow = true;
-            scene.add(patch);
-            const div = document.createElement('div');
-            div.textContent = '🌱 Empty';
-            div.style.backgroundColor = 'rgba(0,0,0,0.6)';
-            div.style.color = '#bada55';
-            div.style.padding = '2px 6px';
-            div.style.borderRadius = '12px';
-            div.style.fontSize = '10px';
-            const label = new CSS2DObject(div);
-            label.position.set(pos[0], pos[1]+0.5, pos[2]);
-            scene.add(label);
-            plantLabels.push({ label, pos, hasPlant: false, growTimer: null });
-        });
-        
-        function harvestFromPatch(idx) {
-            const p = plantLabels[idx];
-            if(p.hasPlant) {
-                const yieldAmt = Math.floor(Math.random() * 3) + 2;
-                food += yieldAmt;
-                updateResourceUI();
-                p.hasPlant = false;
-                p.label.element.textContent = '🌱 Empty';
-                showMessage(`+${yieldAmt} food harvested!`);
-                if(p.growTimer) clearTimeout(p.growTimer);
-            } else { showMessage("Nothing to harvest, plant seeds first!"); }
-        }
-        
-        function plantSeed(idx) {
-            const p = plantLabels[idx];
-            if(!p.hasPlant && food >= 2) {
-                food -= 2;
-                updateResourceUI();
-                p.hasPlant = true;
-                p.label.element.textContent = '🌿 Growing...';
-                showMessage("Planted! It will grow in 30 sec.");
-                p.growTimer = setTimeout(() => {
-                    if(p.hasPlant) {
-                        p.label.element.textContent = '🍎 Ready!';
-                        showMessage("Your plant is ready to harvest!");
-                    }
-                }, 30000);
-            } else if(food<2) showMessage("Need 2 food to plant seeds!");
-            else showMessage("Already growing here!");
-        }
-        
-        function getWater() {
-            if(waterUsedToday < 3) {
-                water += 1;
-                waterUsedToday++;
-                updateResourceUI();
-                showMessage(`Watered! (${waterUsedToday}/3 per day)`);
-            } else {
-                showMessage("No more water today! Wait for next day.");
-            }
-        }
-        
-        function showMessage(msg) {
-            const msgDiv = document.getElementById('message-area');
-            msgDiv.innerText = msg;
-            setTimeout(() => {
-                if(document.getElementById('message-area').innerText === msg)
-                    document.getElementById('message-area').innerText = "🌙 Day/Night cycle active.";
-            }, 3000);
-        }
-        
-        // --- Day/Night Cycle (5 min each)
-        let timeRemaining = 300; // seconds (5min)
-        let isDay = true;
-        const timerEl = document.getElementById('timer');
-        const timeStatusEl = document.getElementById('time-status');
-        const doorStatusEl = document.getElementById('door-status');
-        
-        function updateDayNight() {
-            if(isDay) {
-                scene.background.setHex(0x87CEEB);
-                sunLight.intensity = 1.1;
-                ambientLight.intensity = 0.5;
-                fillLight.intensity = 0.3;
-                timeStatusEl.innerText = "🌞 DAY";
-                doorStatusEl.innerText = "OPEN";
-                // open door
-                doorPanel.position.z = doorOpenPosZ;
-                doorOpen = true;
-                // disable monsters aggro
-                monsterList.forEach(m => m.active = false);
-                // show message
-                if(timeRemaining <= 295) showMessage("Maze door open! Enter before night.");
-            } else {
-                scene.background.setHex(0x071a3b);
-                sunLight.intensity = 0.05;
-                ambientLight.intensity = 0.2;
-                fillLight.intensity = 0.6;
-                timeStatusEl.innerText = "🌙 NIGHT";
-                doorStatusEl.innerText = "CLOSED";
-                doorPanel.position.z = doorClosedPosZ;
-                doorOpen = false;
-                // monsters active if player inside maze (check)
-                monsterList.forEach(m => m.active = true);
-                showMessage("⚠️ Night has fallen! Maze door locked. Monsters hunt!");
-            }
-        }
-        
-        let gameClock = setInterval(() => {
-            if(timeRemaining <= 0) {
-                // switch day/night
-                isDay = !isDay;
-                if(isDay) {
-                    timeRemaining = 300;
-                    // reset water usage & maze changes at midnight also happens at start of day? requirement: maze changes at midnight
-                    // Actually midnight = end of night / start of day, change maze layout and then revert next morning. Wait: "MAZE CHANGES AT MIDNIGHT AND THE NEXT MORNING IT GOES BACK"
-                    // So at midnight (end of day? confusing). Let's implement: At the moment night becomes day (midnight) -> maze changes, and then when day ends it reverts? no: "changes at midnight and next morning it goes back"
-                    // simpler: at each midnight (when night transitions to day) generate new maze, when day transitions to night revert to original? But movie-like: changes during night. But I'll do: every midnight (start of day) maze randomizes, then at start of night it reverts? that breaks consistency. 
-                    // Better: At the moment night starts (sunset) maze changes to deadly version, then at dawn reverts. But spec: "maze changes at midnight and next morning it goes back". Since midnight is middle of night, but for gameplay: at start of night we change, at start of day revert.
-                    // adjusting: at start of Night: change maze, at start of Day: revert to original base maze.
-                    if(!isDay) { // entering night
-                        const newLayout = generateMazeLayout(Math.floor(Date.now()/1000));
-                        rebuildMaze(newLayout);
-                        currentLayout = newLayout;
-                    } else { // entering day
-                        const originalLayout = generateMazeLayout(0); // default
-                        rebuildMaze(originalLayout);
-                        currentLayout = originalLayout;
-                    }
-                    waterUsedToday = 0;
-                    updateResourceUI();
-                    showMessage("Morning! Maze reset. Water refilled.");
-                } else {
-                    timeRemaining = 300;
-                }
-                updateDayNight();
-            } else {
-                timeRemaining--;
-            }
-            const mins = Math.floor(timeRemaining / 60);
-            const secs = timeRemaining % 60;
-            timerEl.innerText = `${mins}:${secs < 10 ? '0'+secs : secs}`;
-        }, 1000);
-        
-        updateDayNight();
-        
-        // --- MAP DISCOVERY SYSTEM (Checkpoint forward)
-        const mapSize = 5; // 5x5 grid (represents zones)
-        let discoveredMap = Array(mapSize).fill().map(() => Array(mapSize).fill(false));
-        let playerMapX = 2, playerMapZ = 2; // center camp zone
-        discoveredMap[2][2] = true;
-        
-        function updateMapUI() {
-            const gridDiv = document.getElementById('mapGrid');
-            gridDiv.innerHTML = '';
-            for(let i=0;i<mapSize;i++) {
-                for(let j=0;j<mapSize;j++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'map-cell';
-                    if(discoveredMap[i][j]) cell.classList.add('discovered');
-                    if(playerMapX === j && playerMapZ === i) cell.classList.add('current');
-                    cell.innerText = discoveredMap[i][j] ? '◉' : '?';
-                    gridDiv.appendChild(cell);
-                }
-            }
-        }
-        
-        // detect player position relative to maze/camp: We'll base on camera target or actual position?
-        // simpler: use controls target or camera position to determine "forward progress" into maze
-        let lastForwardZone = 0;
-        function updateDiscoveryByPosition() {
-            const camX = camera.position.x;
-            const camZ = camera.position.z;
-            // maze zone starts beyond door: z > 16
-            let zoneX = 2, zoneZ = 2;
-            if(camZ > 16) { // inside maze
-                const mazeRelX = (camX + 20) / 10; // 0-4 range
-                const mazeRelZ = (camZ - 16) / 10;
-                zoneX = Math.min(4, Math.max(0, Math.floor(mazeRelX)));
-                zoneZ = Math.min(4, Math.max(0, Math.floor(mazeRelZ)));
-                // also if at camp still
-            } else {
-                zoneX = 2; zoneZ = 2;
-            }
-            if(!discoveredMap[zoneZ][zoneX]) {
-                discoveredMap[zoneZ][zoneX] = true;
-                showMessage(`🗺️ Discovered maze sector ${zoneX+1},${zoneZ+1}!`);
-                updateMapUI();
-            }
-            playerMapX = zoneX;
-            playerMapZ = zoneZ;
-            updateMapUI();
-        }
-        
-        // monster pursuit during night + if player inside maze
-        function updateMonsters() {
-            if(!isDay) {
-                const isPlayerInMaze = camera.position.z > 16 && Math.abs(camera.position.x) < 32;
-                monsterList.forEach(m => {
-                    if(m.active && isPlayerInMaze) {
-                        const dx = camera.position.x - m.mesh.position.x;
-                        const dz = camera.position.z - m.mesh.position.z;
-                        const dist = Math.hypot(dx, dz);
-                        if(dist > 0.3) {
-                            const move = m.speed * 0.016;
-                            const dirX = dx / dist;
-                            const dirZ = dz / dist;
-                            m.mesh.position.x += dirX * move;
-                            m.mesh.position.z += dirZ * move;
-                        }
-                        // collision damage / game over? simple warning
-                        if(dist < 1.2) {
-                            showMessage("💀 MONSTER caught you! You wake up at camp...");
-                            camera.position.set(0, 2, 0);
-                            controls.target.set(0,2,0);
-                            camera.position.set(0, 5, 3);
-                            // reset monsters
-                            monsterList.forEach((m,idx) => {
-                                m.mesh.position.set((Math.random() - 0.5) * 40 + 10, 0.5, (Math.random() - 0.5) * 40 + 35);
-                            });
-                        }
-                    }
-                });
-            }
-        }
-        
-        // Plants growth display update & also water/harvest buttons
-        document.getElementById('harvestBtn').onclick = () => {
-            // find nearest patch? for simplicity harvest first empty? but we use each patch individually? improv: auto harvest nearest
-            const closest = plantLabels.reduce((prev, curr, idx) => {
-                const dPrev = Math.hypot(camera.position.x - prev.pos[0], camera.position.z - prev.pos[2]);
-                const dCurr = Math.hypot(camera.position.x - curr.pos[0], camera.position.z - curr.pos[2]);
-                return dPrev < dCurr ? prev : curr;
-            });
-            const idx = plantLabels.findIndex(p => p === closest);
-            if(idx>=0) harvestFromPatch(idx);
-        };
-        document.getElementById('waterBtn').onclick = getWater;
-        document.getElementById('plantBtn').onclick = () => {
-            const closest = plantLabels.reduce((prev, curr, idx) => {
-                const dPrev = Math.hypot(camera.position.x - prev.pos[0], camera.position.z - prev.pos[2]);
-                const dCurr = Math.hypot(camera.position.x - curr.pos[0], camera.position.z - curr.pos[2]);
-                return dPrev < dCurr ? prev : curr;
-            });
-            const idx = plantLabels.findIndex(p => p === closest);
-            if(idx>=0) plantSeed(idx);
-        };
-        
-        // Add decorative campfire
-        const fireLight = new THREE.PointLight(0xff6600, 0.8, 12);
-        fireLight.position.set(0, 0.5, -3);
-        scene.add(fireLight);
-        
-        // Apple trees simple
-        const treeMat = new THREE.MeshStandardMaterial({ color: 0x6b4c3b });
-        for(let i=0;i<6;i++) {
-            const treeTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,1.5), treeMat);
-            treeTrunk.position.set(-12 + i*4, 0, -8);
-            treeTrunk.castShadow = true;
-            scene.add(treeTrunk);
-        }
-        
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update(); // update camera and target
-            updateDiscoveryByPosition();
-            updateMonsters();
-            // Day night glow for door/fire
-            fireLight.intensity = isDay ? 0.3 : 0.9;
-            renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
-        }
-        animate();
-        
-        // initial map display
-        updateMapUI();
-        showMessage("Use mouse/finger to look around. Enter maze in daytime!");
-        
-        // handle window resize
-        window.addEventListener('resize', onWindowResize, false);
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
-        }
-    </script>
+  <div id="hearts"></div>
+</div>
+
+  <div id="hotbar">
+    <div class="slot"><div class="slotIcon">🌾</div><div class="slotCount" id="invWheat">0</div></div>
+    <div class="slot"><div class="slotIcon">🍎</div><div class="slotCount" id="invFruit">0</div></div>
+    <div class="slot"><div class="slotIcon">🗺️</div><div class="slotCount" id="invMap">0%</div></div>
+  </div>
+</div>
+
+<!-- controls -->
+<div id="joy"><div id="stick"></div></div>
+<div id="actions">
+  <button class="btn" id="mapBtn">🗺️</button>
+  <button class="btn" id="btnRun">RUN</button>
+  <button class="btn" id="btnAct">USE</button>
+</div>
+
+<!-- map overlay -->
+<div id="mapOverlay">
+  <h2>The Map</h2>
+  <canvas id="mapCanvas" width="420" height="420"></canvas>
+  <div id="mapHint">Explore the maze to reveal it. The red mark is the Doors.</div>
+  <button class="btn big" id="mapClose" style="pointer-events:auto;">Close</button>
+</div>
+
+<!-- toast -->
+<div id="toast"></div>
+
+<!-- start -->
+<div class="screen" id="start">
+  <h1>THE GLADE</h1>
+  <div class="sub">A Maze Runner Game</div>
+  <p>By day the great <b>Doors</b> stand open. Farm in the Glade, or sprint into the Maze to map it.</p>
+  <p>At <b>nightfall the Doors slam shut</b>. The walls shift at midnight. Anything caught in the Maze after dark is hunted by the <b>Grievers</b>.</p>
+  <p style="opacity:.6;font-size:12px;margin-top:14px;">Left stick = move · drag right side = look · USE = interact · RUN = sprint</p>
+  <button class="big" id="startBtn">Enter</button>
+</div>
+
+<!-- death -->
+<div class="screen" id="death">
+  <h1>SLAIN</h1>
+  <div class="sub" id="deathSub">The Grievers took you</div>
+  <p id="deathStat"></p>
+  <button class="big" id="reviveBtn">Wake Again</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =========================================================================
+   THE GLADE — Maze Runner style 3D survival (Three.js, mobile-first)
+   ========================================================================= */
+const TILE = 6;            // size of one maze cell (huge corridors)
+const MAZE = 15;           // maze grid is MAZE x MAZE cells (odd)
+const WALL_H = 14;         // HUGE walls
+const CAMP_R = 26;         // glade radius
+const DAY_LEN = 180;       // 3 min
+const NIGHT_LEN = 180;     // 3 min
+
+let scene, camera, renderer, clock;
+let player = {
+  hp:100, food:100, water:100,
+  pos:new THREE.Vector3(0,1.7,8),
+  yaw:Math.PI, pitch:0,
+  speed:7, sprint:12, running:false,
+  inMaze:false, alive:true,
+};
+let inv = { wheat:0, fruit:0, water:3 };
+let world = {
+  time:0, phase:'day', day:1, started:false,
+  mazeGrid:[], wallMeshes:[], doorGroup:null, doorOpen:1,
+  monsters:[], crops:[], sink:null, checkpoints:[], discovered:new Set(), obstacles:[],
+};
+const keys = {f:0,r:0,l:0,b:0}; // not used (mobile) but kept
+let moveVec = {x:0,y:0};
+
+/* ---------------- INIT ---------------- */
+function init(){
+  scene = new THREE.Scene();
+  // cinematic distance haze (Maze Runner's grey-green overcast depth)
+  scene.fog = new THREE.FogExp2(0x9fb2a6, 0.011);
+
+  camera = new THREE.PerspectiveCamera(68, innerWidth/innerHeight, 0.35, 800);
+  camera.position.copy(player.pos);
+
+  renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', stencil:false});
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2.5));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.physicallyCorrectLights = false;
+  document.getElementById('game').appendChild(renderer.domElement);
+
+  // sky dome (gradient) for a more convincing horizon
+  buildSky();
+
+  // lights — strong key sun + soft sky fill, tuned for crisp grounded shadows
+  world.hemi = new THREE.HemisphereLight(0xcfe0d2, 0x2e2a20, 0.6);
+  scene.add(world.hemi);
+  world.sun = new THREE.DirectionalLight(0xfff2d4, 2.4);
+  world.sun.position.set(60,120,40);
+  world.sun.castShadow = true;
+  const shadowRes = (Math.min(innerWidth,innerHeight) < 700) ? 2048 : 4096;
+  world.sun.shadow.mapSize.set(shadowRes, shadowRes);
+  world.sun.shadow.bias = -0.00025;
+  world.sun.shadow.normalBias = 0.4;
+  world.sun.shadow.radius = 3;
+  const s=70; world.sun.shadow.camera.left=-s;world.sun.shadow.camera.right=s;
+  world.sun.shadow.camera.top=s;world.sun.shadow.camera.bottom=-s;
+  world.sun.shadow.camera.near=1; world.sun.shadow.camera.far=400;
+  scene.add(world.sun);
+  scene.add(world.sun.target);
+  // soft fill so shadows aren't pure black
+  world.fill = new THREE.DirectionalLight(0x9fbace, 0.35);
+  world.fill.position.set(-50,40,-30);
+  scene.add(world.fill);
+  // torch on player for night
+  world.torch = new THREE.PointLight(0xffb347, 0, 34, 2);
+  scene.add(world.torch);
+
+  buildGround();
+  buildCamp();
+  generateMaze();
+  buildMazeWalls();
+  buildDoors();
+  buildFarm();
+  buildAtmosphere();
+
+  clock = new THREE.Clock();
+  bindControls();
+  animate();
+}
+
+/* ---------------- ATMOSPHERE (dust motes + light shafts) ---------------- */
+function buildAtmosphere(){
+  // floating dust motes catching the light
+  const N=400;
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    pos[i*3]  =(Math.random()-0.5)*140;
+    pos[i*3+1]= Math.random()*22;
+    pos[i*3+2]=-Math.random()*120+10;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const mat=new THREE.PointsMaterial({color:0xffffff, size:0.13, transparent:true, opacity:0.35, depthWrite:false});
+  world.dust=new THREE.Points(geo,mat);
+  scene.add(world.dust);
+}
+
+/* ---------------- SKY ---------------- */
+function buildSky(){
+  const geo = new THREE.SphereGeometry(400, 24, 16);
+  const mat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms:{
+      top:{value:new THREE.Color(0x4a86c4)},
+      bot:{value:new THREE.Color(0xcfe2e8)},
+      off:{value:0.0}
+    },
+    vertexShader:`varying vec3 vP; void main(){vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader:`varying vec3 vP; uniform vec3 top; uniform vec3 bot; uniform float off;
+      void main(){ float h=normalize(vP).y*0.5+0.5; vec3 c=mix(bot,top,smoothstep(0.0,1.0,h)); gl_FragColor=vec4(c,1.0);} `
+  });
+  world.sky = new THREE.Mesh(geo,mat);
+  scene.add(world.sky);
+}
+
+/* ---------------- PROCEDURAL TEXTURES ---------------- */
+function makeNoiseTexture(base, contrast, size){
+  size=size||128;
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const ctx=c.getContext('2d');
+  const img=ctx.createImageData(size,size);
+  const b=new THREE.Color(base);
+  for(let i=0;i<size*size;i++){
+    const n=(Math.random()-0.5)*contrast;
+    img.data[i*4]  =Math.max(0,Math.min(255,(b.r*255)+n*255));
+    img.data[i*4+1]=Math.max(0,Math.min(255,(b.g*255)+n*255));
+    img.data[i*4+2]=Math.max(0,Math.min(255,(b.b*255)+n*255));
+    img.data[i*4+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  return t;
+}
+function makeStoneTexture(){
+  const size=512; const c=document.createElement('canvas'); c.width=c.height=size;
+  const ctx=c.getContext('2d');
+  // base stone with vertical streaks
+  const grd=ctx.createLinearGradient(0,0,0,size);
+  grd.addColorStop(0,'#646b58'); grd.addColorStop(0.5,'#565d4c'); grd.addColorStop(1,'#4d5444');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,size,size);
+  // fine grain
+  for(let i=0;i<26000;i++){
+    const v=Math.random()*70-35;
+    ctx.fillStyle=`rgba(${95+v},${102+v},${84+v},0.45)`;
+    ctx.fillRect(Math.random()*size,Math.random()*size,2,2);
+  }
+  // mortar grid (brick courses)
+  ctx.strokeStyle='rgba(18,22,16,0.6)'; ctx.lineWidth=3;
+  const rowH=58;
+  for(let y=0;y<=size;y+=rowH){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(size,y);ctx.stroke(); }
+  let row=0;
+  for(let y=0;y<size;y+=rowH,row++){
+    const off=(row%2)*64;
+    for(let x=off;x<=size;x+=128){ ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+rowH);ctx.stroke(); }
+  }
+  // weathering blotches + moss
+  for(let i=0;i<60;i++){
+    const x=Math.random()*size,y=Math.random()*size,r=8+Math.random()*30;
+    ctx.fillStyle = Math.random()<0.4
+      ? `rgba(${40+Math.random()*30},${70+Math.random()*40},${30+Math.random()*20},0.18)` // moss
+      : `rgba(30,33,26,0.12)`; // grime
+    ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+  }
+  // a few cracks
+  ctx.strokeStyle='rgba(15,18,12,0.5)'; ctx.lineWidth=1.5;
+  for(let i=0;i<14;i++){
+    let x=Math.random()*size,y=Math.random()*size;
+    ctx.beginPath();ctx.moveTo(x,y);
+    for(let s=0;s<5;s++){ x+=(Math.random()-0.5)*40;y+=(Math.random()-0.5)*40;ctx.lineTo(x,y); }
+    ctx.stroke();
+  }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.anisotropy=8;
+  return t;
+}
+
+
+function buildGround(){
+  // glade grass — textured + subtle relief
+  const grassTex = makeNoiseTexture(0x4a7c3f, 0.22, 128);
+  grassTex.repeat.set(8,8);
+  const gGeo = new THREE.CircleGeometry(CAMP_R+2, 64);
+  const gMat = new THREE.MeshStandardMaterial({map:grassTex, color:0x6e9e54, roughness:1});
+  const grass = new THREE.Mesh(gGeo,gMat);
+  grass.rotation.x=-Math.PI/2; grass.position.y=0.02; grass.receiveShadow=true;
+  scene.add(grass);
+
+  // a few rocks
+  const rockMat=new THREE.MeshStandardMaterial({color:0x6b6f63,roughness:1,flatShading:true});
+  for(let i=0;i<10;i++){
+    const a=Math.random()*Math.PI*2, r=8+Math.random()*(CAMP_R-12);
+    const rad=0.5+Math.random()*0.8;
+    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(rad,0),rockMat);
+    rock.position.set(Math.cos(a)*r,0.3,Math.sin(a)*r);
+    if(rock.position.z<-(CAMP_R-8))continue;
+    rock.rotation.set(Math.random(),Math.random(),Math.random());
+    rock.castShadow=true; rock.receiveShadow=true; scene.add(rock);
+    world.obstacles.push({x:rock.position.x, z:rock.position.z, r:rad+0.3});
+  }
+
+  // maze floor (big textured stone plane) — sized & centered to cover the WHOLE maze
+  const zNear = -(CAMP_R-2);                 // closest maze row (meets camp)
+  const zFar  = -((MAZE-1)*TILE) - (CAMP_R-2); // furthest maze row
+  const margin = TILE*1.5;
+  const spanX = MAZE*TILE + margin*2;
+  const spanZ = (zNear - zFar) + margin*2;
+  const centerZ = (zNear + zFar)/2;
+  const floorTex = makeStoneTexture(); floorTex.repeat.set(MAZE+3, MAZE+3);
+  const fGeo = new THREE.PlaneGeometry(spanX, spanZ);
+  const fMat = new THREE.MeshStandardMaterial({map:floorTex, color:0x6b7363, roughness:1});
+  const floor = new THREE.Mesh(fGeo,fMat);
+  floor.rotation.x=-Math.PI/2;
+  floor.position.set(0, 0.01, centerZ);
+  floor.receiveShadow=true;
+  scene.add(floor);
+  world.mazeFloor = floor;
+}
+
+/* ---------------- VINES (draping strands with leaves) ---------------- */
+function makeVineCurtain(width, height, density){
+  // returns a Group of hanging vine strands; origin at top-center, hangs down -Y
+  const grp = new THREE.Group();
+  const stemMat = new THREE.MeshStandardMaterial({color:0x3c5a2a, roughness:1});
+  const leafMat = new THREE.MeshStandardMaterial({color:0x4d7d33, roughness:.9, side:THREE.DoubleSide});
+  const leafMat2= new THREE.MeshStandardMaterial({color:0x5f9440, roughness:.9, side:THREE.DoubleSide});
+  const strands = Math.max(2, Math.round(width*density));
+  for(let s=0;s<strands;s++){
+    const len = height*(0.45+Math.random()*0.5);
+    const segs = Math.max(3, Math.round(len/0.9));
+    const px = (s/(strands-1) - 0.5)*width + (Math.random()-0.5)*0.4;
+    const sway = (Math.random()-0.5)*0.6;
+    let prevX = px, prevY = 0;
+    for(let i=0;i<segs;i++){
+      const t=i/segs;
+      const segLen = len/segs;
+      const curX = px + Math.sin(t*3+sway)*0.25*t;
+      const curY = -t*len;
+      // stem segment
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.06,segLen*1.05,4), stemMat);
+      stem.position.set((curX+prevX)/2, (curY+prevY)/2, 0);
+      stem.rotation.z = Math.atan2(curX-prevX, -(curY-prevY));
+      grp.add(stem);
+      // leaves along the strand
+      if(Math.random()<0.7){
+        const leaf=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.32), Math.random()<.5?leafMat:leafMat2);
+        leaf.position.set(curX+(Math.random()<.5?0.18:-0.18), curY, (Math.random()-0.5)*0.12);
+        leaf.rotation.set((Math.random()-0.5)*0.8,(Math.random()-0.5)*1.2,(Math.random()-0.5)*1.0);
+        grp.add(leaf);
+      }
+      prevX=curX; prevY=curY;
+    }
+  }
+  grp.children.forEach(c=>{c.castShadow=true;});
+  return grp;
+}
+
+/* ---------------- CAMP (the towering Glade walls) ---------------- */
+function buildCamp(){
+  if(!world.wallTex){ world.wallTex = makeStoneTexture(); world.wallTex.repeat.set(1.4,3); }
+  // weathered-concrete material, tinted grey-green like the film's Glade walls
+  const wallMat = new THREE.MeshStandardMaterial({map:world.wallTex, color:0x8a9080, roughness:1, metalness:0});
+  const seamMat = new THREE.MeshStandardMaterial({color:0x5c6256, roughness:1});
+  const capMat  = new THREE.MeshStandardMaterial({color:0x6e7466, roughness:1});
+  const ivyMat  = new THREE.MeshStandardMaterial({color:0x35551f, roughness:1, side:THREE.DoubleSide});
+
+  const CAMP_WALL_H = WALL_H*2.4;   // make the Glade walls TOWER like the show
+  const segs = 32;
+  const segW = TILE*1.25;
+  for(let i=0;i<segs;i++){
+    const a = (i/segs)*Math.PI*2;
+    const deg = a*180/Math.PI;
+    if(deg>250 && deg<290) continue; // doorway gap toward the maze
+    const x = Math.cos(a)*(CAMP_R+1);
+    const z = Math.sin(a)*(CAMP_R+1);
+
+    // main slab
+    const w = new THREE.Mesh(new THREE.BoxGeometry(segW, CAMP_WALL_H, 3.2), wallMat);
+    w.position.set(x, CAMP_WALL_H/2, z);
+    w.lookAt(0, CAMP_WALL_H/2, 0);
+    w.castShadow=true; w.receiveShadow=true;
+    scene.add(w);
+
+    // recessed horizontal banding (concrete form-lines) — a few thin insets
+    for(let b=1;b<=3;b++){
+      const band=new THREE.Mesh(new THREE.BoxGeometry(segW*0.98, 0.5, 3.4), seamMat);
+      band.position.set(x, CAMP_WALL_H*(b/4), z);
+      band.lookAt(0, CAMP_WALL_H*(b/4), 0);
+      scene.add(band);
+    }
+    // vertical seam pillar between segments
+    const seam=new THREE.Mesh(new THREE.BoxGeometry(1.0, CAMP_WALL_H+1.5, 3.6), seamMat);
+    seam.position.set(Math.cos(a+Math.PI/segs)*(CAMP_R+1), (CAMP_WALL_H+1.5)/2, Math.sin(a+Math.PI/segs)*(CAMP_R+1));
+    seam.lookAt(0,(CAMP_WALL_H)/2,0);
+    seam.castShadow=true; scene.add(seam);
+
+    // heavy top cap
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(segW+1.2, 1.6, 4.4), capMat);
+    cap.position.set(x, CAMP_WALL_H+0.6, z);
+    cap.lookAt(0, CAMP_WALL_H+0.6, 0);
+    cap.castShadow=true; scene.add(cap);
+
+    // climbing ivy on the INNER (Glade-facing) surface — patches creeping up
+    if(i%2===0){
+      const ivyGrp=new THREE.Group();
+      const patches=3+Math.floor(Math.random()*3);
+      for(let p=0;p<patches;p++){
+        const leaf=new THREE.Mesh(new THREE.PlaneGeometry(0.9+Math.random()*0.8,0.7+Math.random()*0.6), ivyMat);
+        leaf.position.set((Math.random()-0.5)*segW*0.8, 2+Math.random()*CAMP_WALL_H*0.55, 0);
+        leaf.rotation.z=(Math.random()-0.5)*0.7;
+        ivyGrp.add(leaf);
+      }
+      ivyGrp.position.set(x, 0, z);
+      ivyGrp.lookAt(0,0,0);
+      ivyGrp.translateZ(1.75);
+      scene.add(ivyGrp);
+    }
+    // draping vines spilling over the top on the inner face
+    if(deg>30 && deg<210 && i%2===0){
+      const vine = makeVineCurtain(segW*0.95, CAMP_WALL_H*0.5, 1.0);
+      vine.position.set(x, CAMP_WALL_H-1.0, z);
+      vine.lookAt(0, CAMP_WALL_H-1.0, 0);
+      vine.translateZ(1.7);
+      scene.add(vine);
+    }
+  }
+}
+
+/* ---------------- MAZE GEN (recursive backtracker) ---------------- */
+function generateMaze(seed){
+  // grid of cells; 1 = wall, 0 = path. We work on (2n+1) lattice.
+  const N = MAZE;
+  const g = Array.from({length:N},()=>Array(N).fill(1));
+  // carve using DFS on odd cells
+  function carve(cx,cy){
+    g[cy][cx]=0;
+    const dirs=[[0,-2],[0,2],[-2,0],[2,0]].sort(()=>Math.random()-0.5);
+    for(const [dx,dy] of dirs){
+      const nx=cx+dx, ny=cy+dy;
+      if(nx>0&&nx<N-1&&ny>0&&ny<N-1&&g[ny][nx]===1){
+        g[cy+dy/2][cx+dx/2]=0;
+        carve(nx,ny);
+      }
+    }
+  }
+  carve(1,1);
+  // --- guaranteed entrance corridor at bottom-center, connected into the maze ---
+  const mid = Math.floor(N/2);
+  // clear a straight column from the bottom edge up to the first interior path row
+  for(let cy=N-1; cy>=1; cy--){
+    g[cy][mid]=0;
+    // stop once we've linked into an existing carved path beside us
+    if(cy<=N-3 && (g[cy][mid-1]===0 || g[cy][mid+1]===0)) break;
+  }
+  // make sure the mouth of the entrance is open one cell to each side so the
+  // player (with body radius) isn't pinched at the doorway
+  g[N-1][mid]=0; g[N-2][mid]=0;
+  if(mid-1>0){ g[N-1][mid-1]=0; }
+  if(mid+1<N-1){ g[N-1][mid+1]=0; }
+  // open up some loops so it's less linear & has dead ends to flee through
+  for(let i=0;i<N;i++){
+    const rx=1+2*Math.floor(Math.random()*((N-1)/2));
+    const ry=1+2*Math.floor(Math.random()*((N-1)/2));
+    if(g[ry] && g[ry][rx]!==undefined) g[ry][rx]=0;
+  }
+  world.mazeGrid = g;
+}
+
+/* world coords for a maze cell */
+function cellToWorld(cx,cy){
+  const span = MAZE*TILE;
+  const x = (cx - (MAZE-1)/2)*TILE;
+  // maze sits to the north (-z); bottom row (cy=N-1) meets the camp gap
+  const z = -( (MAZE-1-cy) * TILE ) - (CAMP_R-2);
+  return {x,z};
+}
+function worldToCell(x,z){
+  const cx = Math.round(x/TILE + (MAZE-1)/2);
+  const cy = (MAZE-1) - Math.round( (-z - (CAMP_R-2))/TILE );
+  return {cx,cy};
+}
+
+/* ---------------- BUILD WALL MESHES ---------------- */
+function buildMazeWalls(){
+  // remove old
+  world.wallMeshes.forEach(m=>scene.remove(m));
+  world.wallMeshes=[];
+  if(!world.wallTex){ world.wallTex = makeStoneTexture(); world.wallTex.repeat.set(1.4,3); }
+  const mat = new THREE.MeshStandardMaterial({map:world.wallTex, color:0x6a7060, roughness:.96});
+  const g = world.mazeGrid;
+  // instanced-ish: just build boxes (maze is small enough)
+  for(let cy=0;cy<MAZE;cy++){
+    for(let cx=0;cx<MAZE;cx++){
+      if(g[cy][cx]===1){
+        const {x,z}=cellToWorld(cx,cy);
+        const w = new THREE.Mesh(new THREE.BoxGeometry(TILE,WALL_H,TILE), mat);
+        w.position.set(x,WALL_H/2,z);
+        w.castShadow=true; w.receiveShadow=true;
+        w.userData.wall=true;
+        scene.add(w); world.wallMeshes.push(w);
+        // weathered cap stone
+        const cap=new THREE.Mesh(new THREE.BoxGeometry(TILE+0.4,0.8,TILE+0.4),
+          new THREE.MeshStandardMaterial({color:0x565c4c,roughness:1}));
+        cap.position.set(x,WALL_H+0.4,z); cap.castShadow=true;
+        scene.add(cap); world.wallMeshes.push(cap);
+      }
+    }
+  }
+}
+
+/* ---------------- HUGE DOORS (the iconic Glade gateway) ---------------- */
+function buildDoors(){
+  world.doorGroup = new THREE.Group();
+  const mid = Math.floor(MAZE/2);
+  const {x,z}=cellToWorld(mid, MAZE-1);
+  const doorZ = z + TILE*0.5 + 1;
+  if(!world.wallTex){ world.wallTex = makeStoneTexture(); world.wallTex.repeat.set(1.4,3); }
+  const GATE_H = WALL_H*2.4; // match the towering Glade walls
+
+  const doorTex = world.wallTex.clone(); doorTex.needsUpdate=true; doorTex.repeat.set(1,4);
+  const mat = new THREE.MeshStandardMaterial({map:doorTex, color:0x747a6a, roughness:1});
+  const slatMat = new THREE.MeshStandardMaterial({color:0x4a4f44, roughness:1});
+  const pillarMat = new THREE.MeshStandardMaterial({map:world.wallTex, color:0x868c7a, roughness:1});
+
+  const halfW = TILE*0.95;
+  const doorH = GATE_H*0.92;
+
+  // two giant sliding slabs
+  const left = new THREE.Mesh(new THREE.BoxGeometry(halfW, doorH, 2.8), mat);
+  const right = left.clone();
+  left.position.set(x-halfW/2, doorH/2, doorZ);
+  right.position.set(x+halfW/2, doorH/2, doorZ);
+  [left,right].forEach(d=>{d.castShadow=true;d.receiveShadow=true;});
+
+  // vertical slats across the doors (the show's segmented door look)
+  const slatGrp=new THREE.Group();
+  for(let s=0;s<6;s++){
+    const slat=new THREE.Mesh(new THREE.BoxGeometry(0.4, doorH*0.96, 3.0), slatMat);
+    slat.position.set(x-halfW + (s+0.5)*(halfW*2/6), doorH/2, doorZ);
+    slat.castShadow=true; slatGrp.add(slat);
+  }
+  world.doorSlats=slatGrp; // slide with doors
+
+  // towering flanking pillars (full Glade-wall height)
+  const pL = new THREE.Mesh(new THREE.BoxGeometry(2.4, GATE_H, 4), pillarMat);
+  const pR = pL.clone();
+  pL.position.set(x-halfW-1.2, GATE_H/2, doorZ);
+  pR.position.set(x+halfW+1.2, GATE_H/2, doorZ);
+  [pL,pR].forEach(p=>{p.castShadow=true;p.receiveShadow=true;});
+  // pillar caps
+  const capL=new THREE.Mesh(new THREE.BoxGeometry(3.2,1.6,5), pillarMat);
+  const capR=capL.clone();
+  capL.position.set(pL.position.x, GATE_H+0.8, doorZ);
+  capR.position.set(pR.position.x, GATE_H+0.8, doorZ);
+  // massive lintel beam across the top
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(halfW*2+6, 2.8, 4.4), pillarMat);
+  lintel.position.set(x, GATE_H+0.4, doorZ);
+  lintel.castShadow=true;
+
+  world.doorGroup.add(left,right,pL,pR,capL,capR,lintel);
+  scene.add(slatGrp);
+  // ivy draping over the gateway lintel
+  const gateVines = makeVineCurtain(halfW*2+3, GATE_H*0.32, 0.9);
+  gateVines.position.set(x, GATE_H-0.4, doorZ+2.1);
+  scene.add(gateVines);
+
+  world.doorLeft=left; world.doorRight=right;
+  world.doorX=x; world.doorZ=doorZ; world.doorHalfW=halfW;
+  scene.add(world.doorGroup);
+}
+
+function updateDoors(dt){
+  // doorOpen 1 = fully open, 0 = closed
+  const target = (world.phase==='day') ? 1 : 0;
+  world.doorOpen += (target - world.doorOpen) * Math.min(1, dt*1.2);
+  const slide = world.doorHalfW*0.98 * world.doorOpen;
+  world.doorLeft.position.x = world.doorX - world.doorHalfW/2 - slide;
+  world.doorRight.position.x = world.doorX + world.doorHalfW/2 + slide;
+  // slats split & slide with the two halves
+  if(world.doorSlats){
+    world.doorSlats.children.forEach((slat,idx)=>{
+      const side = idx<3 ? -1 : 1;
+      const baseX = world.doorX - world.doorHalfW + (idx+0.5)*(world.doorHalfW*2/6);
+      slat.position.x = baseX + side*slide;
+    });
+  }
+}
+
+function doorIsClosed(){ return world.doorOpen < 0.35; }
+
+/* ---------------- FARM ---------------- */
+function buildFarm(){
+  // wheat field, fruit trees, sink — all in the glade
+  // soil plots
+  const soilMat = new THREE.MeshStandardMaterial({color:0x4a3526, roughness:1});
+  for(let i=0;i<5;i++){
+    const plot = new THREE.Mesh(new THREE.BoxGeometry(3,0.3,3), soilMat);
+    const ang = -0.6 + i*0.3;
+    plot.position.set(Math.cos(ang)*14, 0.15, Math.sin(ang)*14 + 6);
+    plot.receiveShadow=true;
+    scene.add(plot);
+    addCrop(plot.position.x, plot.position.z, 'wheat');
+  }
+  // fruit trees
+  for(let i=0;i<3;i++){
+    const ang = 2 + i*0.7;
+    const tx=Math.cos(ang)*16, tz=Math.sin(ang)*16;
+    buildTree(tx,tz);
+    addCrop(tx,tz,'fruit');
+  }
+  // SINK (water source)
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.8,1.4,16),
+     new THREE.MeshStandardMaterial({color:0x8d8d97, roughness:.7, metalness:.2}));
+  base.position.set(-14,0.7,8); base.castShadow=true; base.receiveShadow=true;
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,.3,16),
+     new THREE.MeshStandardMaterial({color:0x2a9df4, roughness:.2, metalness:.1, transparent:true, opacity:.85}));
+  water.position.set(-14,1.4,8);
+  scene.add(base,water);
+  world.sink = {x:-14,z:8, daily:3, used:0};
+  world.obstacles.push({x:-14, z:8, r:2.2}); // solid sink
+}
+
+function buildTree(x,z){
+  const barkMat = new THREE.MeshStandardMaterial({color:0x4a2f1a, roughness:1, flatShading:true});
+  const leafMat = new THREE.MeshStandardMaterial({color:0x35681f, roughness:1, flatShading:true});
+  const leafMat2= new THREE.MeshStandardMaterial({color:0x2c5519, roughness:1, flatShading:true});
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.85,6,9), barkMat);
+  trunk.position.set(x,3,z); trunk.castShadow=true; trunk.receiveShadow=true;
+  scene.add(trunk);
+  world.obstacles.push({x, z, r:1.2}); // solid trunk
+  // a couple of branches
+  for(let b=0;b<3;b++){
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.25,2.4,6),barkMat);
+    const a=Math.random()*Math.PI*2;
+    br.position.set(x+Math.cos(a)*0.8, 4.5+Math.random(), z+Math.sin(a)*0.8);
+    br.rotation.z=Math.cos(a)*0.9; br.rotation.x=Math.sin(a)*0.9;
+    br.castShadow=true; scene.add(br);
+  }
+  // layered, irregular canopy
+  for(let i=0;i<5;i++){
+    const r=1.6+Math.random()*1.4;
+    const blob=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0), i%2?leafMat2:leafMat);
+    blob.position.set(x+(Math.random()-0.5)*2.6, 6.2+Math.random()*2.2, z+(Math.random()-0.5)*2.6);
+    blob.castShadow=true; scene.add(blob);
+  }
+}
+
+function addCrop(x,z,type){
+  // a small marker that grows/ripens; harvestable
+  const mat = new THREE.MeshStandardMaterial({color: type==='wheat'?0xd8b54a:0xd13b3b, roughness:.8, emissive:0x000000});
+  const geo = type==='wheat' ? new THREE.ConeGeometry(0.6,1.6,6) : new THREE.SphereGeometry(0.6,8,8);
+  const m = new THREE.Mesh(geo,mat);
+  m.position.set(x, type==='wheat'?1:4.4, z);
+  m.castShadow=true;
+  scene.add(m);
+  world.crops.push({mesh:m, type, x, z, ripe:true, regrow:0});
+}
+
+/* ---------------- CHECKPOINTS removed (map still reveals as you explore) ---------------- */
+function spawnCheckpoints(){ /* checkpoint flags removed */ }
+
+/* ---------------- MONSTERS (Grievers) ---------------- */
+function spawnMonsters(count){
+  clearMonsters();
+  const g=world.mazeGrid;
+  const cells=[];
+  for(let cy=0;cy<MAZE-2;cy++)for(let cx=0;cx<MAZE;cx++) if(g[cy][cx]===0) cells.push({cx,cy});
+  for(let i=0;i<count;i++){
+    const c = cells[Math.floor(Math.random()*cells.length)] || {cx:1,cy:1};
+    const {x,z}=cellToWorld(c.cx,c.cy);
+    const grp=new THREE.Group();
+    const fleshMat=new THREE.MeshStandardMaterial({color:0x55403a, roughness:.85, flatShading:true});
+    const skinMat =new THREE.MeshStandardMaterial({color:0x7a5a4a, roughness:.7});
+    const metalMat=new THREE.MeshStandardMaterial({color:0x33312c, roughness:.4, metalness:.8});
+    // segmented bulbous body
+    const segs=[];
+    for(let s=0;s<3;s++){
+      const r=1.4-s*0.25;
+      const seg=new THREE.Mesh(new THREE.SphereGeometry(r,12,10), s===1?skinMat:fleshMat);
+      seg.position.set(0,0.2,-s*1.3+1.3); seg.scale.set(1.2,0.95,1.1);
+      seg.castShadow=true; grp.add(seg); segs.push(seg);
+    }
+    // glistening hide bumps
+    for(let b=0;b<8;b++){
+      const bump=new THREE.Mesh(new THREE.SphereGeometry(0.22,6,6),skinMat);
+      const a=Math.random()*Math.PI*2;
+      bump.position.set(Math.cos(a)*1.0,0.7+Math.random()*0.4,Math.sin(a)*1.2);
+      grp.add(bump);
+    }
+    // mechanical stinger/spike at front
+    const spike=new THREE.Mesh(new THREE.ConeGeometry(0.25,1.6,7),metalMat);
+    spike.position.set(0,0.3,2.1); spike.rotation.x=Math.PI/2; spike.castShadow=true;
+    grp.add(spike);
+    // pincers
+    [-1,1].forEach(sgn=>{
+      const p=new THREE.Mesh(new THREE.ConeGeometry(0.12,0.9,5),metalMat);
+      p.position.set(sgn*0.4,0.2,2.0); p.rotation.x=Math.PI/2; p.rotation.z=sgn*0.3; grp.add(p);
+    });
+    // burning eyes
+    const eyeMat=new THREE.MeshStandardMaterial({color:0xff2200, emissive:0xff3300, emissiveIntensity:2.5});
+    const e1=new THREE.Mesh(new THREE.SphereGeometry(0.16,8,8),eyeMat);
+    const e2=e1.clone(); e1.position.set(.35,.55,1.4); e2.position.set(-.35,.55,1.4);
+    grp.add(e1,e2);
+    // articulated bristly legs (store for animation)
+    const legs=[];
+    for(let l=0;l<8;l++){
+      const side=l<4?-1:1; const idx=l%4;
+      const upper=new THREE.Mesh(new THREE.CylinderGeometry(.1,.13,1.6,5),fleshMat);
+      const lower=new THREE.Mesh(new THREE.CylinderGeometry(.06,.1,1.6,5),fleshMat);
+      const hip=new THREE.Group();
+      hip.position.set(side*1.0, 0, 1.0-idx*0.7);
+      upper.position.set(side*0.6,-0.3,0); upper.rotation.z=side*0.9;
+      lower.position.set(side*1.1,-1.0,0); lower.rotation.z=side*0.3;
+      upper.castShadow=true; lower.castShadow=true;
+      hip.add(upper,lower); grp.add(hip); legs.push({hip,phase:l*0.7});
+    }
+    const glow=new THREE.PointLight(0xff3300,1.4,14,2);
+    glow.position.y=0.6; grp.add(glow);
+    grp.position.set(x,1.7,z);
+    scene.add(grp);
+    world.monsters.push({grp, legs, speed:5.5+Math.random()*1.5, state:'patrol', target:null});
+  }
+}
+function clearMonsters(){
+  world.monsters.forEach(m=>scene.remove(m.grp));
+  world.monsters=[];
+}
+
+/* ---------------- COLLISION ---------------- */
+const PLAYER_R = 1.4;  // player body radius — keeps camera away from wall faces
+
+// is the world point (x,z) inside a solid maze wall cell?
+function pointInWall(x,z){
+  // only the maze region is walled
+  if(z > -(CAMP_R-8)) return false;
+  const {cx,cy}=worldToCell(x,z);
+  const g=world.mazeGrid;
+  // beyond the FAR/side edges of the maze = solid boundary
+  if(cx<0||cx>=MAZE||cy<0) return true;
+  // below the bottom row (cy>=MAZE) is the camp-side mouth — passable (the doorway)
+  if(cy>=MAZE) return false;
+  return g[cy][cx]===1;
+}
+
+function collide(nx,nz){
+  // --- camp perimeter ring (block leaving the glade except through the gap) ---
+  const r = Math.hypot(nx,nz);
+  if(nz > -(CAMP_R-6) && r > CAMP_R-PLAYER_R){
+    const ang = (Math.atan2(nz,nx)*180/Math.PI+360)%360;
+    if(!(ang>250&&ang<290)) return true; // not in the doorway gap
+  }
+  // --- closed doors block the gateway ---
+  if(doorIsClosed()){
+    if(Math.abs(nx-world.doorX) < world.doorHalfW+PLAYER_R &&
+       Math.abs(nz-world.doorZ) < 2.0+PLAYER_R) return true;
+  }
+  // --- maze walls: sample the player's body radius (center + 4 offsets) ---
+  if(nz < -(CAMP_R-9)){
+    if(pointInWall(nx,nz)) return true;
+    if(pointInWall(nx+PLAYER_R,nz)) return true;
+    if(pointInWall(nx-PLAYER_R,nz)) return true;
+    if(pointInWall(nx,nz+PLAYER_R)) return true;
+    if(pointInWall(nx,nz-PLAYER_R)) return true;
+    // diagonal corners catch wall edges
+    const d=PLAYER_R*0.72;
+    if(pointInWall(nx+d,nz+d)) return true;
+    if(pointInWall(nx-d,nz+d)) return true;
+    if(pointInWall(nx+d,nz-d)) return true;
+    if(pointInWall(nx-d,nz-d)) return true;
+  }
+  // --- props: trees, rocks, sink (circle collision) ---
+  const ob=world.obstacles;
+  for(let i=0;i<ob.length;i++){
+    const dx=nx-ob[i].x, dz=nz-ob[i].z;
+    const rr=ob[i].r+PLAYER_R;
+    if(dx*dx+dz*dz < rr*rr) return true;
+  }
+  return false;
+}
+
+/* ---------------- TIME / PHASE ---------------- */
+function updateTime(dt){
+  world.time += dt;
+  const len = world.phase==='day' ? DAY_LEN : NIGHT_LEN;
+  if(world.time >= len){
+    world.time = 0;
+    if(world.phase==='day'){
+      world.phase='night';
+      onNightfall();
+    } else {
+      world.phase='day';
+      onDawn();
+    }
+  }
+  // sun arc + colors
+  const t = world.time/len;
+  if(!world.sunOffset) world.sunOffset=new THREE.Vector3(60,120,40);
+  if(world.phase==='day'){
+    const a = Math.PI*t; // 0..PI
+    world.sunOffset.set(Math.cos(a)*100, Math.max(15,Math.sin(a)*130+10), 40);
+    const elev=Math.sin(a); // 0 at horizon
+    world.sun.intensity = 1.6 + elev*1.4;
+    world.sun.color.setHSL(0.09+0.04*elev, 0.55-0.25*elev, 0.62);
+    world.hemi.intensity = 0.45+elev*0.5;
+    // overcast grey-green haze, warmer near horizon
+    scene.fog.color.setHSL(0.28-0.04*elev, 0.12, 0.62-elev*0.06);
+    if(world.sky){
+      world.sky.material.uniforms.top.value.setHSL(0.58, 0.45, 0.42+elev*0.26);
+      world.sky.material.uniforms.bot.value.setHSL(0.10+0.02*elev, 0.35, 0.78-elev*0.12);
+    }
+    if(world.dust) world.dust.material.opacity = 0.18+elev*0.25;
+    document.getElementById('nightTint').style.opacity=0;
+    world.torch.intensity = 0;
+  } else {
+    world.sun.intensity = 0.12;
+    world.sun.color.setHex(0x6677aa);
+    world.hemi.intensity = 0.16;
+    world.sunOffset.set(-50,60,-40);
+    scene.fog.color.setHex(0x0a0e14);
+    if(world.sky){
+      world.sky.material.uniforms.top.value.setHex(0x05070f);
+      world.sky.material.uniforms.bot.value.setHex(0x13182a);
+    }
+    if(world.dust) world.dust.material.opacity = 0.10;
+    document.getElementById('nightTint').style.opacity=0.55;
+    world.torch.intensity = 2.6;
+    // midnight: shift the maze
+    if(!world.shifted && world.time > NIGHT_LEN*0.5){
+      world.shifted = true;
+      shiftMaze();
+    }
+  }
+}
+
+function onNightfall(){
+  toast('🌑 NIGHTFALL — the Doors are closing!');
+  world.shifted = false;
+  // spawn monsters scaled with day count
+  spawnMonsters(2 + Math.min(world.day,4));
+}
+function onDawn(){
+  world.day++;
+  document.getElementById('dayCount').textContent = 'DAY '+world.day;
+  toast('🌅 DAWN — the Doors open. The Maze has reset.');
+  // restore original maze layout & refresh
+  generateMaze();
+  buildMazeWalls();
+  clearMonsters();
+}
+
+function shiftMaze(){
+  toast('🌀 MIDNIGHT — the walls are shifting!');
+  generateMaze();
+  buildMazeWalls();
+  // monsters get re-pathed automatically next frame
+}
+
+/* ---------------- MONSTER AI ---------------- */
+function updateMonsters(dt){
+  if(world.phase!=='night') return;
+  const p = player.pos;
+  world.monsters.forEach(m=>{
+    const g=m.grp;
+    const dx=p.x-g.position.x, dz=p.z-g.position.z;
+    const dist=Math.hypot(dx,dz);
+    // chase if player is in maze, else patrol toward maze
+    const targetInMaze = p.z < -(CAMP_R-8);
+    let mvx=0,mvz=0;
+    if(targetInMaze && dist<60){
+      mvx=dx/dist; mvz=dz/dist; m.state='chase';
+    } else {
+      // wander
+      if(!m.wt || m.wt<=0){ m.wa=Math.random()*Math.PI*2; m.wt=1+Math.random()*2; }
+      m.wt-=dt; mvx=Math.cos(m.wa); mvz=Math.sin(m.wa); m.state='patrol';
+    }
+    const sp = m.speed*(m.state==='chase'?1:0.5);
+    let nx=g.position.x+mvx*sp*dt, nz=g.position.z+mvz*sp*dt;
+    // simple wall avoidance via collision grid
+    if(!monsterBlocked(nx,g.position.z)) g.position.x=nx;
+    if(!monsterBlocked(g.position.x,nz)) g.position.z=nz;
+    g.lookAt(p.x, g.position.y, p.z);
+    // animate articulated legs (walk gait)
+    const gait = m.state==='chase'?12:6;
+    if(m.legs) m.legs.forEach(L=>{ L.hip.rotation.x=Math.sin(world.time*gait+L.phase)*0.5; });
+    // subtle body bob
+    g.position.y = 1.7 + Math.abs(Math.sin(world.time*gait*0.5))*0.12;
+    // attack
+    if(dist<2.2){ damage(28*dt*1.5); }
+  });
+}
+function monsterBlocked(x,z){
+  if(z>-(CAMP_R-8)) return true; // keep monsters in maze
+  const R=1.6;
+  if(pointInWall(x,z)) return true;
+  if(pointInWall(x+R,z)||pointInWall(x-R,z)||pointInWall(x,z+R)||pointInWall(x,z-R)) return true;
+  return false;
+}
+
+/* ---------------- DAMAGE / SURVIVAL ---------------- */
+let dmgCD=0;
+function damage(amt){
+  player.hp -= amt;
+  const f=document.getElementById('dmgFlash');
+  f.style.opacity=0.8; clearTimeout(window._df);
+  window._df=setTimeout(()=>f.style.opacity=0,150);
+  if(player.hp<=0){ player.hp=0; die('The Grievers took you'); }
+}
+function die(reason){
+  if(!player.alive) return;
+  player.alive=false;
+  document.getElementById('deathSub').textContent=reason;
+  document.getElementById('deathStat').textContent =
+    `You survived ${world.day-1} full day${world.day-1===1?'':'s'} in the Glade.`;
+  document.getElementById('death').style.display='flex';
+}
+function updateSurvival(dt){
+  // food & water need removed for now
+}
+
+/* ---------------- INTERACTION (USE) ---------------- */
+function nearestInteractable(){
+  const p=player.pos; let best=null,bd=3.2;
+  // crops (optional gathering)
+  world.crops.forEach(c=>{
+    if(!c.ripe) return;
+    const d=Math.hypot(p.x-c.x,p.z-c.z);
+    if(d<bd){ best={type:'crop',obj:c,d}; bd=d; }
+  });
+  return best;
+}
+function doUse(){
+  const it=nearestInteractable();
+  if(!it){ toast('Nothing to gather here.'); return; }
+  if(it.type==='crop'){
+    const c=it.obj; c.ripe=false; c.mesh.visible=false;
+    if(c.type==='wheat'){ inv.wheat++; toast('🌾 Harvested wheat'); }
+    else { inv.fruit++; toast('🍎 Picked fruit'); }
+    updateInv();
+  }
+}
+
+/* ---------------- MOVEMENT / CAMERA ---------------- */
+function updatePlayer(dt){
+  if(!player.alive) return;
+  const sp = player.running ? player.sprint : player.speed;
+  // forward/right based on yaw
+  const fx=Math.sin(player.yaw), fz=Math.cos(player.yaw);
+  const rx=Math.sin(player.yaw+Math.PI/2), rz=Math.cos(player.yaw+Math.PI/2);
+  let vx = (fx*moveVec.y + rx*moveVec.x);
+  let vz = (fz*moveVec.y + rz*moveVec.x);
+  const len=Math.hypot(vx,vz)||1; vx/=len; vz/=len;
+  const moving = Math.hypot(moveVec.x,moveVec.y)>0.05;
+  if(moving){
+    let nx=player.pos.x + vx*sp*dt;
+    let nz=player.pos.z + vz*sp*dt;
+    if(!collide(nx,player.pos.z)) player.pos.x=nx;
+    if(!collide(player.pos.x,nz)) player.pos.z=nz;
+    // running drains a touch more
+    // running has no resource cost now
+  }
+  player.inMaze = player.pos.z < -(CAMP_R-8);
+  // head bob
+  const bob = moving ? Math.sin(world.time*10)*0.08 : 0;
+  camera.position.set(player.pos.x, 1.7+bob, player.pos.z);
+  camera.rotation.order='YXZ';
+  camera.rotation.y=player.yaw;
+  camera.rotation.x=player.pitch;
+  world.torch.position.set(player.pos.x, 2.4, player.pos.z);
+
+  // keep the sun + its shadow frustum centered on the player (crisp shadows everywhere)
+  if(world.sun){
+    const off = world.sunOffset || (world.sunOffset=new THREE.Vector3(60,120,40));
+    world.sun.position.set(player.pos.x+off.x, off.y, player.pos.z+off.z);
+    world.sun.target.position.set(player.pos.x, 0, player.pos.z);
+    world.sun.target.updateMatrixWorld();
+  }
+  // drift dust motes
+  if(world.dust){
+    world.dust.rotation.y += dt*0.02;
+    world.dust.position.y = Math.sin(world.time*0.3)*0.4;
+  }
+
+  // discover map cells near player
+  if(player.inMaze){
+    const {cx,cy}=worldToCell(player.pos.x,player.pos.z);
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+      const k=(cx+dx)+','+(cy+dy);
+      world.discovered.add(k);
+    }
+  }
+}
+
+/* ---------------- MINECRAFT HEARTS ---------------- */
+const HEART_COUNT = 10; // each heart = 10 HP
+function heartSVG(state, idx){
+  const shape = "M3 2 H6 V3 H7 V4 H9 V3 H10 V2 H13 V3 H14 V6 H13 V8 H12 V10 H11 V11 H10 V12 H9 V13 H7 V12 H6 V11 H5 V10 H4 V8 H3 V6 H2 V3 H3 Z";
+  const back = '#3a0a0a', red='#e23b3b', redD='#9b1c1c';
+  if(state==='empty'){
+    return `<svg viewBox="0 0 16 15"><path d="${shape}" fill="${back}" stroke="#000" stroke-width="0.6"/></svg>`;
+  }
+  if(state==='half'){
+    const cid='lh'+idx;
+    return `<svg viewBox="0 0 16 15">
+      <path d="${shape}" fill="${back}" stroke="#000" stroke-width="0.6"/>
+      <clipPath id="${cid}"><rect x="0" y="0" width="8" height="15"/></clipPath>
+      <g clip-path="url(#${cid})"><path d="${shape}" fill="${red}" stroke="#000" stroke-width="0.6"/>
+      <rect x="4" y="4" width="2" height="2" fill="#ff9a9a"/></g>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 16 15">
+    <path d="${shape}" fill="${red}" stroke="#000" stroke-width="0.6"/>
+    <rect x="4" y="4" width="2" height="2" fill="#ff9a9a"/>
+    <path d="M11 4 H12 V6 H11 Z" fill="${redD}"/>
+  </svg>`;
+}
+let _heartsBuilt=false;
+function renderHearts(hp){
+  const wrap=document.getElementById('hearts');
+  if(!wrap) return;
+  if(!_heartsBuilt){
+    wrap.innerHTML='';
+    for(let i=0;i<HEART_COUNT;i++){
+      const d=document.createElement('div'); d.className='heart'; wrap.appendChild(d);
+    }
+    _heartsBuilt=true;
+  }
+  const perHeart = 100/HEART_COUNT;
+  const cells=wrap.children;
+  for(let i=0;i<HEART_COUNT;i++){
+    const lo=i*perHeart;
+    let state;
+    if(hp >= lo+perHeart) state='full';
+    else if(hp >= lo+perHeart*0.5) state='half';
+    else state='empty';
+    if(cells[i]._state!==state){ cells[i].innerHTML=heartSVG(state, i); cells[i]._state=state; }
+  }
+}
+
+/* ---------------- HUD UPDATE ---------------- */
+function updateHUD(){
+  renderHearts(player.hp);
+  const len = world.phase==='day'?DAY_LEN:NIGHT_LEN;
+  const rem = Math.max(0,len-world.time);
+  const mm=Math.floor(rem/60), ss=Math.floor(rem%60);
+  document.getElementById('timer').textContent=`${mm}:${ss<10?'0':''}${ss}`;
+  const phaseEl=document.getElementById('phase');
+  phaseEl.textContent = world.phase==='day'?'DAY':'NIGHT';
+  phaseEl.style.color = world.phase==='day'?'#e9c46a':'#9bc4ff';
+  document.getElementById('cycleBar').style.width=(rem/len*100)+'%';
+  document.getElementById('cycleBar').style.background =
+    world.phase==='day'?'linear-gradient(90deg,#e9c46a,#f4a261)':'linear-gradient(90deg,#5e60ce,#48cae4)';
+  // USE button hot when something usable near
+  const act=document.getElementById('btnAct');
+  if(nearestInteractable()) act.classList.add('hot'); else act.classList.remove('hot');
+  updateInv();
+}
+function updateInv(){
+  document.getElementById('invWheat').textContent=inv.wheat;
+  document.getElementById('invFruit').textContent=inv.fruit;
+  const totalPath = world.mazeGrid.flat().filter(v=>v===0).length || 1;
+  const pct=Math.min(100,Math.round(world.discovered.size/totalPath*100));
+  document.getElementById('invMap').textContent=pct+'%';
+}
+
+/* ---------------- MAP OVERLAY ---------------- */
+function drawMap(){
+  const cv=document.getElementById('mapCanvas'); const ctx=cv.getContext('2d');
+  const N=MAZE, cell=cv.width/N;
+  ctx.fillStyle='#0d120e'; ctx.fillRect(0,0,cv.width,cv.height);
+  const g=world.mazeGrid;
+  for(let cy=0;cy<N;cy++)for(let cx=0;cx<N;cx++){
+    const k=cx+','+cy;
+    const px=cx*cell, py=cy*cell;
+    if(world.discovered.has(k)){
+      ctx.fillStyle = g[cy][cx]===1 ? '#3a4234' : '#cdbf8f';
+      ctx.fillRect(px,py,cell-1,cell-1);
+    } else {
+      ctx.fillStyle='#11160f';
+      ctx.fillRect(px,py,cell-1,cell-1);
+    }
+  }
+  // player
+  if(player.inMaze){
+    const {cx,cy}=worldToCell(player.pos.x,player.pos.z);
+    ctx.fillStyle='#48cae4';
+    ctx.beginPath();ctx.arc(cx*cell+cell/2,cy*cell+cell/2,cell*0.32,0,7);ctx.fill();
+  }
+  // entrance marker
+  const mid=Math.floor(N/2);
+  ctx.fillStyle='#9b2226';
+  ctx.fillRect(mid*cell+cell*0.25,(N-1)*cell+cell*0.1,cell*0.5,cell*0.8);
+}
+
+/* ---------------- CONTROLS ---------------- */
+function bindControls(){
+  // joystick
+  const joy=document.getElementById('joy'), stick=document.getElementById('stick');
+  let jid=null, jcx=0, jcy=0;
+  function jStart(e){const t=e.changedTouches?e.changedTouches[0]:e;jid=t.identifier??'m';
+    const r=joy.getBoundingClientRect();jcx=r.left+r.width/2;jcy=r.top+r.height/2;jMove(e);}
+  function jMove(e){const ts=e.changedTouches?[...e.changedTouches]:[e];
+    for(const t of ts){ if((t.identifier??'m')!==jid)continue;
+      let dx=t.clientX-jcx, dy=t.clientY-jcy; const R=52;
+      const d=Math.hypot(dx,dy); if(d>R){dx*=R/d;dy*=R/d;}
+      stick.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+      moveVec.x=dx/R; moveVec.y=dy/R; // inverted vertical: up=back, down=forward
+    }}
+  function jEnd(e){const ts=e.changedTouches?[...e.changedTouches]:[e];
+    for(const t of ts){ if((t.identifier??'m')!==jid)continue;
+      jid=null;moveVec.x=0;moveVec.y=0;stick.style.transform='translate(-50%,-50%)';}}
+  joy.addEventListener('touchstart',e=>{e.preventDefault();jStart(e);},{passive:false});
+  joy.addEventListener('touchmove',e=>{e.preventDefault();jMove(e);},{passive:false});
+  joy.addEventListener('touchend',jEnd);joy.addEventListener('touchcancel',jEnd);
+  joy.addEventListener('mousedown',jStart);
+  window.addEventListener('mousemove',e=>{if(jid!==null)jMove(e);});
+  window.addEventListener('mouseup',e=>{if(jid==='m')jEnd(e);});
+
+  // look (drag anywhere on right half of screen, excluding buttons)
+  let lid=null,lx=0,ly=0;
+  function isUI(t){return t.closest&&t.closest('#joy,#actions,#mapBtn,.screen,#mapOverlay,.btn');}
+  function lStart(e){const t=e.changedTouches?e.changedTouches[0]:e;
+    if(isUI(e.target))return; if(t.clientX<innerWidth*0.4 && e.touches)return;
+    lid=t.identifier??'lm';lx=t.clientX;ly=t.clientY;}
+  function lMove(e){const ts=e.changedTouches?[...e.changedTouches]:[e];
+    for(const t of ts){ if((t.identifier??'lm')!==lid)continue;
+      const dx=t.clientX-lx, dy=t.clientY-ly; lx=t.clientX;ly=t.clientY;
+      player.yaw -= dx*0.005;
+      player.pitch -= dy*0.005;
+      player.pitch=Math.max(-1.2,Math.min(1.2,player.pitch));
+    }}
+  function lEnd(e){const ts=e.changedTouches?[...e.changedTouches]:[e];
+    for(const t of ts){if((t.identifier??'lm')===lid)lid=null;}}
+  const cv=renderer.domElement;
+  cv.addEventListener('touchstart',e=>{lStart(e);},{passive:true});
+  cv.addEventListener('touchmove',e=>{lMove(e);},{passive:true});
+  cv.addEventListener('touchend',lEnd);cv.addEventListener('touchcancel',lEnd);
+  cv.addEventListener('mousedown',e=>{lid='lm';lx=e.clientX;ly=e.clientY;});
+  window.addEventListener('mousemove',e=>{if(lid==='lm')lMove(e);});
+  window.addEventListener('mouseup',e=>{if(lid==='lm')lid=null;});
+
+  // action buttons
+  const run=document.getElementById('btnRun');
+  run.addEventListener('touchstart',e=>{e.preventDefault();player.running=true;run.style.background='var(--ivy)';},{passive:false});
+  run.addEventListener('touchend',e=>{player.running=false;run.style.background='';});
+  run.addEventListener('mousedown',()=>player.running=true);
+  run.addEventListener('mouseup',()=>player.running=false);
+  document.getElementById('btnAct').addEventListener('click',e=>{e.preventDefault();doUse();});
+
+  // map
+  document.getElementById('mapBtn').addEventListener('click',()=>{
+    drawMap();document.getElementById('mapOverlay').style.display='flex';});
+  document.getElementById('mapClose').addEventListener('click',()=>{
+    document.getElementById('mapOverlay').style.display='none';});
+
+  // keyboard (desktop testing)
+  addEventListener('keydown',e=>{
+    if(e.key==='w')moveVec.y=1; if(e.key==='s')moveVec.y=-1;
+    if(e.key==='a')moveVec.x=-1; if(e.key==='d')moveVec.x=1;
+    if(e.key==='Shift')player.running=true; if(e.key==='e')doUse();
+  });
+  addEventListener('keyup',e=>{
+    if(e.key==='w'||e.key==='s')moveVec.y=0;
+    if(e.key==='a'||e.key==='d')moveVec.x=0;
+    if(e.key==='Shift')player.running=false;
+  });
+
+  addEventListener('resize',()=>{
+    camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+  });
+
+  document.getElementById('startBtn').addEventListener('click',()=>{
+    document.getElementById('start').style.display='none';
+    world.started=true; world.time=0;
+  });
+  document.getElementById('reviveBtn').addEventListener('click',()=>location.reload());
+}
+
+/* ---------------- TOAST ---------------- */
+let toastT;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+/* ---------------- LOOP ---------------- */
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(0.05, clock.getDelta());
+  if(world.started && player.alive){
+    updateTime(dt);
+    updatePlayer(dt);
+    updateMonsters(dt);
+    updateSurvival(dt);
+    updateDoors(dt);
+    updateHUD();
+    // map live if open
+    if(document.getElementById('mapOverlay').style.display==='flex') drawMap();
+  }
+  renderer.render(scene,camera);
+}
+
+init();
+</script>
 </body>
 </html>
