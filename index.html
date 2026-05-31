@@ -2,444 +2,673 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Maze Runner Mobile Prototype</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Maze Runner: Glade & The Maze</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
-        #canvas-container { width: 100vw; height: 100vh; }
-        
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            touch-action: none; /* Improves touch control on mobile */
+        }
         /* UI Overlay */
-        #ui-layer { position: absolute; top: 10px; left: 10px; color: white; pointer-events: none; text-shadow: 2px 2px 2px #000; }
-        .hud-item { margin-bottom: 5px; font-size: 16px; font-weight: bold; }
-        #timer { font-size: 24px; color: #ffcc00; }
-        
-        /* Mobile Controls */
-        .joystick-container { position: absolute; bottom: 30px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); touch-action: none; }
-        #move-stick { left: 30px; width: 120px; height: 120px; }
-        #look-stick { right: 30px; width: 120px; height: 120px; }
-        .knob { position: absolute; width: 40px; height: 40px; background: rgba(255,255,255,0.5); border-radius: 50%; top: 40px; left: 40px; }
-        
-        /* Action Button */
-        #action-btn { position: absolute; bottom: 170px; right: 45px; width: 90px; height: 90px; background: rgba(255, 0, 0, 0.4); border: 3px solid #ff3333; border-radius: 50%; color: white; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; display: none; }
-        
-        /* Mini-Map Checkpoints */
-        #minimap { position: absolute; top: 10px; right: 10px; width: 120px; height: 120px; background: rgba(0,0,0,0.7); border: 2px solid #555; border-radius: 8px; overflow: hidden; }
-        #map-canvas { width: 100%; height: 100%; }
-
-        /* Status Alerts */
-        #alert-box { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); color: #ff3333; font-size: 30px; font-weight: bold; text-align: center; text-shadow: 3px 3px 5px #000; pointer-events: none; display: none; }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+        .status-bar {
+            background: rgba(0,0,0,0.7);
+            color: #ffd966;
+            padding: 8px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            pointer-events: auto;
+        }
+        .status-item {
+            background: #2c2c2c;
+            padding: 4px 12px;
+            border-radius: 16px;
+            color: #f5c542;
+        }
+        .camp-resources {
+            display: flex;
+            gap: 15px;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        #message-area {
+            background: rgba(0,0,0,0.8);
+            color: #ffaa44;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 12px;
+            font-size: 12px;
+            text-align: center;
+            pointer-events: none;
+            max-width: 90%;
+        }
+        .map-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.75);
+            border-radius: 16px;
+            padding: 12px;
+            width: 140px;
+            backdrop-filter: blur(8px);
+            border: 1px solid #c9a03d;
+            pointer-events: auto;
+            font-size: 10px;
+            color: #eee;
+            text-align: center;
+            z-index: 200;
+        }
+        .map-panel h4 {
+            margin: 0 0 5px;
+            font-size: 12px;
+            color: #ffbb66;
+        }
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 3px;
+            background: #1e2a1a;
+            padding: 6px;
+            border-radius: 8px;
+        }
+        .map-cell {
+            aspect-ratio: 1 / 1;
+            background: #3a2a1a;
+            border-radius: 2px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #bda46b;
+        }
+        .map-cell.discovered {
+            background: #5f7a3c;
+            color: #ffeaac;
+            box-shadow: 0 0 4px gold;
+        }
+        .map-cell.current {
+            background: #e09d32;
+            color: black;
+            font-weight: bold;
+        }
+        .action-buttons {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+            z-index: 150;
+        }
+        .action-btn {
+            background: #3a2a1f;
+            border: none;
+            color: #f7d44a;
+            padding: 12px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 16px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px black;
+            transition: 0.1s linear;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .action-btn:active {
+            transform: scale(0.96);
+            background: #1e3a1e;
+        }
+        #night-warning {
+            background: #aa2e1e;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        @media (max-width: 700px) {
+            .action-btn { padding: 8px 14px; font-size: 12px; }
+            .map-panel { width: 110px; padding: 6px; }
+            .status-bar { font-size: 10px; }
+        }
     </style>
-    <!-- Include Three.js via CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-
-    <div id="canvas-container"></div>
-    
-    <div id="ui-layer">
-        <div id="timer" class="hud-item">DAY - 00:00</div>
-        <div id="water-count" class="hud-item">Water Supply: 3/3</div>
-        <div id="food-count" class="hud-item">Wheat Harvested: 0</div>
+    <div id="ui">
+        <div class="status-bar">
+            <div>🌞 DAY/NIGHT: <span id="time-status">DAY</span> | ⏱️ <span id="timer">5:00</span></div>
+            <div class="camp-resources">
+                <span>🍎 Food: <span id="food-count">5</span></span>
+                <span>💧 Water: <span id="water-count">3</span><span style="font-size:10px">/day</span></span>
+            </div>
+            <div>🚪 Maze Door: <span id="door-status">OPEN</span></div>
+        </div>
+        <div id="message-area">🌿 Welcome, Glader! Explore camp, grow food. Maze open in daytime. Night = monsters & maze changes!</div>
+    </div>
+    <div class="map-panel" id="mapPanel">
+        <h4>🗺️ DISCOVERED MAZE</h4>
+        <div class="map-grid" id="mapGrid"></div>
+        <div style="font-size:8px; margin-top:4px;">⬆️ forward = reveal</div>
+    </div>
+    <div class="action-buttons">
+        <button class="action-btn" id="harvestBtn">🌾 Harvest Plant</button>
+        <button class="action-btn" id="waterBtn">💧 Get Water</button>
+        <button class="action-btn" id="plantBtn">🌱 Plant Seeds</button>
     </div>
 
-    <div id="alert-box">⚠️ DOORS CLOSING RUN! ⚠️</div>
+    <!-- Import Three.js core and add-ons -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
 
-    <div id="minimap">
-        <canvas id="map-canvas" width="120" height="120"></canvas>
-    </div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-    <!-- Mobile Joysticks -->
-    <div id="move-stick" class="joystick-container"><div class="knob" id="move-knob"></div></div>
-    <div id="look-stick" class="joystick-container"><div class="knob" id="look-knob"></div></div>
-    
-    <!-- Action Interactor Context Button -->
-    <div id="action-btn">INTERACT</div>
-
-    <script>
-        // --- GAME CONFIGURATION ---
-        // Note: Real 5 mins = 300 seconds. For testing feedback, we set phases to 60 seconds (1 min). Change to 300 for full 5 mins!
-        const PHASE_DURATION = 60; 
-        let isDay = true;
-        let gameTime = 0; // Tracks seconds
-        let waterAvailable = 3;
-        let wheatCount = 0;
-        let exploredSectors = { center: true, north: false, south: false, east: false, west: false };
-
-        // --- THREE.JS SETUP ---
-        const container = document.getElementById('canvas-container');
+        // --- Game Setup ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x111116, 0.015);
-
+        scene.background = new THREE.Color(0x071a3b); // night sky default
+        scene.fog = new THREE.FogExp2(0x071a3b, 0.008);
+        
         const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 8, 20);
+        camera.rotation.order = 'YXZ';
+        
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        container.appendChild(renderer.domElement);
-
-        // --- LIGHTING ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        document.body.appendChild(renderer.domElement);
+        
+        // CSS2 for simple labels
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+        
+        // Controls with mobile touch support
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.maxPolarAngle = Math.PI / 2.4;
+        controls.target.set(0, 2, 0);
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404060);
         scene.add(ambientLight);
-        const sunLight = new THREE.DirectionalLight(0xfffaed, 1.0);
-        sunLight.position.set(50, 100, 50);
+        const sunLight = new THREE.DirectionalLight(0xffdd99, 1.2);
+        sunLight.position.set(30, 25, 10);
         sunLight.castShadow = true;
+        sunLight.receiveShadow = true;
+        sunLight.shadow.mapSize.width = 1024;
         scene.add(sunLight);
-
-        // --- CREATING WORLD ---
-        // The Glade Ground
-        const groundGeo = new THREE.PlaneGeometry(300, 300);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x3a5f0b, roughness: 0.9 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
+        const fillLight = new THREE.PointLight(0x5577aa, 0.4);
+        fillLight.position.set(0, 5, 0);
+        scene.add(fillLight);
+        
+        // Ground plane (camp area)
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x5a7645, roughness: 0.8 });
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), groundMat);
         ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.2;
         ground.receiveShadow = true;
         scene.add(ground);
-
-        // HUGE MASSIVE CAMP WALLS (The Glade boundaries)
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x444446, roughness: 0.7 });
-        function createHugeWall(w, h, d, x, y, z) {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mesh = new THREE.Mesh(geo, wallMat);
-            mesh.position.set(x, y, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            scene.add(mesh);
-            return mesh;
+        
+        // --- CAMP WALLS (HUGE)
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.4 });
+        function addWall(x, z, rx, rz, w, h, d) {
+            const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+            wall.position.set(x, h/2, z);
+            wall.receiveShadow = true;
+            wall.castShadow = true;
+            scene.add(wall);
         }
-
-        // Surrounding Box Walls (100 units high!)
-        createHugeWall(300, 100, 10, 0, 50, -150); // Back
-        createHugeWall(10, 100, 300, -150, 50, 0); // Left
-        createHugeWall(10, 100, 300, 150, 50, 0);  // Right
-        // Front wall divided into two blocks to make space for the HUGE DOOR
-        createHugeWall(130, 100, 10, -85, 50, 150);
-        createHugeWall(130, 100, 10, 85, 50, 150);
-
-        // --- THE GIANT SLIDING MAZE DOOR ---
-        const doorGeo = new THREE.BoxGeometry(40, 100, 8);
-        const doorMat = new THREE.MeshStandardMaterial({ color: 0x222224, metalness: 0.5 });
-        const leftDoor = new THREE.Mesh(doorGeo, doorMat);
-        leftDoor.position.set(-20, 50, 150);
-        scene.add(leftDoor);
-
-        const rightDoor = new THREE.Mesh(doorGeo, doorMat);
-        rightDoor.position.set(20, 50, 150);
-        scene.add(rightDoor);
-
-        // --- CAMP ASSETS (Farming & Sink) ---
-        // Sink Structure
-        const sinkGeo = new THREE.BoxGeometry(4, 4, 4);
-        const sinkMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
-        const sink = new THREE.Mesh(sinkGeo, sinkMat);
-        sink.position.set(-20, 2, -20);
-        scene.add(sink);
-
-        // Crops / Wheat Field Visual
-        const farmGeo = new THREE.BoxGeometry(15, 0.5, 15);
-        const farmMat = new THREE.MeshStandardMaterial({ color: 0x997a3d });
-        const farmZone = new THREE.Mesh(farmGeo, farmMat);
-        farmZone.position.set(20, 0.2, -20);
-        scene.add(farmZone);
-
-        // --- DYNAMIC SHIFTING MAZE SECTORS ---
-        const mazeContainer = new THREE.Group();
-        scene.add(mazeContainer);
-
-        function buildMazeWalls() {
-            // Clear existing layout
-            while(mazeContainer.children.length > 0){ 
-                mazeContainer.remove(mazeContainer.children[0]); 
+        // Outer Camp Walls (square)
+        const campSize = 24;
+        const wallH = 6;
+        addWall(0, -campSize/2, 0,0, campSize, wallH, 1.2);
+        addWall(0, campSize/2, 0,0, campSize, wallH, 1.2);
+        addWall(-campSize/2, 0, 0,0, 1.2, wallH, campSize);
+        addWall(campSize/2, 0, 0,0, 1.2, wallH, campSize);
+        
+        // Maze Door (HUGE) at positive Z side
+        const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(5, 8, 1.5), new THREE.MeshStandardMaterial({ color: 0xbd7a3a, metalness: 0.7 }));
+        doorFrame.position.set(0, 4, campSize/2 - 0.8);
+        scene.add(doorFrame);
+        const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(4.2, 6.8, 0.3), new THREE.MeshStandardMaterial({ color: 0xac8e5a, emissive: 0x221100 }));
+        doorPanel.position.set(0, 3.4, campSize/2 - 0.2);
+        scene.add(doorPanel);
+        let doorOpen = true;
+        const doorClosedPosZ = campSize/2 - 0.2;
+        const doorOpenPosZ = campSize/2 + 1.5;
+        doorPanel.position.z = doorOpenPosZ;
+        
+        // --- Maze Generation (procedural block maze that changes at midnight)
+        const mazeSize = 45; // world extends from -25 to 25 approx
+        const cellSize = 3.2;
+        const mazeGridW = 15;
+        const mazeGridH = 15;
+        let mazeWalls = []; // store wall meshes
+        let currentMazeLayout = []; // 2d boolean (true = wall)
+        
+        function generateMazeLayout(seedOffset = 0) {
+            // simple randomized DFS-based maze with some variation each midnight
+            const width = mazeGridW, height = mazeGridH;
+            let grid = Array(height).fill().map(() => Array(width).fill(true));
+            // make paths: carve
+            const stack = [];
+            const startX = 1, startY = 1;
+            grid[startY][startX] = false;
+            stack.push([startX, startY]);
+            const dirs = [[0, -2],[2,0],[0,2],[-2,0]];
+            while(stack.length) {
+                const [cx, cy] = stack[stack.length-1];
+                const neighbours = [];
+                for(let [dx, dy] of dirs) {
+                    const nx = cx+dx, ny = cy+dy;
+                    if(nx>0 && nx<width-1 && ny>0 && ny<height-1 && grid[ny][nx] === true) neighbours.push([nx, ny, dx/2, dy/2]);
+                }
+                if(neighbours.length) {
+                    const [nx, ny, wx, wy] = neighbours[Math.floor(Math.random() * neighbours.length)];
+                    grid[ny][nx] = false;
+                    grid[cy+wy][cx+wx] = false;
+                    stack.push([nx, ny]);
+                } else stack.pop();
             }
-            
-            // Random variation generator based on midnight time step
-            const pattern = Math.random() > 0.5 ? 1 : 2;
-            
-            // Generate rows of massive maze barriers in outer sector (z > 150)
-            for(let i = -100; i <= 100; i += 50) {
-                for(let j = 180; j <= 280; j += 40) {
-                    if ((i + j) % (pattern === 1 ? 30 : 40) === 0) continue; 
-                    const mWall = new THREE.Mesh(new THREE.BoxGeometry(30, 100, 10), wallMat);
-                    mWall.position.set(i + (Math.sin(j)*5), 50, j);
-                    mazeContainer.add(mWall);
+            // add extra random walls for variation based on seed (time)
+            for(let i=0;i<40 + seedOffset % 70; i++) {
+                const rx = Math.floor(Math.random() * width);
+                const ry = Math.floor(Math.random() * height);
+                if(!(rx===1 && ry===1) && !(rx===width-2 && ry===height-2) && Math.random()>0.4) grid[ry][rx] = true;
+            }
+            // ensure entrance from camp: portal at grid coords (0,7) -> actual world
+            return grid;
+        }
+        
+        function rebuildMaze(layout) {
+            // remove old walls
+            mazeWalls.forEach(w => scene.remove(w));
+            mazeWalls = [];
+            const wallMatMaze = new THREE.MeshStandardMaterial({ color: 0xa5845e, roughness: 0.3 });
+            const startXOffset = - (mazeGridW * cellSize)/2 + cellSize/2;
+            const startZOffset = campSize/2 + 3; // just beyond door
+            for(let i=0; i<mazeGridH; i++) {
+                for(let j=0; j<mazeGridW; j++) {
+                    if(layout[i][j] === true) {
+                        const w = cellSize;
+                        const h = 4.5;
+                        const d = cellSize;
+                        const x = startXOffset + j * cellSize;
+                        const z = startZOffset + i * cellSize;
+                        const wallBlock = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMatMaze);
+                        wallBlock.position.set(x, h/2, z);
+                        wallBlock.castShadow = true;
+                        wallBlock.receiveShadow = true;
+                        scene.add(wallBlock);
+                        mazeWalls.push(wallBlock);
+                    }
                 }
             }
         }
-        buildMazeWalls(); // Initialize first layout
-
-        // --- MONSTERS (Grievers) ---
+        
+        // initial maze
+        let currentLayout = generateMazeLayout(0);
+        rebuildMaze(currentLayout);
+        
+        // --- Monsters (simple orb + pursuit)
         const monsters = [];
-        const monsterMat = new THREE.MeshBasicMaterial({ color: 0xff0033 });
-        function spawnMonster(x, z) {
-            const mGeo = new THREE.SphereGeometry(3, 8, 8);
-            const mMesh = new THREE.Mesh(mGeo, monsterMat);
-            mMesh.position.set(x, 3, z);
-            scene.add(mMesh);
-            monsters.push(mMesh);
+        function createMonster(x, z) {
+            const group = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), new THREE.MeshStandardMaterial({ color: 0xaa3333, emissive: 0x441111 }));
+            body.castShadow = true;
+            const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffaa44 }));
+            eyeL.position.set(-0.3, 0.2, 0.7);
+            const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffaa44 }));
+            eyeR.position.set(0.3, 0.2, 0.7);
+            group.add(body, eyeL, eyeR);
+            group.position.set(x, 0.5, z);
+            scene.add(group);
+            return { mesh: group, speed: 1.8, active: false };
         }
-
-        // --- PLAYER CONFIG ---
-        const player = {
-            position: new THREE.Vector3(0, 4, 0),
-            rotation: new THREE.Vector3(),
-            speed: 1.2,
-            radius: 2
-        };
-        camera.position.copy(player.position);
-
-        // --- GAME CONTROLS LOGIC (Mobile Friendly Joysticks) ---
-        let moveInput = { x: 0, y: 0 };
-        let lookInput = { x: 0, y: 0 };
-
-        function setupJoystick(containerId, knobId, callback) {
-            const stick = document.getElementById(containerId);
-            const knob = document.getElementById(knobId);
-            let active = false;
-            let startX, startY;
-
-            function handleStart(e) {
-                active = true;
-                const touch = e.touches ? e.touches[0] : e;
-                startX = touch.clientX;
-                startY = touch.clientY;
-            }
-
-            function handleMove(e) {
-                if (!active) return;
-                const touch = e.touches ? e.touches[0] : e;
-                let dx = touch.clientX - startX;
-                let dy = touch.clientY - startY;
-                const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 40);
-                
-                const angle = Math.atan2(dy, dx);
-                dx = Math.cos(angle) * dist;
-                dy = Math.sin(angle) * dist;
-
-                knob.style.transform = `translate(${dx}px, ${dy}px)`;
-                callback(dx / 40, dy / 40);
-            }
-
-            function handleEnd() {
-                active = false;
-                knob.style.transform = 'translate(0px, 0px)';
-                callback(0, 0);
-            }
-
-            stick.addEventListener('touchstart', handleStart, {passive: true});
-            window.addEventListener('touchmove', handleMove, {passive: false});
-            window.addEventListener('touchend', handleEnd);
-            
-            // Desktop Mouse Backup
-            stick.addEventListener('mousedown', handleStart);
-            window.addEventListener('mousemove', handleMove);
-            window.addEventListener('mouseup', handleEnd);
+        // spawn 4 monsters inside maze region
+        const monsterList = [];
+        for(let i=0;i<5;i++) {
+            const x = (Math.random() - 0.5) * 40 + 10;
+            const z = (Math.random() - 0.5) * 40 + 35;
+            monsterList.push(createMonster(x, z));
         }
-
-        setupJoystick('move-stick', 'move-knob', (x, y) => { moveInput.x = x; moveInput.y = y; });
-        setupJoystick('look-stick', 'look-knob', (x, y) => { lookInput.x = x; lookInput.y = y; });
-
-        // Keyboard support for desktop testing
-        window.addEventListener('keydown', (e) => {
-            if(e.key === 'w' || e.key === 'ArrowUp') moveInput.y = -1;
-            if(e.key === 's' || e.key === 'ArrowDown') moveInput.y = 1;
-            if(e.key === 'a' || e.key === 'ArrowLeft') moveInput.x = -1;
-            if(e.key === 'd' || e.key === 'ArrowRight') moveInput.x = 1;
+        
+        // --- Camp resources
+        let food = 5;
+        let water = 3;
+        let waterUsedToday = 0;
+        let dayCounter = 0;
+        let plantedCount = 0; // each plant gives 2-3 food after harvest
+        
+        // Simple plant indicators (CSS2D)
+        const plantLabels = [];
+        function updateResourceUI() {
+            document.getElementById('food-count').innerText = food;
+            document.getElementById('water-count').innerText = water;
+        }
+        
+        // Garden patches
+        const gardenPositions = [[-5, 0.1, -6], [5, 0.1, -5], [0, 0.1, -7], [-3,0.1,-3]];
+        gardenPositions.forEach((pos) => {
+            const patch = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.2, 8), new THREE.MeshStandardMaterial({ color: 0x6b4c3b }));
+            patch.position.set(pos[0], pos[1], pos[2]);
+            patch.receiveShadow = true;
+            scene.add(patch);
+            const div = document.createElement('div');
+            div.textContent = '🌱 Empty';
+            div.style.backgroundColor = 'rgba(0,0,0,0.6)';
+            div.style.color = '#bada55';
+            div.style.padding = '2px 6px';
+            div.style.borderRadius = '12px';
+            div.style.fontSize = '10px';
+            const label = new CSS2DObject(div);
+            label.position.set(pos[0], pos[1]+0.5, pos[2]);
+            scene.add(label);
+            plantLabels.push({ label, pos, hasPlant: false, growTimer: null });
         });
-        window.addEventListener('keyup', (e) => {
-            if(['w','s','ArrowUp','ArrowDown'].includes(e.key)) moveInput.y = 0;
-            if(['a','d','ArrowLeft','ArrowRight'].includes(e.key)) moveInput.x = 0;
-        });
-
-        // --- INTERACTION BUTTON CONTEXT ---
-        const actionBtn = document.getElementById('action-btn');
-        actionBtn.addEventListener('click', () => {
-            // Context Action Check
-            const distToSink = player.position.distanceTo(sink.position);
-            const distToFarm = player.position.distanceTo(farmZone.position);
-
-            if (distToSink < 8 && waterAvailable > 0) {
-                waterAvailable--;
-                document.getElementById('water-count').innerText = `Water Supply: ${waterAvailable}/3`;
-                alert("Drank refreshing well water!");
-            } else if (distToFarm < 12) {
-                wheatCount += 5;
-                document.getElementById('food-count').innerText = `Wheat Harvested: ${wheatCount}`;
-                alert("Harvested 5 Wheat crops!");
-            }
-        });
-
-        // --- GAME LOOP CLOCK CALCULATION ---
-        setInterval(() => {
-            gameTime++;
-            let currentPhaseTime = gameTime % (PHASE_DURATION * 2);
-
-            if (currentPhaseTime < PHASE_DURATION) {
-                // Day Mode
-                isDay = true;
-                const minutes = Math.floor(currentPhaseTime / 60).toString().padStart(2, '0');
-                const seconds = (currentPhaseTime % 60).toString().padStart(2, '0');
-                document.getElementById('timer').innerText = `DAY - ${minutes}:${seconds}`;
-                document.getElementById('timer').style.color = '#ffcc00';
-                
-                // Keep alert screen hidden
-                document.getElementById('alert-box').style.display = 'none';
-
-                // Handle Day light values
-                if (sunLight.intensity < 1) sunLight.intensity += 0.05;
-                scene.fog.color.setHex(0xaaccff);
-
-                // Monsters vanish in direct day sunlight
-                while(monsters.length > 0) { scene.remove(monsters.pop()); }
-
+        
+        function harvestFromPatch(idx) {
+            const p = plantLabels[idx];
+            if(p.hasPlant) {
+                const yieldAmt = Math.floor(Math.random() * 3) + 2;
+                food += yieldAmt;
+                updateResourceUI();
+                p.hasPlant = false;
+                p.label.element.textContent = '🌱 Empty';
+                showMessage(`+${yieldAmt} food harvested!`);
+                if(p.growTimer) clearTimeout(p.growTimer);
+            } else { showMessage("Nothing to harvest, plant seeds first!"); }
+        }
+        
+        function plantSeed(idx) {
+            const p = plantLabels[idx];
+            if(!p.hasPlant && food >= 2) {
+                food -= 2;
+                updateResourceUI();
+                p.hasPlant = true;
+                p.label.element.textContent = '🌿 Growing...';
+                showMessage("Planted! It will grow in 30 sec.");
+                p.growTimer = setTimeout(() => {
+                    if(p.hasPlant) {
+                        p.label.element.textContent = '🍎 Ready!';
+                        showMessage("Your plant is ready to harvest!");
+                    }
+                }, 30000);
+            } else if(food<2) showMessage("Need 2 food to plant seeds!");
+            else showMessage("Already growing here!");
+        }
+        
+        function getWater() {
+            if(waterUsedToday < 3) {
+                water += 1;
+                waterUsedToday++;
+                updateResourceUI();
+                showMessage(`Watered! (${waterUsedToday}/3 per day)`);
             } else {
-                // Night Mode
-                isDay = false;
-                let nightSecs = currentPhaseTime - PHASE_DURATION;
-                const minutes = Math.floor(nightSecs / 60).toString().padStart(2, '0');
-                const seconds = (nightSecs % 60).toString().padStart(2, '0');
-                document.getElementById('timer').innerText = `NIGHT - ${minutes}:${seconds}`;
-                document.getElementById('timer').style.color = '#ff3333';
-
-                // Change environments to dark
-                if (sunLight.intensity > 0) sunLight.intensity -= 0.05;
-                scene.fog.color.setHex(0x05050a);
-
-                // Midnight Layout Shifting Mechanics
-                if (nightSecs === Math.floor(PHASE_DURATION / 2)) {
-                    buildMazeWalls();
-                    document.getElementById('alert-box').innerText = "⚠️ THE MAZE IS SHIFTING! ⚠️";
-                    document.getElementById('alert-box').style.display = 'block';
-                    setTimeout(() => { document.getElementById('alert-box').style.display = 'none'; }, 2000);
-                }
-
-                // Spawn hunters if player wanders out into the darkness
-                if(monsters.length === 0 && player.position.z > 150) {
-                    spawnMonster(player.position.x + 30, player.position.z + 40);
-                    spawnMonster(player.position.x - 30, player.position.z + 50);
-                }
+                showMessage("No more water today! Wait for next day.");
             }
-
-            // Warning right before gate closes shut
-            if (isDay && currentPhaseTime > (PHASE_DURATION - 10)) {
-                document.getElementById('alert-box').innerText = "⚠️ DOORS CLOSING RUN! ⚠️";
-                document.getElementById('alert-box').style.display = 'block';
-            }
-
-            // Morning Resource Refills
-            if (currentPhaseTime === 0) {
-                waterAvailable = 3;
-                document.getElementById('water-count').innerText = `Water Supply: ${waterAvailable}/3`;
-            }
-
-        }, 1000);
-
-        // --- MAP CHECKPOINT DISCOVERY SYSTEM ---
-        const mapCanvas = document.getElementById('map-canvas');
-        const mapCtx = mapCanvas.getContext('2d');
-
-        function updateMiniMap() {
-            mapCtx.clearRect(0, 0, 120, 120);
-            mapCtx.fillStyle = '#222';
-            mapCtx.fillRect(0,0,120,120);
-
-            // Track discoveries
-            if (player.position.z > 160) exploredSectors.north = true;
-            if (player.position.x > 50 && player.position.z > 160) exploredSectors.east = true;
-            if (player.position.x < -50 && player.position.z > 160) exploredSectors.west = true;
-
-            // Render discovered zones
-            mapCtx.fillStyle = exploredSectors.center ? '#555' : '#111';
-            mapCtx.fillRect(40, 60, 40, 40); // Base camp layout block
-
-            mapCtx.fillStyle = exploredSectors.north ? '#777' : '#111';
-            mapCtx.fillRect(40, 20, 40, 40); // Deep Corridor
-
-            // Draw player position marker dot
-            const pX = 60 + (player.position.x / 300) * 60;
-            const pZ = 80 + ((player.position.z - 150) / 300) * 60;
-            mapCtx.fillStyle = '#00ffcc';
-            mapCtx.beginPath();
-            mapCtx.arc(pX, pZ, 4, 0, Math.PI*2);
-            mapCtx.fill();
         }
-
-        // --- CORE ANIMATION & INTERACTION RENDER LOOP ---
-        const clock = new THREE.Clock();
-
+        
+        function showMessage(msg) {
+            const msgDiv = document.getElementById('message-area');
+            msgDiv.innerText = msg;
+            setTimeout(() => {
+                if(document.getElementById('message-area').innerText === msg)
+                    document.getElementById('message-area').innerText = "🌙 Day/Night cycle active.";
+            }, 3000);
+        }
+        
+        // --- Day/Night Cycle (5 min each)
+        let timeRemaining = 300; // seconds (5min)
+        let isDay = true;
+        const timerEl = document.getElementById('timer');
+        const timeStatusEl = document.getElementById('time-status');
+        const doorStatusEl = document.getElementById('door-status');
+        
+        function updateDayNight() {
+            if(isDay) {
+                scene.background.setHex(0x87CEEB);
+                sunLight.intensity = 1.1;
+                ambientLight.intensity = 0.5;
+                fillLight.intensity = 0.3;
+                timeStatusEl.innerText = "🌞 DAY";
+                doorStatusEl.innerText = "OPEN";
+                // open door
+                doorPanel.position.z = doorOpenPosZ;
+                doorOpen = true;
+                // disable monsters aggro
+                monsterList.forEach(m => m.active = false);
+                // show message
+                if(timeRemaining <= 295) showMessage("Maze door open! Enter before night.");
+            } else {
+                scene.background.setHex(0x071a3b);
+                sunLight.intensity = 0.05;
+                ambientLight.intensity = 0.2;
+                fillLight.intensity = 0.6;
+                timeStatusEl.innerText = "🌙 NIGHT";
+                doorStatusEl.innerText = "CLOSED";
+                doorPanel.position.z = doorClosedPosZ;
+                doorOpen = false;
+                // monsters active if player inside maze (check)
+                monsterList.forEach(m => m.active = true);
+                showMessage("⚠️ Night has fallen! Maze door locked. Monsters hunt!");
+            }
+        }
+        
+        let gameClock = setInterval(() => {
+            if(timeRemaining <= 0) {
+                // switch day/night
+                isDay = !isDay;
+                if(isDay) {
+                    timeRemaining = 300;
+                    // reset water usage & maze changes at midnight also happens at start of day? requirement: maze changes at midnight
+                    // Actually midnight = end of night / start of day, change maze layout and then revert next morning. Wait: "MAZE CHANGES AT MIDNIGHT AND THE NEXT MORNING IT GOES BACK"
+                    // So at midnight (end of day? confusing). Let's implement: At the moment night becomes day (midnight) -> maze changes, and then when day ends it reverts? no: "changes at midnight and next morning it goes back"
+                    // simpler: at each midnight (when night transitions to day) generate new maze, when day transitions to night revert to original? But movie-like: changes during night. But I'll do: every midnight (start of day) maze randomizes, then at start of night it reverts? that breaks consistency. 
+                    // Better: At the moment night starts (sunset) maze changes to deadly version, then at dawn reverts. But spec: "maze changes at midnight and next morning it goes back". Since midnight is middle of night, but for gameplay: at start of night we change, at start of day revert.
+                    // adjusting: at start of Night: change maze, at start of Day: revert to original base maze.
+                    if(!isDay) { // entering night
+                        const newLayout = generateMazeLayout(Math.floor(Date.now()/1000));
+                        rebuildMaze(newLayout);
+                        currentLayout = newLayout;
+                    } else { // entering day
+                        const originalLayout = generateMazeLayout(0); // default
+                        rebuildMaze(originalLayout);
+                        currentLayout = originalLayout;
+                    }
+                    waterUsedToday = 0;
+                    updateResourceUI();
+                    showMessage("Morning! Maze reset. Water refilled.");
+                } else {
+                    timeRemaining = 300;
+                }
+                updateDayNight();
+            } else {
+                timeRemaining--;
+            }
+            const mins = Math.floor(timeRemaining / 60);
+            const secs = timeRemaining % 60;
+            timerEl.innerText = `${mins}:${secs < 10 ? '0'+secs : secs}`;
+        }, 1000);
+        
+        updateDayNight();
+        
+        // --- MAP DISCOVERY SYSTEM (Checkpoint forward)
+        const mapSize = 5; // 5x5 grid (represents zones)
+        let discoveredMap = Array(mapSize).fill().map(() => Array(mapSize).fill(false));
+        let playerMapX = 2, playerMapZ = 2; // center camp zone
+        discoveredMap[2][2] = true;
+        
+        function updateMapUI() {
+            const gridDiv = document.getElementById('mapGrid');
+            gridDiv.innerHTML = '';
+            for(let i=0;i<mapSize;i++) {
+                for(let j=0;j<mapSize;j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'map-cell';
+                    if(discoveredMap[i][j]) cell.classList.add('discovered');
+                    if(playerMapX === j && playerMapZ === i) cell.classList.add('current');
+                    cell.innerText = discoveredMap[i][j] ? '◉' : '?';
+                    gridDiv.appendChild(cell);
+                }
+            }
+        }
+        
+        // detect player position relative to maze/camp: We'll base on camera target or actual position?
+        // simpler: use controls target or camera position to determine "forward progress" into maze
+        let lastForwardZone = 0;
+        function updateDiscoveryByPosition() {
+            const camX = camera.position.x;
+            const camZ = camera.position.z;
+            // maze zone starts beyond door: z > 16
+            let zoneX = 2, zoneZ = 2;
+            if(camZ > 16) { // inside maze
+                const mazeRelX = (camX + 20) / 10; // 0-4 range
+                const mazeRelZ = (camZ - 16) / 10;
+                zoneX = Math.min(4, Math.max(0, Math.floor(mazeRelX)));
+                zoneZ = Math.min(4, Math.max(0, Math.floor(mazeRelZ)));
+                // also if at camp still
+            } else {
+                zoneX = 2; zoneZ = 2;
+            }
+            if(!discoveredMap[zoneZ][zoneX]) {
+                discoveredMap[zoneZ][zoneX] = true;
+                showMessage(`🗺️ Discovered maze sector ${zoneX+1},${zoneZ+1}!`);
+                updateMapUI();
+            }
+            playerMapX = zoneX;
+            playerMapZ = zoneZ;
+            updateMapUI();
+        }
+        
+        // monster pursuit during night + if player inside maze
+        function updateMonsters() {
+            if(!isDay) {
+                const isPlayerInMaze = camera.position.z > 16 && Math.abs(camera.position.x) < 32;
+                monsterList.forEach(m => {
+                    if(m.active && isPlayerInMaze) {
+                        const dx = camera.position.x - m.mesh.position.x;
+                        const dz = camera.position.z - m.mesh.position.z;
+                        const dist = Math.hypot(dx, dz);
+                        if(dist > 0.3) {
+                            const move = m.speed * 0.016;
+                            const dirX = dx / dist;
+                            const dirZ = dz / dist;
+                            m.mesh.position.x += dirX * move;
+                            m.mesh.position.z += dirZ * move;
+                        }
+                        // collision damage / game over? simple warning
+                        if(dist < 1.2) {
+                            showMessage("💀 MONSTER caught you! You wake up at camp...");
+                            camera.position.set(0, 2, 0);
+                            controls.target.set(0,2,0);
+                            camera.position.set(0, 5, 3);
+                            // reset monsters
+                            monsterList.forEach((m,idx) => {
+                                m.mesh.position.set((Math.random() - 0.5) * 40 + 10, 0.5, (Math.random() - 0.5) * 40 + 35);
+                            });
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Plants growth display update & also water/harvest buttons
+        document.getElementById('harvestBtn').onclick = () => {
+            // find nearest patch? for simplicity harvest first empty? but we use each patch individually? improv: auto harvest nearest
+            const closest = plantLabels.reduce((prev, curr, idx) => {
+                const dPrev = Math.hypot(camera.position.x - prev.pos[0], camera.position.z - prev.pos[2]);
+                const dCurr = Math.hypot(camera.position.x - curr.pos[0], camera.position.z - curr.pos[2]);
+                return dPrev < dCurr ? prev : curr;
+            });
+            const idx = plantLabels.findIndex(p => p === closest);
+            if(idx>=0) harvestFromPatch(idx);
+        };
+        document.getElementById('waterBtn').onclick = getWater;
+        document.getElementById('plantBtn').onclick = () => {
+            const closest = plantLabels.reduce((prev, curr, idx) => {
+                const dPrev = Math.hypot(camera.position.x - prev.pos[0], camera.position.z - prev.pos[2]);
+                const dCurr = Math.hypot(camera.position.x - curr.pos[0], camera.position.z - curr.pos[2]);
+                return dPrev < dCurr ? prev : curr;
+            });
+            const idx = plantLabels.findIndex(p => p === closest);
+            if(idx>=0) plantSeed(idx);
+        };
+        
+        // Add decorative campfire
+        const fireLight = new THREE.PointLight(0xff6600, 0.8, 12);
+        fireLight.position.set(0, 0.5, -3);
+        scene.add(fireLight);
+        
+        // Apple trees simple
+        const treeMat = new THREE.MeshStandardMaterial({ color: 0x6b4c3b });
+        for(let i=0;i<6;i++) {
+            const treeTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,1.5), treeMat);
+            treeTrunk.position.set(-12 + i*4, 0, -8);
+            treeTrunk.castShadow = true;
+            scene.add(treeTrunk);
+        }
+        
+        // Animation loop
         function animate() {
             requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-
-            // 1. Smoothly Animate Massive Sliding Metal Doors
-            let targetDoorX = isDay ? 40 : 0; // 40 units apart on day, closed flat on night
-            leftDoor.position.x = THREE.MathUtils.lerp(leftDoor.position.x, -targetDoorX/2, 0.05);
-            rightDoor.position.x = THREE.MathUtils.lerp(rightDoor.position.x, targetDoorX/2, 0.05);
-
-            // 2. Camera Rotations Controls Look Input
-            player.rotation.y -= lookInput.x * 0.05;
-            player.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, player.rotation.x - lookInput.y * 0.05));
-            camera.rotation.set(0,0,0);
-            camera.rotation.y = player.rotation.y;
-            camera.rotation.x = player.rotation.x;
-
-            // 3. Vector Movement calculation
-            const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
-            const side = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
-            
-            let moveVec = new THREE.Vector3();
-            moveVec.addScaledVector(forward, -moveInput.y);
-            moveVec.addScaledVector(side, moveInput.x);
-            moveVec.normalize().multiplyScalar(player.speed);
-
-            // Wall Collisions Box Bounds checks
-            let nextX = player.position.x + moveVec.x;
-            let nextZ = player.position.z + moveVec.z;
-
-            // Simple boundary stops for Camp Outer Boundary walls
-            if (Math.abs(nextX) < 145 && nextZ > -145) {
-                // Door open check barrier logic
-                if (nextZ >= 148 && nextZ <= 152) {
-                    if (Math.abs(leftDoor.position.x - rightDoor.position.x) > 5) {
-                        player.position.x = nextX;
-                        player.position.z = nextZ;
-                    }
-                } else {
-                    player.position.x = nextX;
-                    player.position.z = nextZ;
-                }
-            }
-            camera.position.copy(player.position);
-
-            // 4. Update Monster AI Tracking
-            monsters.forEach(m => {
-                const dir = new THREE.Vector3().subVectors(player.position, m.position).normalize();
-                m.position.addScaledVector(dir, 0.6); // Dangerous hunter follow speeds
-                
-                // Check fail state kill contact
-                if(m.position.distanceTo(player.position) < 4) {
-                    alert("A Griever caught you in the dark! Teleporting back safely to base camp.");
-                    player.position.set(0,4,0);
-                }
-            });
-
-            // 5. Context UI Engine prompts toggle
-            const distToSink = player.position.distanceTo(sink.position);
-            const distToFarm = player.position.distanceTo(farmZone.position);
-            if (distToSink < 8 || distToFarm < 12) {
-                actionBtn.style.display = 'flex';
-            } else {
-                actionBtn.style.display = 'none';
-            }
-
-            updateMiniMap();
+            controls.update(); // update camera and target
+            updateDiscoveryByPosition();
+            updateMonsters();
+            // Day night glow for door/fire
+            fireLight.intensity = isDay ? 0.3 : 0.9;
             renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
         }
-
-        // Screen Adjust Dynamic handling
-        window.addEventListener('resize', () => {
+        animate();
+        
+        // initial map display
+        updateMapUI();
+        showMessage("Use mouse/finger to look around. Enter maze in daytime!");
+        
+        // handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        animate();
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
     </script>
 </body>
 </html>
