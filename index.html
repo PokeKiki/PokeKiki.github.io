@@ -275,27 +275,35 @@ function startHost(){
   net.role='host';
   net.code = gen6();
   setLobbyStatus('Connecting to network…');
-  net.peer = new Peer(codeToPeerId(net.code), PEER_OPTS);
   net.myId = 'host';
-  net.peer.on('open', ()=>{
-    document.getElementById('roomCodeBig').textContent = net.code;
-    setLobbyStatus('Room open. Waiting for runners…');
-    updateLobbyCount();
-  });
-  net.peer.on('connection', conn=>{
-    conn.on('open', ()=>{
-      net.conns.push(conn);
-      ensureRemote(conn.peer);
+  function openHost(){
+    net.peer = new Peer(codeToPeerId(net.code), PEER_OPTS);
+    net.peer.on('open', (id)=>{
+      document.getElementById('roomCodeBig').textContent = net.code;
+      setLobbyStatus('Room OPEN ✓  Share the code. Waiting for runners…');
       updateLobbyCount();
-      conn.send({t:'welcome', id:conn.peer, day:world.day, phase:world.phase, time:world.time});
     });
-    conn.on('data', d=> hostOnData(conn, d));
-    conn.on('close', ()=> dropConn(conn));
-    conn.on('error', ()=> dropConn(conn));
-  });
-  net.peer.on('error', e=>{
-    setLobbyStatus('Network error: '+(e.type||e)+'. Try again.');
-  });
+    net.peer.on('connection', conn=>{
+      conn.on('open', ()=>{
+        net.conns.push(conn);
+        ensureRemote(conn.peer);
+        updateLobbyCount();
+        conn.send({t:'welcome', id:conn.peer, day:world.day, phase:world.phase, time:world.time});
+      });
+      conn.on('data', d=> hostOnData(conn, d));
+      conn.on('close', ()=> dropConn(conn));
+      conn.on('error', ()=> dropConn(conn));
+    });
+    net.peer.on('error', e=>{
+      if(e.type==='unavailable-id'){
+        // that code is taken on the broker — pick a new one and retry
+        try{ net.peer.destroy(); }catch(_){}
+        net.code = gen6(); openHost(); return;
+      }
+      setLobbyStatus('Network error: '+(e.type||'unknown')+'. Tap Back and retry.');
+    });
+  }
+  openHost();
 }
 
 function hostOnData(conn, d){
@@ -323,17 +331,27 @@ function startJoin(code){
   setJoinStatus('Connecting…');
   net.peer = new Peer(PEER_OPTS);
   net.peer.on('open', ()=>{
-    const conn = net.peer.connect(codeToPeerId(code), {reliable:true});
-    net.conns=[conn];
-    let opened=false;
-    conn.on('open', ()=>{ opened=true; setJoinStatus('Connected! Entering…'); beginGame(); });
-    conn.on('data', d=> clientOnData(d));
-    conn.on('close', ()=> setJoinStatus('Disconnected from room.'));
-    conn.on('error', ()=> setJoinStatus('Could not reach that room.'));
-    setTimeout(()=>{ if(!opened) setJoinStatus('No room found for '+code+'. Check the code.'); }, 12000);
+    let opened=false, attempts=0;
+    function tryConnect(){
+      attempts++;
+      setJoinStatus('Looking for room '+code+'… ('+attempts+')');
+      const conn = net.peer.connect(codeToPeerId(code), {reliable:true});
+      net.conns=[conn];
+      conn.on('open', ()=>{ opened=true; setJoinStatus('Connected! Entering…'); beginGame(); });
+      conn.on('data', d=> clientOnData(d));
+      conn.on('close', ()=> setJoinStatus('Disconnected from room.'));
+      conn.on('error', ()=>{});
+      // if this attempt didn't open in 3.5s, retry (broker registration can lag)
+      setTimeout(()=>{
+        if(!opened && attempts<4){ try{conn.close();}catch(e){} tryConnect(); }
+        else if(!opened){ setJoinStatus('No room "'+code+'". Make sure the host created it & you typed it right.'); }
+      }, 3500);
+    }
+    tryConnect();
   });
   net.peer.on('error', e=>{
-    setJoinStatus(e.type==='peer-unavailable' ? ('No room '+code+'.') : ('Network error.'));
+    if(e.type==='peer-unavailable'){ /* handled by retry */ return; }
+    setJoinStatus('Network error: '+(e.type||'unknown')+'. Try again.');
   });
 }
 
@@ -659,7 +677,7 @@ function init(){
   buildMazeWalls();
   buildDoors();
   buildFarm();
-  buildHouse(16, -2);
+  buildHouse(15, 8);
   buildAtmosphere();
 
   clock = new THREE.Clock();
@@ -793,46 +811,49 @@ function makeWoodTexture(){
 /* ---------------- WOODEN HOUSE (enterable) ---------------- */
 function buildHouse(hx, hz){
   const GEO = window.HOUSE_GEO;
-  const HOUSE_W = 9, HOUSE_D = 9, HOUSE_H = 5; // footprint we scale the model to + collision size
+  const TARGET_H = 5.5;        // desired house height in world units
   const T = 0.4;
 
+  let footW = 7, footD = 7;    // collision footprint (updated from model if available)
+
   if(GEO && GEO.pos && GEO.pos.length){
-    // ---- real model ----
     const geo=new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(GEO.pos,3));
     geo.computeVertexNormals(); geo.computeBoundingBox();
     if(!world.woodTex) world.woodTex=makeWoodTexture();
-    const mat=new THREE.MeshStandardMaterial({map:world.woodTex.clone(), color:0xb89066, roughness:.85});
+    const mat=new THREE.MeshStandardMaterial({map:world.woodTex.clone(), color:0xc09a6a, roughness:.85});
     mat.map.repeat.set(2,2);
     const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.receiveShadow=true; mesh.frustumCulled=false;
     const bb=geo.boundingBox, size=new THREE.Vector3(); bb.getSize(size);
-    // scale so the model's largest horizontal dimension ~ HOUSE_W
-    const s = HOUSE_W / Math.max(size.x, size.z, 0.001);
+    // UNIFORM scale by height so proportions are preserved (no stretching)
+    const s = TARGET_H / (size.y||1);
     mesh.scale.setScalar(s);
-    // center on x/z, feet on ground
+    // center on x/z, sit base on ground
     mesh.position.set(
       hx - ((bb.min.x+bb.max.x)/2)*s,
       -bb.min.y*s,
       hz - ((bb.min.z+bb.max.z)/2)*s
     );
     scene.add(mesh);
+    // collision footprint follows the model's true scaled width/depth
+    footW = Math.max(2, size.x*s);
+    footD = Math.max(2, size.z*s);
   } else {
-    // ---- fallback: simple box hut (only if model missing) ----
     const wallMat=new THREE.MeshStandardMaterial({color:0x9a6c42,roughness:.9});
-    const box=new THREE.Mesh(new THREE.BoxGeometry(HOUSE_W,HOUSE_H,HOUSE_D),wallMat);
-    box.position.set(hx,HOUSE_H/2,hz); scene.add(box);
+    const box=new THREE.Mesh(new THREE.BoxGeometry(footW,TARGET_H,footD),wallMat);
+    box.position.set(hx,TARGET_H/2,hz); scene.add(box);
   }
 
-  // ---- collision: perimeter walls with a doorway gap on the +Z (front) side ----
+  // perimeter collision with a doorway gap on the +Z (front) side
   const walls=[];
   function addWall(lx,lz,hw,hd){ walls.push({x:hx+lx, z:hz+lz, hw, hd}); }
-  const halfW=HOUSE_W/2, halfD=HOUSE_D/2;
-  addWall(0,-halfD, halfW, T/2);          // back
-  addWall(-halfW,0, T/2, halfD);          // left
-  addWall( halfW,0, T/2, halfD);          // right
-  const doorGap=3.6, sideW=(HOUSE_W-doorGap)/2;
-  addWall(-(doorGap/2+sideW/2), halfD, sideW/2, T/2); // front-left
-  addWall( (doorGap/2+sideW/2), halfD, sideW/2, T/2); // front-right
+  const halfW=footW/2, halfD=footD/2;
+  addWall(0,-halfD, halfW, T/2);
+  addWall(-halfW,0, T/2, halfD);
+  addWall( halfW,0, T/2, halfD);
+  const doorGap=Math.min(3.4, footW*0.45), sideW=(footW-doorGap)/2;
+  addWall(-(doorGap/2+sideW/2), halfD, sideW/2, T/2);
+  addWall( (doorGap/2+sideW/2), halfD, sideW/2, T/2);
   world.houseWalls = walls;
 }
 function buildGround(){
