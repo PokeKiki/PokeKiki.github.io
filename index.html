@@ -353,82 +353,136 @@ function netTick(dt){
   }
   for(const id in net.remotes){
     const r=net.remotes[id];
+    const prev=r.mesh.position.clone();
     r.mesh.position.lerp(r.tpos, Math.min(1, dt*10));
     let dy=r.tyaw - r.yaw;
     while(dy>Math.PI) dy-=Math.PI*2; while(dy<-Math.PI) dy+=Math.PI*2;
     r.yaw += dy*Math.min(1,dt*10);
-    r.mesh.rotation.y = r.yaw;
-    r.bob = (r.bob||0)+dt*8;
-    if(r.legs){ r.legs.forEach((l,i)=>{ l.rotation.x=Math.sin(r.bob+i*Math.PI)*0.4; }); }
+    r.mesh.rotation.y = r.yaw + Math.PI;
+    // measured ground speed (units/sec) for choosing walk vs run
+    const moved=Math.hypot(r.mesh.position.x-prev.x, r.mesh.position.z-prev.z);
+    const spd = dt>0 ? moved/dt : 0;
+    animateAvatar(r.mesh, spd, dt);
     if(performance.now()-r.last > 12000) removeRemote(id);
   }
 }
 
-/* ---------------- REMOTE PLAYER AVATAR (simple villain figure) ---------------- */
+/* ---------------- AVATAR ANIMATION (idle / walk / run) ---------------- */
+function animateAvatar(mesh, speed, dt){
+  const rig = mesh.userData.rig;
+  if(!rig) return;
+  const a = mesh.userData.anim;
+  // smooth the speed so transitions aren't jittery
+  a.speed += (speed - a.speed) * Math.min(1, dt*8);
+  const sp = a.speed;
+  const moving = sp > 0.4;
+  const running = sp > 8.5;            // matches player.sprint
+  // stride frequency & amplitude scale with speed
+  const freq = moving ? (running ? 13 : 8.5) : 2.2;     // idle = slow breathe
+  const amp  = moving ? (running ? 0.95 : 0.6) : 0.0;
+  a.t += dt*freq;
+  const swing = Math.sin(a.t);
+  const swing2= Math.sin(a.t*2);
+
+  // legs: opposite phase stride
+  rig.legs[0].rotation.x =  swing*amp;
+  rig.legs[1].rotation.x = -swing*amp;
+  // arms swing opposite to legs (natural counter-rotation)
+  if(rig.arms){
+    rig.arms[0].rotation.x = -swing*amp*0.9;
+    rig.arms[1].rotation.x =  swing*amp*0.9;
+    // slight outward flare when running
+    rig.arms[0].rotation.z =  (running?0.18:0.08);
+    rig.arms[1].rotation.z = -(running?0.18:0.08);
+  }
+  // torso bob + forward lean when running; gentle breathe when idle
+  if(rig.torsoPivot){
+    const bob = moving ? Math.abs(swing2)*(running?0.12:0.06) : Math.sin(a.t)*0.015;
+    rig.torsoPivot.position.y = 1.05 + bob;
+    const lean = running ? 0.22 : (moving ? 0.10 : 0.0);
+    rig.torsoPivot.rotation.x += (lean - rig.torsoPivot.rotation.x)*Math.min(1,dt*6);
+    rig.torsoPivot.rotation.z = moving ? swing*0.04 : 0; // subtle hip sway
+  }
+  // head counter-steady + idle look
+  if(rig.headPivot){
+    rig.headPivot.rotation.x += ((moving?-0.08:0) - rig.headPivot.rotation.x)*Math.min(1,dt*6);
+  }
+}
+
+/* ---------------- PLAYER AVATAR (stylized hero, fully rigged) ---------------- */
 function makeAvatar(){
   const g=new THREE.Group();
-  const dark = new THREE.MeshStandardMaterial({color:0x1f2226, roughness:.65, metalness:.35});
-  const armor= new THREE.MeshStandardMaterial({color:0x3a3f45, roughness:.4, metalness:.6});
-  const spike= new THREE.MeshStandardMaterial({color:0x14161a, roughness:.5, metalness:.5});
-  const glow = new THREE.MeshStandardMaterial({color:0xff3322, emissive:0xff2200, emissiveIntensity:2.4});
-  const cape = new THREE.MeshStandardMaterial({color:0x23120f, roughness:.95, side:THREE.DoubleSide});
+  // edgy palette: charcoal hoodie, teal trim, pale face, dark jeans
+  const hoodie = new THREE.MeshStandardMaterial({color:0x2b2f3a, roughness:.85});
+  const trim   = new THREE.MeshStandardMaterial({color:0x18b9a6, roughness:.6, emissive:0x06342f, emissiveIntensity:.3});
+  const skin   = new THREE.MeshStandardMaterial({color:0xd9a06b, roughness:.7});
+  const hair   = new THREE.MeshStandardMaterial({color:0x14161c, roughness:.9, flatShading:true});
+  const jeans  = new THREE.MeshStandardMaterial({color:0x232a33, roughness:.9});
+  const shoe   = new THREE.MeshStandardMaterial({color:0x111317, roughness:.7});
+  const eyeMat = new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:.3});
 
-  // torso (armored chestplate)
-  const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.52,0.44,1.35,12), armor);
-  torso.position.y=1.2; g.add(torso);
-  // chest ridge
-  const ridge=new THREE.Mesh(new THREE.BoxGeometry(0.18,1.0,0.5), spike);
-  ridge.position.set(0,1.35,0.42); g.add(ridge);
+  // --- TORSO pivot (so we can lean/bob the upper body) ---
+  const torsoPivot=new THREE.Group(); torsoPivot.position.set(0,1.05,0); g.add(torsoPivot);
+  // chunky tapered torso (Brawl-Stars proportion: short + stout)
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.5,0.95,14), hoodie);
+  torso.position.y=0.18; torsoPivot.add(torso);
+  // hoodie chest pocket / trim stripe
+  const stripe=new THREE.Mesh(new THREE.BoxGeometry(0.66,0.12,0.46), trim);
+  stripe.position.set(0,0.0,0.18); torsoPivot.add(stripe);
+  // collar
+  const collar=new THREE.Mesh(new THREE.TorusGeometry(0.26,0.08,8,16), hoodie);
+  collar.rotation.x=Math.PI/2; collar.position.y=0.62; torsoPivot.add(collar);
 
-  // spiked pauldrons
+  // --- HEAD pivot (oversized head = stylized look) ---
+  const headPivot=new THREE.Group(); headPivot.position.y=0.7; torsoPivot.add(headPivot);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.46,18,16), skin);
+  head.scale.set(1,1.02,0.96); head.position.y=0.34; headPivot.add(head);
+  // hair cap (swept, edgy)
+  const hairCap=new THREE.Mesh(new THREE.SphereGeometry(0.49,16,14,0,Math.PI*2,0,Math.PI*0.62), hair);
+  hairCap.position.y=0.40; headPivot.add(hairCap);
+  const fringe=new THREE.Mesh(new THREE.BoxGeometry(0.84,0.18,0.2), hair);
+  fringe.position.set(0,0.5,0.4); fringe.rotation.x=0.3; headPivot.add(fringe);
+  // eyes (big, stylized)
   [-1,1].forEach(s=>{
-    const pad=new THREE.Mesh(new THREE.SphereGeometry(0.32,10,10), armor);
-    pad.position.set(s*0.62,1.78,0); pad.scale.set(1,0.8,1); g.add(pad);
-    for(let k=0;k<3;k++){
-      const sp=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.34,5), spike);
-      sp.position.set(s*0.62,1.95,-0.18+k*0.18); sp.rotation.x=-0.4; g.add(sp);
-    }
+    const eye=new THREE.Mesh(new THREE.SphereGeometry(0.09,10,10), eyeMat);
+    eye.scale.set(0.8,1.2,0.6); eye.position.set(s*0.16,0.34,0.40); headPivot.add(eye);
+  });
+  // simple smirk (edgy)
+  const mouth=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.03,0.04), eyeMat);
+  mouth.position.set(0.05,0.16,0.43); mouth.rotation.z=-0.18; headPivot.add(mouth);
+
+  // --- ARMS (shoulder pivots for swing) ---
+  const arms=[];
+  [-1,1].forEach(s=>{
+    const sh=new THREE.Group(); sh.position.set(s*0.5,0.5,0); torsoPivot.add(sh);
+    const upper=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.13,0.5,10), hoodie);
+    upper.position.y=-0.25; sh.add(upper);
+    const fore=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.10,0.45,10), hoodie);
+    fore.position.y=-0.66; sh.add(fore);
+    const cuff=new THREE.Mesh(new THREE.TorusGeometry(0.11,0.04,6,12), trim);
+    cuff.rotation.x=Math.PI/2; cuff.position.y=-0.86; sh.add(cuff);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,10), skin);
+    hand.position.y=-0.96; sh.add(hand);
+    arms.push(sh);
   });
 
-  // head + horned helm
-  const head=new THREE.Mesh(new THREE.SphereGeometry(0.3,12,12), dark);
-  head.position.y=2.12; g.add(head);
-  const helm=new THREE.Mesh(new THREE.ConeGeometry(0.42,0.55,12), spike);
-  helm.position.y=2.34; g.add(helm);
-  [-1,1].forEach(s=>{
-    const horn=new THREE.Mesh(new THREE.ConeGeometry(0.07,0.4,6), spike);
-    horn.position.set(s*0.26,2.4,0); horn.rotation.z=s*0.7; g.add(horn);
-  });
-  // glowing visor slit
-  const visor=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.07,0.06), glow);
-  visor.position.set(0,2.14,0.28); g.add(visor);
-
-  // arms
-  [-1,1].forEach(s=>{
-    const arm=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.11,1.05,8), dark);
-    arm.position.set(s*0.66,1.18,0); g.add(arm);
-    const fist=new THREE.Mesh(new THREE.SphereGeometry(0.14,8,8), armor);
-    fist.position.set(s*0.66,0.62,0); g.add(fist);
-  });
-
-  // tattered cape behind
-  const capeMesh=new THREE.Mesh(new THREE.PlaneGeometry(1.0,1.7,1,3), cape);
-  capeMesh.position.set(0,1.15,-0.42); capeMesh.rotation.x=0.12; g.add(capeMesh);
-
-  // legs (animated)
+  // --- LEGS (hip pivots for stride) ---
   const legs=[];
   [-1,1].forEach(s=>{
-    const hip=new THREE.Group(); hip.position.set(s*0.22,1.0,0);
-    const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.12,1.0,8), dark);
-    leg.position.y=-0.5; hip.add(leg);
-    const boot=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.22,0.42), spike);
-    boot.position.set(0,-0.95,0.06); hip.add(boot);
-    g.add(hip); legs.push(hip);
+    const hip=new THREE.Group(); hip.position.set(s*0.22,1.08,0); g.add(hip);
+    const thigh=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.15,0.55,10), jeans);
+    thigh.position.y=-0.28; hip.add(thigh);
+    const shin=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.12,0.5,10), jeans);
+    shin.position.y=-0.72; hip.add(shin);
+    const boot=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.2,0.46), shoe);
+    boot.position.set(0,-1.0,0.07); hip.add(boot);
+    legs.push(hip);
   });
 
   g.traverse(o=>{ if(o.isMesh){o.castShadow=true;} });
-  g.userData.legs=legs;
-  g.userData.cape=capeMesh;
+  g.userData.rig = { torsoPivot, headPivot, arms, legs };
+  g.userData.legs = legs; // back-compat
+  g.userData.anim = { t:0, speed:0, prevX:0, prevZ:0, inited:false };
   return g;
 }
 function ensureRemote(id){
@@ -455,6 +509,9 @@ function updateLobbyCount(){
 function beginGame(){
   document.getElementById('start').style.display='none';
   world.started=true; world.time=0;
+  // ensure the canonical Maze 1 layout for day 1
+  generateMaze(false); buildMazeWalls();
+  document.getElementById('dayCount').textContent = 'DAY 1  ·  MAZE 1/7';
 }
 
 function init(){
@@ -509,6 +566,7 @@ function init(){
   buildMazeWalls();
   buildDoors();
   buildFarm();
+  buildHouse(16, -2);
   buildAtmosphere();
 
   clock = new THREE.Clock();
@@ -613,7 +671,118 @@ function makeStoneTexture(){
   return t;
 }
 
+function makeWoodTexture(){
+  const size=256; const c=document.createElement('canvas'); c.width=c.height=size;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#6b4628'; ctx.fillRect(0,0,size,size);
+  // horizontal planks
+  const planks=6, ph=size/planks;
+  for(let p=0;p<planks;p++){
+    const base=90+Math.random()*30;
+    ctx.fillStyle=`rgb(${base+20},${base-10},${base-45})`;
+    ctx.fillRect(0,p*ph+1,size,ph-2);
+    // grain streaks
+    for(let i=0;i<40;i++){
+      const y=p*ph+Math.random()*ph;
+      ctx.strokeStyle=`rgba(${40+Math.random()*30},${25+Math.random()*20},10,0.25)`;
+      ctx.lineWidth=1+Math.random();
+      ctx.beginPath();ctx.moveTo(0,y);
+      for(let x=0;x<size;x+=16){ ctx.lineTo(x,y+(Math.random()-0.5)*3); }
+      ctx.stroke();
+    }
+    // plank seam shadow
+    ctx.fillStyle='rgba(20,12,6,0.55)'; ctx.fillRect(0,p*ph,size,2);
+  }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8;
+  return t;
+}
 
+/* ---------------- WOODEN HOUSE (enterable) ---------------- */
+function buildHouse(hx, hz){
+  const W=8, D=8, H=4.2, T=0.3; // width, depth, wall height, thickness
+  if(!world.woodTex) world.woodTex=makeWoodTexture();
+  const wall = new THREE.MeshStandardMaterial({map:world.woodTex.clone(), color:0x9a6c42, roughness:.9});
+  wall.map.repeat.set(3,2);
+  const darkWood=new THREE.MeshStandardMaterial({color:0x4a3018, roughness:.95, flatShading:true});
+  const floorMat=new THREE.MeshStandardMaterial({map:world.woodTex.clone(), color:0x7d5630, roughness:.9});
+  floorMat.map.repeat.set(4,4);
+  const roofMat=new THREE.MeshStandardMaterial({color:0x5b3a22, roughness:1, flatShading:true});
+
+  const g=new THREE.Group(); g.position.set(hx,0,hz);
+
+  // floor
+  const floor=new THREE.Mesh(new THREE.BoxGeometry(W,0.3,D), floorMat);
+  floor.position.y=0.15; floor.receiveShadow=true; g.add(floor);
+
+  // helper to add a wall slab + register collision in WORLD space
+  const walls=[]; // {x,z,hw,hd} axis-aligned boxes in world coords
+  function addWall(lx,lz,w,d,h,y){
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wall);
+    m.position.set(lx,y!==undefined?y:h/2+0.3,lz); m.castShadow=true; m.receiveShadow=true; g.add(m);
+    walls.push({x:hx+lx, z:hz+lz, hw:w/2, hd:d/2});
+  }
+
+  // back wall (solid)
+  addWall(0,-D/2, W, T, H);
+  // left & right walls (solid)
+  addWall(-W/2,0, T, D, H);
+  addWall( W/2,0, T, D, H);
+  // front wall split around a doorway (gap in the middle)
+  const doorGap=3.6;
+  const sideW=(W-doorGap)/2;
+  addWall(-(doorGap/2+sideW/2), D/2, sideW, T, H);
+  addWall( (doorGap/2+sideW/2), D/2, sideW, T, H);
+  // lintel above the door (no collision needed, it's overhead)
+  const lintel=new THREE.Mesh(new THREE.BoxGeometry(doorGap+0.2,H-2.6,T),wall);
+  lintel.position.set(0,2.6+(H-2.6)/2,D/2); g.add(lintel);
+
+  // window openings on the sides (just dark insets for looks)
+  const winMat=new THREE.MeshStandardMaterial({color:0x14202a, roughness:.3, metalness:.2, transparent:true, opacity:.6});
+  [[-W/2,-1.5],[-W/2,1.5],[W/2,-1.5],[W/2,1.5]].forEach(([wxp,wzp],i)=>{
+    const win=new THREE.Mesh(new THREE.PlaneGeometry(1.2,1.0), winMat);
+    win.position.set(wxp+(wxp<0?0.02:-0.02), 2.2, wzp);
+    win.rotation.y=Math.PI/2; g.add(win);
+    // window frame
+    const fr=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.3,1.5),darkWood);
+    fr.position.set(wxp,2.2,wzp); g.add(fr);
+  });
+
+  // corner beams
+  [[-W/2,-D/2],[W/2,-D/2],[-W/2,D/2],[W/2,D/2]].forEach(([cx,cz])=>{
+    const beam=new THREE.Mesh(new THREE.BoxGeometry(0.4,H+0.4,0.4),darkWood);
+    beam.position.set(cx,(H+0.4)/2+0.3,cz); beam.castShadow=true; g.add(beam);
+  });
+
+  // pitched roof (two slabs meeting at a ridge)
+  const peak=2.4;                       // how high the ridge rises above the walls
+  const eaveY=H+0.3;                     // top of walls
+  const pitch=Math.atan2(peak, D/2);     // roof angle
+  const roofLen=Math.hypot(D/2, peak)+0.5;
+  [-1,1].forEach(sgn=>{
+    const slab=new THREE.Mesh(new THREE.BoxGeometry(W+0.9,0.22,roofLen), roofMat);
+    // center of each slab sits halfway between eave and ridge, offset toward its side
+    slab.position.set(0, eaveY + peak/2, sgn*D/4);
+    slab.rotation.x = -sgn*pitch;
+    slab.castShadow=true; g.add(slab);
+  });
+  // ridge beam at the very top
+  const ridge=new THREE.Mesh(new THREE.BoxGeometry(W+1.0,0.3,0.3),darkWood);
+  ridge.position.set(0, eaveY+peak, 0); g.add(ridge);
+  // gable end triangles to close the roof (front & back)
+  [-D/2, D/2].forEach(gz=>{
+    const shape=new THREE.Shape();
+    shape.moveTo(-W/2,0); shape.lineTo(W/2,0); shape.lineTo(0,peak); shape.lineTo(-W/2,0);
+    const gable=new THREE.Mesh(new THREE.ShapeGeometry(shape), wall);
+    gable.position.set(0, eaveY, gz); g.add(gable);
+  });
+
+  // a little step/porch at the door
+  const step=new THREE.Mesh(new THREE.BoxGeometry(doorGap+0.6,0.25,1.0),darkWood);
+  step.position.set(0,0.12,D/2+0.6); step.receiveShadow=true; g.add(step);
+
+  scene.add(g);
+  world.houseWalls = walls; // for collision
+}
 function buildGround(){
   // glade grass — textured + subtle relief
   const grassTex = makeNoiseTexture(0x4a7c3f, 0.22, 128);
@@ -623,19 +792,6 @@ function buildGround(){
   const grass = new THREE.Mesh(gGeo,gMat);
   grass.rotation.x=-Math.PI/2; grass.position.y=0.02; grass.receiveShadow=true;
   scene.add(grass);
-
-  // a few rocks
-  const rockMat=new THREE.MeshStandardMaterial({color:0x6b6f63,roughness:1,flatShading:true});
-  for(let i=0;i<10;i++){
-    const a=Math.random()*Math.PI*2, r=8+Math.random()*(CAMP_R-12);
-    const rad=0.5+Math.random()*0.8;
-    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(rad,0),rockMat);
-    rock.position.set(Math.cos(a)*r,0.3,Math.sin(a)*r);
-    if(rock.position.z<-(CAMP_R-8))continue;
-    rock.rotation.set(Math.random(),Math.random(),Math.random());
-    rock.castShadow=true; rock.receiveShadow=true; scene.add(rock);
-    world.obstacles.push({x:rock.position.x, z:rock.position.z, r:rad+0.3});
-  }
 
   // maze floor (big textured stone plane) — sized & centered to cover the WHOLE maze
   const zNear = -(CAMP_R-2);                 // closest maze row (meets camp)
@@ -765,14 +921,30 @@ function buildCamp(){
 }
 
 /* ---------------- MAZE GEN (recursive backtracker) ---------------- */
-function generateMaze(seed){
+// simple seeded PRNG (mulberry32)
+function makeRng(seed){
+  let a = seed>>>0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a>>>15), 1 | a);
+    t = (t + Math.imul(t ^ (t>>>7), 61 | t)) ^ t;
+    return ((t ^ (t>>>14)) >>> 0) / 4294967296;
+  };
+}
+// which maze layout for the current day: 7-day loop (day1..7 fixed, day8==day1)
+function mazeDayIndex(){ return ((world.day - 1) % 7) + 1; } // 1..7
+function generateMaze(shiftPhase){
   // grid of cells; 1 = wall, 0 = path. We work on (2n+1) lattice.
   const N = MAZE;
+  // seed from the day-in-cycle so the same day always yields the same maze (a loop)
+  const dayIdx = mazeDayIndex();
+  const variant = shiftPhase ? 777 : 0; // midnight shift = different temporary layout
+  const rng = makeRng(0xA53F * dayIdx + 12345 + variant);
   const g = Array.from({length:N},()=>Array(N).fill(1));
   // carve using DFS on odd cells
   function carve(cx,cy){
     g[cy][cx]=0;
-    const dirs=[[0,-2],[0,2],[-2,0],[2,0]].sort(()=>Math.random()-0.5);
+    const dirs=[[0,-2],[0,2],[-2,0],[2,0]].sort(()=>rng()-0.5);
     for(const [dx,dy] of dirs){
       const nx=cx+dx, ny=cy+dy;
       if(nx>0&&nx<N-1&&ny>0&&ny<N-1&&g[ny][nx]===1){
@@ -784,24 +956,21 @@ function generateMaze(seed){
   carve(1,1);
   // --- guaranteed entrance corridor at bottom-center, connected into the maze ---
   const mid = Math.floor(N/2);
-  // clear a straight column from the bottom edge up to the first interior path row
   for(let cy=N-1; cy>=1; cy--){
     g[cy][mid]=0;
-    // stop once we've linked into an existing carved path beside us
     if(cy<=N-3 && (g[cy][mid-1]===0 || g[cy][mid+1]===0)) break;
   }
-  // make sure the mouth of the entrance is open one cell to each side so the
-  // player (with body radius) isn't pinched at the doorway
   g[N-1][mid]=0; g[N-2][mid]=0;
   if(mid-1>0){ g[N-1][mid-1]=0; }
   if(mid+1<N-1){ g[N-1][mid+1]=0; }
-  // open up some loops so it's less linear & has dead ends to flee through
+  // open up some loops (also seeded, so the day's layout is fully deterministic)
   for(let i=0;i<N;i++){
-    const rx=1+2*Math.floor(Math.random()*((N-1)/2));
-    const ry=1+2*Math.floor(Math.random()*((N-1)/2));
+    const rx=1+2*Math.floor(rng()*((N-1)/2));
+    const ry=1+2*Math.floor(rng()*((N-1)/2));
     if(g[ry] && g[ry][rx]!==undefined) g[ry][rx]=0;
   }
   world.mazeGrid = g;
+  world.mazeDayIdx = dayIdx;
 }
 
 /* world coords for a maze cell */
@@ -904,6 +1073,9 @@ function buildDoors(){
 
   world.doorLeft=left; world.doorRight=right;
   world.doorX=x; world.doorZ=doorZ; world.doorHalfW=halfW;
+  // physical opening in the camp wall (gap spans ~250-290deg) is wider than the doors;
+  // record its half-width so collision can seal the whole gap at night
+  world.gapHalfW = Math.abs(Math.cos(250*Math.PI/180))*(CAMP_R+1) + 1.5;
   scene.add(world.doorGroup);
 }
 
@@ -954,16 +1126,53 @@ function buildFarm(){
     addCrop(tx,tz,'fruit');
   });
 
-  // SINK (water source)
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.8,1.4,16),
-     new THREE.MeshStandardMaterial({color:0x8d8d97, roughness:.7, metalness:.2}));
-  base.position.set(-14,0.7,8); base.castShadow=true; base.receiveShadow=true;
-  const water = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,.3,16),
-     new THREE.MeshStandardMaterial({color:0x2a9df4, roughness:.2, metalness:.1, transparent:true, opacity:.85}));
-  water.position.set(-14,1.4,8);
-  scene.add(base,water);
-  world.sink = {x:-14,z:8, daily:3, used:0};
-  world.obstacles.push({x:-14, z:8, r:2.2}); // solid sink
+  // ---- WELL: a hole in the ground with water at the bottom ----
+  buildWell(-15, 9);
+}
+
+/* ---------------- WELL (hole with water below ground) ---------------- */
+function buildWell(wx, wz){
+  const stoneMat = new THREE.MeshStandardMaterial({map: world.wallTex || makeStoneTexture(), color:0x8a8d82, roughness:.95});
+  const darkMat  = new THREE.MeshStandardMaterial({color:0x10130f, roughness:1, side:THREE.DoubleSide});
+  const waterMat = new THREE.MeshStandardMaterial({color:0x1b4a6b, roughness:.15, metalness:.2, transparent:true, opacity:.9, emissive:0x06121c, emissiveIntensity:.4});
+  const rimR=2.0, depth=6;
+
+  // dark shaft walls going DOWN into the ground (open-top cylinder, rendered inside)
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(rimR-0.25, rimR-0.4, depth, 24, 1, true), darkMat);
+  shaft.position.set(wx, -depth/2+0.1, wz);
+  scene.add(shaft);
+  // dark floor cap of the shaft (so you can't see through the world)
+  const bottom=new THREE.Mesh(new THREE.CircleGeometry(rimR, 24), darkMat);
+  bottom.rotation.x=-Math.PI/2; bottom.position.set(wx,-depth+0.2,wz); scene.add(bottom);
+  // water disc deep at the bottom
+  const water=new THREE.Mesh(new THREE.CircleGeometry(rimR-0.35, 24), waterMat);
+  water.rotation.x=-Math.PI/2; water.position.set(wx,-depth+1.4,wz); scene.add(water);
+  world.wellWater = water;
+
+  // raised stone rim around the hole
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(rimR, 0.35, 10, 28), stoneMat);
+  rim.rotation.x=Math.PI/2; rim.position.set(wx,0.5,wz); rim.castShadow=true; rim.receiveShadow=true;
+  scene.add(rim);
+  // a few rim stones for chunky detail
+  for(let i=0;i<10;i++){
+    const a=(i/10)*Math.PI*2;
+    const s=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.5), stoneMat);
+    s.position.set(wx+Math.cos(a)*rimR, 0.75, wz+Math.sin(a)*rimR);
+    s.rotation.y=a; s.castShadow=true; scene.add(s);
+  }
+  // wooden posts + roof over the well (classic well look)
+  const woodMat=new THREE.MeshStandardMaterial({color:0x5a3a22, roughness:1, flatShading:true});
+  [-1,1].forEach(sgn=>{
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.16,3.2,7), woodMat);
+    post.position.set(wx+sgn*(rimR-0.2), 1.6, wz); post.castShadow=true; scene.add(post);
+  });
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,rimR*2.2,7), woodMat);
+  beam.rotation.z=Math.PI/2; beam.position.set(wx,3.2,wz); scene.add(beam);
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(rimR+0.6,1.4,4), woodMat);
+  roof.rotation.y=Math.PI/4; roof.position.set(wx,4.0,wz); roof.castShadow=true; scene.add(roof);
+
+  world.sink = {x:wx,z:wz, daily:3, used:0};
+  world.obstacles.push({x:wx, z:wz, r:rimR+0.4}); // can't walk into the hole
 }
 
 /* ---------------- WHEAT (a tuft of golden stalks with grain heads) ---------------- */
@@ -1126,10 +1335,11 @@ function collide(nx,nz){
     const ang = (Math.atan2(nz,nx)*180/Math.PI+360)%360;
     if(!(ang>250&&ang<290)) return true; // not in the doorway gap
   }
-  // --- closed doors block the gateway ---
+  // --- closed doors block the gateway (full opening width, no side slots) ---
   if(doorIsClosed()){
-    if(Math.abs(nx-world.doorX) < world.doorHalfW+PLAYER_R &&
-       Math.abs(nz-world.doorZ) < 2.0+PLAYER_R) return true;
+    // the doorway gap in the camp wall is wider than the doors; seal the whole opening
+    if(Math.abs(nx-world.doorX) < world.gapHalfW + PLAYER_R &&
+       nz < -(CAMP_R-9) && nz > -(CAMP_R-2) - 4) return true;
   }
   // --- maze walls: sample the player's body radius (center + 4 offsets) ---
   if(nz < -(CAMP_R-9)){
@@ -1145,12 +1355,19 @@ function collide(nx,nz){
     if(pointInWall(nx+d,nz-d)) return true;
     if(pointInWall(nx-d,nz-d)) return true;
   }
-  // --- props: trees, rocks, sink (circle collision) ---
+  // --- props: trees, sink/well (circle collision) ---
   const ob=world.obstacles;
   for(let i=0;i<ob.length;i++){
     const dx=nx-ob[i].x, dz=nz-ob[i].z;
     const rr=ob[i].r+PLAYER_R;
     if(dx*dx+dz*dz < rr*rr) return true;
+  }
+  // --- wooden house walls (axis-aligned boxes; doorway is left open) ---
+  if(world.houseWalls){
+    for(let i=0;i<world.houseWalls.length;i++){
+      const w=world.houseWalls[i];
+      if(Math.abs(nx-w.x) < w.hw+PLAYER_R && Math.abs(nz-w.z) < w.hd+PLAYER_R) return true;
+    }
   }
   return false;
 }
@@ -1217,17 +1434,19 @@ function onNightfall(){
 }
 function onDawn(){
   world.day++;
-  document.getElementById('dayCount').textContent = 'DAY '+world.day;
-  toast('🌅 DAWN — the Doors open. The Maze has reset.');
-  // restore original maze layout & refresh
-  generateMaze();
+  const idx = ((world.day-1)%7)+1;
+  document.getElementById('dayCount').textContent = 'DAY '+world.day+'  ·  MAZE '+idx+'/7';
+  if(idx===1 && world.day>1) toast('🔁 The cycle loops — Maze 1 returns.');
+  else toast('🌅 DAWN — a new Maze ('+idx+' of 7). The Doors open.');
+  // restore this day's canonical maze layout
+  generateMaze(false);
   buildMazeWalls();
   clearMonsters();
 }
 
 function shiftMaze(){
   toast('🌀 MIDNIGHT — the walls are shifting!');
-  generateMaze();
+  generateMaze(true);   // temporary shifted layout for the rest of the night
   buildMazeWalls();
   // monsters get re-pathed automatically next frame
 }
