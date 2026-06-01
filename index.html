@@ -205,6 +205,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fflate/0.7.4/fflate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
 <script>
 /* =========================================================================
    THE GLADE — Maze Runner style 3D survival (Three.js, mobile-first)
@@ -369,47 +371,103 @@ function netTick(dt){
 
 /* ---------------- AVATAR ANIMATION (idle / walk / run) ---------------- */
 function animateAvatar(mesh, speed, dt){
-  const rig = mesh.userData.rig;
-  if(!rig) return;
-  const a = mesh.userData.anim;
-  // smooth the speed so transitions aren't jittery
+  const a = mesh.userData.anim || (mesh.userData.anim={t:0,speed:0});
   a.speed += (speed - a.speed) * Math.min(1, dt*8);
   const sp = a.speed;
   const moving = sp > 0.4;
   const running = sp > 8.5;            // matches player.sprint
-  // stride frequency & amplitude scale with speed
-  const freq = moving ? (running ? 13 : 8.5) : 2.2;     // idle = slow breathe
+
+  // ---- rigless model (pigeon): animate the WHOLE body (bob + lean + waddle) ----
+  if(mesh.userData.pigeon){
+    const freq = moving ? (running?12:8) : 2.0;
+    a.t += dt*freq;
+    const body = mesh.children[0]; if(!body) return;
+    const bob = moving ? Math.abs(Math.sin(a.t))*(running?0.16:0.09) : Math.sin(a.t)*0.02;
+    body.position.y = bob;
+    // forward lean into movement, waddle bank side to side
+    const lean = running ? 0.18 : (moving ? 0.09 : 0.0);
+    body.rotation.x += (lean - body.rotation.x)*Math.min(1,dt*6);
+    body.rotation.z = moving ? Math.sin(a.t)*(running?0.10:0.06) : 0;
+    return;
+  }
+
+  // ---- code character: full skeletal-style rig ----
+  const rig = mesh.userData.rig;
+  if(!rig) return;
+  const freq = moving ? (running ? 13 : 8.5) : 2.2;
   const amp  = moving ? (running ? 0.95 : 0.6) : 0.0;
   a.t += dt*freq;
   const swing = Math.sin(a.t);
   const swing2= Math.sin(a.t*2);
-
-  // legs: opposite phase stride
   rig.legs[0].rotation.x =  swing*amp;
   rig.legs[1].rotation.x = -swing*amp;
-  // arms swing opposite to legs (natural counter-rotation)
   if(rig.arms){
     rig.arms[0].rotation.x = -swing*amp*0.9;
     rig.arms[1].rotation.x =  swing*amp*0.9;
-    // slight outward flare when running
     rig.arms[0].rotation.z =  (running?0.18:0.08);
     rig.arms[1].rotation.z = -(running?0.18:0.08);
   }
-  // torso bob + forward lean when running; gentle breathe when idle
   if(rig.torsoPivot){
     const bob = moving ? Math.abs(swing2)*(running?0.12:0.06) : Math.sin(a.t)*0.015;
     rig.torsoPivot.position.y = 1.05 + bob;
     const lean = running ? 0.22 : (moving ? 0.10 : 0.0);
     rig.torsoPivot.rotation.x += (lean - rig.torsoPivot.rotation.x)*Math.min(1,dt*6);
-    rig.torsoPivot.rotation.z = moving ? swing*0.04 : 0; // subtle hip sway
+    rig.torsoPivot.rotation.z = moving ? swing*0.04 : 0;
   }
-  // head counter-steady + idle look
   if(rig.headPivot){
     rig.headPivot.rotation.x += ((moving?-0.08:0) - rig.headPivot.rotation.x)*Math.min(1,dt*6);
   }
 }
 
-/* ---------------- PLAYER AVATAR (stylized hero, fully rigged) ---------------- */
+/* ---------------- PIGEON MODEL (optional FBX, with code-character fallback) ---------------- */
+// Host these next to the HTML on your site:
+//   ./assets/pigeon/model.fbx   and the textures the FBX references.
+const PIGEON_URL = 'assets/pigeon/model.fbx';
+const AVATAR_TARGET_H = 2.1; // desired character height in world units
+const pigeon = { template:null, ready:false, tried:false };
+
+function loadPigeonModel(){
+  if(typeof THREE.FBXLoader!=='function'){ pigeon.tried=true; return; } // loader not present -> fallback
+  try{
+    const loader=new THREE.FBXLoader();
+    loader.load(PIGEON_URL, (obj)=>{
+      // normalize: center on ground, scale to target height, face +Z
+      const box=new THREE.Box3().setFromObject(obj);
+      const size=new THREE.Vector3(); box.getSize(size);
+      const h=size.y||1;
+      const s=AVATAR_TARGET_H/h;
+      obj.scale.setScalar(s);
+      // recompute after scaling to sit feet at y=0
+      const box2=new THREE.Box3().setFromObject(obj);
+      obj.position.y -= box2.min.y;
+      obj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false;
+        if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{ m.side=THREE.FrontSide; }); } } });
+      pigeon.template=obj; pigeon.ready=true; pigeon.tried=true;
+      // upgrade any avatars already spawned
+      for(const id in net.remotes){ swapToPigeon(net.remotes[id]); }
+    }, undefined, (err)=>{ pigeon.tried=true; /* stays on code character */ });
+  }catch(e){ pigeon.tried=true; }
+}
+
+function makePigeonInstance(){
+  if(!pigeon.ready) return null;
+  const inst=pigeon.template.clone(true);
+  const wrap=new THREE.Group();          // wrapper so we animate without touching model offsets
+  wrap.add(inst);
+  wrap.userData.pigeon=true;
+  wrap.userData.anim={ t:0, speed:0 };
+  return wrap;
+}
+function swapToPigeon(r){
+  if(!pigeon.ready || !r || r.isPigeon) return;
+  const p=makePigeonInstance(); if(!p) return;
+  p.position.copy(r.mesh.position);
+  scene.remove(r.mesh);
+  r.mesh=p; r.isPigeon=true; r.rig=null;
+  scene.add(p);
+}
+
+/* ---------------- PLAYER AVATAR (stylized hero, fully rigged fallback) ---------------- */
 function makeAvatar(){
   const g=new THREE.Group();
   // edgy palette: charcoal hoodie, teal trim, pale face, dark jeans
@@ -487,10 +545,12 @@ function makeAvatar(){
 }
 function ensureRemote(id){
   if(net.remotes[id]) return net.remotes[id];
-  const mesh=makeAvatar();
+  let mesh, isPigeon=false;
+  if(pigeon.ready){ mesh=makePigeonInstance(); isPigeon=true; }
+  if(!mesh){ mesh=makeAvatar(); isPigeon=false; }
   mesh.position.set(0,0,8);
   scene.add(mesh);
-  const r={mesh, tpos:new THREE.Vector3(0,0,8), yaw:0, tyaw:0, last:performance.now(), legs:mesh.userData.legs};
+  const r={mesh, isPigeon, tpos:new THREE.Vector3(0,0,8), yaw:0, tyaw:0, last:performance.now()};
   net.remotes[id]=r;
   return r;
 }
@@ -562,6 +622,7 @@ function init(){
 
   buildGround();
   buildCamp();
+  loadPigeonModel();
   generateMaze();
   buildMazeWalls();
   buildDoors();
