@@ -286,7 +286,7 @@ function startHost(){
 function hostOnData(conn, d){
   if(d.t==='state'){
     const r=ensureRemote(conn.peer);
-    r.tpos.set(d.x, 1.7, d.z); r.tyaw=d.yaw; r.last=performance.now();
+    r.tpos.set(d.x, 0, d.z); r.tyaw=d.yaw; r.last=performance.now();
     broadcastStates();
   }
 }
@@ -328,7 +328,7 @@ function clientOnData(d){
     d.players.forEach(p=>{
       if(p.id===net.myId) return;
       const r=ensureRemote(p.id);
-      r.tpos.set(p.x,1.7,p.z); r.tyaw=p.yaw; r.last=performance.now();
+      r.tpos.set(p.x,0,p.z); r.tyaw=p.yaw; r.last=performance.now();
     });
   }
 }
@@ -418,11 +418,11 @@ function makeAvatar(){
   // legs (animated)
   const legs=[];
   [-1,1].forEach(s=>{
-    const hip=new THREE.Group(); hip.position.set(s*0.22,0.95,0);
+    const hip=new THREE.Group(); hip.position.set(s*0.22,1.0,0);
     const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.12,1.0,8), dark);
     leg.position.y=-0.5; hip.add(leg);
     const boot=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.22,0.42), spike);
-    boot.position.set(0,-1.0,0.06); hip.add(boot);
+    boot.position.set(0,-0.95,0.06); hip.add(boot);
     g.add(hip); legs.push(hip);
   });
 
@@ -434,9 +434,9 @@ function makeAvatar(){
 function ensureRemote(id){
   if(net.remotes[id]) return net.remotes[id];
   const mesh=makeAvatar();
-  mesh.position.set(0,1.7,8);
+  mesh.position.set(0,0,8);
   scene.add(mesh);
-  const r={mesh, tpos:new THREE.Vector3(0,1.7,8), yaw:0, tyaw:0, last:performance.now(), legs:mesh.userData.legs};
+  const r={mesh, tpos:new THREE.Vector3(0,0,8), yaw:0, tyaw:0, last:performance.now(), legs:mesh.userData.legs};
   net.remotes[id]=r;
   return r;
 }
@@ -928,24 +928,32 @@ function doorIsClosed(){ return world.doorOpen < 0.35; }
 
 /* ---------------- FARM ---------------- */
 function buildFarm(){
-  // wheat field, fruit trees, sink — all in the glade
-  // soil plots
+  // ---- BIG garden: a broad cluster of soil beds on the south/east of the glade ----
   const soilMat = new THREE.MeshStandardMaterial({color:0x4a3526, roughness:1});
-  for(let i=0;i<5;i++){
-    const plot = new THREE.Mesh(new THREE.BoxGeometry(3,0.3,3), soilMat);
-    const ang = -0.6 + i*0.3;
-    plot.position.set(Math.cos(ang)*14, 0.15, Math.sin(ang)*14 + 6);
-    plot.receiveShadow=true;
-    scene.add(plot);
-    addCrop(plot.position.x, plot.position.z, 'wheat');
-  }
-  // fruit trees
-  for(let i=0;i<3;i++){
-    const ang = 2 + i*0.7;
-    const tx=Math.cos(ang)*16, tz=Math.sin(ang)*16;
+  const soilTop = new THREE.MeshStandardMaterial({color:0x3a2a1c, roughness:1});
+  // arrange wheat beds in a grid block (a real field)
+  const beds = [
+    // [centerX, centerZ]
+    [10,12],[14,12],[18,11],
+    [9,16],[13,16],[17,15.5],
+    [11,20],[15,19.5]
+  ];
+  beds.forEach(([bx,bz])=>{
+    const plot = new THREE.Mesh(new THREE.BoxGeometry(3.6,0.35,3.6), soilMat);
+    plot.position.set(bx,0.17,bz); plot.receiveShadow=true; scene.add(plot);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(3.4,0.06,3.4), soilTop);
+    top.position.set(bx,0.36,bz); top.receiveShadow=true; scene.add(top);
+    // each bed holds a tuft of wheat
+    addCrop(bx, bz, 'wheat');
+  });
+
+  // ---- orchard: more fruit trees, spread wider ----
+  const treeSpots=[[-12,16],[-16,9],[-17,-3],[-9,20],[-19,3]];
+  treeSpots.forEach(([tx,tz])=>{
     buildTree(tx,tz);
     addCrop(tx,tz,'fruit');
-  }
+  });
+
   // SINK (water source)
   const base = new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.8,1.4,16),
      new THREE.MeshStandardMaterial({color:0x8d8d97, roughness:.7, metalness:.2}));
@@ -956,6 +964,33 @@ function buildFarm(){
   scene.add(base,water);
   world.sink = {x:-14,z:8, daily:3, used:0};
   world.obstacles.push({x:-14, z:8, r:2.2}); // solid sink
+}
+
+/* ---------------- WHEAT (a tuft of golden stalks with grain heads) ---------------- */
+function makeWheatTuft(){
+  const grp=new THREE.Group();
+  const stalkMat=new THREE.MeshStandardMaterial({color:0xc9a23b, roughness:.95, flatShading:true});
+  const grainMat=new THREE.MeshStandardMaterial({color:0xe8c84e, roughness:.85, emissive:0x3a2c00, emissiveIntensity:.25, flatShading:true});
+  const n=12; // stalks per tuft
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, r=Math.random()*0.9;
+    const px=Math.cos(a)*r, pz=Math.sin(a)*r;
+    const h=1.4+Math.random()*0.6;
+    const lean=(Math.random()-0.5)*0.18;
+    // stalk
+    const stalk=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.05,h,4), stalkMat);
+    stalk.position.set(px,h/2,pz); stalk.rotation.z=lean; stalk.castShadow=true;
+    grp.add(stalk);
+    // grain head (ellipsoid cluster on top)
+    const head=new THREE.Mesh(new THREE.SphereGeometry(0.13,6,8), grainMat);
+    head.scale.set(1,2.0,1);
+    head.position.set(px+Math.sin(lean)* -h*0.5, h+0.18, pz);
+    head.castShadow=true; grp.add(head);
+    // a few awns (whiskers) as tiny cones
+    const awn=new THREE.Mesh(new THREE.ConeGeometry(0.02,0.3,3), grainMat);
+    awn.position.set(head.position.x, h+0.42, pz); grp.add(awn);
+  }
+  return grp;
 }
 
 function buildTree(x,z){
@@ -984,12 +1019,16 @@ function buildTree(x,z){
 }
 
 function addCrop(x,z,type){
-  // a small marker that grows/ripens; harvestable
-  const mat = new THREE.MeshStandardMaterial({color: type==='wheat'?0xd8b54a:0xd13b3b, roughness:.8, emissive:0x000000});
-  const geo = type==='wheat' ? new THREE.ConeGeometry(0.6,1.6,6) : new THREE.SphereGeometry(0.6,8,8);
-  const m = new THREE.Mesh(geo,mat);
-  m.position.set(x, type==='wheat'?1:4.4, z);
-  m.castShadow=true;
+  let m;
+  if(type==='wheat'){
+    m = makeWheatTuft();
+    m.position.set(x, 0.4, z);
+  } else {
+    const mat = new THREE.MeshStandardMaterial({color:0xd13b3b, roughness:.8});
+    m = new THREE.Mesh(new THREE.SphereGeometry(0.6,8,8), mat);
+    m.position.set(x, 4.4, z);
+    m.castShadow=true;
+  }
   scene.add(m);
   world.crops.push({mesh:m, type, x, z, ripe:true, regrow:0});
 }
