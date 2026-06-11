@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -503,6 +504,10 @@ CASTLE</div>
 <svg width="40" height="40" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
 <div class="gsi-title">Sign in with Google</div>
 <div class="gsi-subtitle">to continue to <b>Pokémon Castle</b></div>
+<div id="gsi-real" style="display:none;flex-direction:column;align-items:center;gap:10px;width:100%;padding:8px 0;">
+<div id="gsi-button"></div>
+<div id="gsi-status" style="font-size:12px;color:#5f6368;min-height:14px;text-align:center;"></div>
+</div>
 <div id="gsi-chooser" style="display:flex;flex-direction:column;width:100%;gap:2px;">
 <div id="gsi-account-list"></div>
 <div id="gsi-empty-hint">No accounts yet — add one below</div>
@@ -520,7 +525,7 @@ CASTLE</div>
 </div>
 </div>
 <div id="gsi-msg"></div>
-<div class="gsi-footnote">Progress saves automatically to this account on this device.</div>
+<div class="gsi-footnote" id="gsi-note">Progress saves automatically to this account on this device.</div>
 </div>
 </div>
 </div>
@@ -973,6 +978,7 @@ ts: Date.now()
 };
 
 try { localStorage.setItem(saveKey(accountEmail || username), JSON.stringify(data)); flashSaved(); } catch(e) {}
+if (googleUser) scheduleCloudSave();
 }
 function loadSaveData(name) {
 try {
@@ -1108,14 +1114,28 @@ setAccounts(accounts);
 renderAccounts();
 }
 }
+function setChip(u) {
+var chip = document.getElementById('account-avatar');
+if (!chip) return;
+if (u.picture) {
+chip.textContent = '';
+chip.style.backgroundImage = 'url(' + u.picture + ')';
+chip.style.backgroundSize = 'cover';
+} else {
+chip.style.backgroundImage = '';
+chip.textContent = u.name.charAt(0).toUpperCase();
+chip.style.background = u.color || '#1a73e8';
+}
+}
 function signInAccount(i) {
 var acct = getAccounts()[i];
 if (!acct) return;
 username = acct.name;
 accountEmail = acct.email;
-var chip = document.getElementById('account-avatar');
-if (chip) { chip.textContent = acct.name.charAt(0).toUpperCase(); chip.style.background = acct.color; }
-var sv = loadSaveData(acct.email);
+setChip(acct);
+startPlaying(loadSaveData(acct.email));
+}
+function startPlaying(sv) {
 document.getElementById('login-screen').classList.remove('active');
 if (sv) {
 // Returning player — load save, skip Oak intro
@@ -1150,7 +1170,8 @@ function signOut() {
 if (!accountEmail) return;
 if (!confirm('Sign out?\nYour progress is saved automatically.')) return;
 saveGame();
-location.reload();
+if (googleUser) { cloudUploadNow(); try { google.accounts.id.disableAutoSelect(); } catch(e) {} }
+setTimeout(function() { location.reload(); }, googleUser ? 600 : 0);
 }
 // Auto-save: every 10 seconds while playing, plus when leaving the page
 setInterval(function() { if (username && typeof currentMap !== 'undefined') saveGame(); },
@@ -1169,10 +1190,172 @@ lastSaveToast = now;
 toast.classList.add('show');
 setTimeout(function() { toast.classList.remove('show'); }, 1500);
 }
+// ============================================================
+// REAL GOOGLE SIGN-IN + GOOGLE DRIVE AUTO-SAVE
+// ============================================================
+// HOW TO TURN ON REAL GOOGLE SIGN-IN (3 steps):
+//  1. Put this file on a real website. Free + easy options:
+//     GitHub Pages, Netlify Drop (drag & drop), or Cloudflare Pages.
+//     (Real Google sign-in does NOT work when the file is opened
+//      directly from your computer - Google blocks file:// pages.)
+//  2. Go to https://console.cloud.google.com/apis/credentials
+//     -> Create credentials -> OAuth client ID -> Web application.
+//     Under "Authorized JavaScript origins" add your site address,
+//     e.g. https://yourname.github.io
+//     Also enable the "Google Drive API" for the project
+//     (APIs & Services -> Library -> Google Drive API -> Enable).
+//  3. Copy the Client ID (ends in .apps.googleusercontent.com)
+//     and paste it between the quotes on the next line:
+var GOOGLE_CLIENT_ID = '';
+// When set up, players sign in with their real Google account and
+// progress auto-saves to their Google Drive (hidden app folder),
+// so it follows them on any device. Without it, the game falls
+// back to local accounts saved in this browser.
+var googleUser = null;
+var gAccessToken = null, gTokenExp = 0, gTokenClient = null, gTokenCallback = null;
+var gDriveFileId = null;
+var DRIVE_FILE = 'pokemon-castle-save.json';
+function googleEnabled() {
+return !!GOOGLE_CLIENT_ID && /^https?:$/.test(location.protocol);
+}
+function loadGsiScript(ok, fail) {
+if (window.google && google.accounts) { ok(); return; }
+var sc = document.createElement('script');
+sc.src = 'https://accounts.google.com/gsi/client';
+sc.onload = ok;
+sc.onerror = fail;
+document.head.appendChild(sc);
+}
+function parseJwt(t) {
+var p = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+return JSON.parse(decodeURIComponent(atob(p).split('').map(function(c) {
+return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+}).join('')));
+}
+function setupGoogleLogin() {
+var real = document.getElementById('gsi-real');
+var note = document.getElementById('gsi-note');
+var chooser = document.getElementById('gsi-chooser');
+if (!googleEnabled()) {
+real.style.display = 'none';
+chooser.style.display = 'flex';
+if (!GOOGLE_CLIENT_ID && location.protocol === 'file:') {
+note.textContent = 'Local accounts mode. To use real Google sign-in, host this game online and add a Client ID (instructions inside this file).';
+} else if (!GOOGLE_CLIENT_ID) {
+note.textContent = 'Local accounts mode. Add a Google Client ID inside this file to turn on real Google sign-in.';
+}
+return;
+}
+chooser.style.display = 'none';
+document.getElementById('gsi-add-form').style.display = 'none';
+real.style.display = 'flex';
+note.textContent = 'Your progress saves automatically to your Google account.';
+loadGsiScript(function() {
+google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
+google.accounts.id.renderButton(document.getElementById('gsi-button'),
+{ theme: 'filled_blue', size: 'large', shape: 'pill', width: 260 });
+gTokenClient = google.accounts.oauth2.initTokenClient({
+client_id: GOOGLE_CLIENT_ID,
+scope: 'https://www.googleapis.com/auth/drive.appdata',
+callback: function(resp) { if (gTokenCallback) gTokenCallback(resp); }
+});
+}, function() {
+// Could not reach Google - fall back to local accounts
+real.style.display = 'none';
+chooser.style.display = 'flex';
+note.textContent = 'Could not reach Google. Using local accounts instead.';
+renderAccounts();
+});
+}
+function onGoogleCredential(resp) {
+var p;
+try { p = parseJwt(resp.credential); } catch(e) { return; }
+googleUser = { name: p.given_name || p.name || 'Trainer', email: p.email, picture: p.picture, sub: p.sub };
+username = String(googleUser.name).slice(0, 12);
+accountEmail = googleUser.email;
+setChip(googleUser);
+var status = document.getElementById('gsi-status');
+status.textContent = 'Loading your save\u2026';
+ensureToken().then(function() { return cloudFindAndDownload(); })
+.catch(function() { return null; })
+.then(function(cloudSv) {
+var localSv = loadSaveData(accountEmail);
+var sv = cloudSv || localSv;
+if (cloudSv && localSv && (localSv.ts || 0) > (cloudSv.ts || 0)) sv = localSv;
+if (sv) {
+try { localStorage.setItem(saveKey(accountEmail), JSON.stringify(sv)); } catch(e) {}
+}
+if (!cloudSv && localSv) scheduleCloudSave();
+status.textContent = '';
+startPlaying(sv);
+});
+}
+function ensureToken() {
+return new Promise(function(resolve, reject) {
+if (gAccessToken && Date.now() < gTokenExp - 60000) { resolve(gAccessToken); return; }
+if (!gTokenClient) { reject(new Error('no token client')); return; }
+gTokenCallback = function(resp) {
+if (resp && resp.access_token) {
+gAccessToken = resp.access_token;
+gTokenExp = Date.now() + (resp.expires_in || 3600) * 1000;
+resolve(gAccessToken);
+} else {
+reject(resp);
+}
+};
+gTokenClient.requestAccessToken(gAccessToken ? { prompt: '' } : {});
+});
+}
+function cloudFindAndDownload() {
+return ensureToken().then(function(tok) {
+var q = encodeURIComponent("name='" + DRIVE_FILE + "'");
+return fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id)&q=' + q,
+{ headers: { Authorization: 'Bearer ' + tok } }).then(function(r) { return r.json(); });
+}).then(function(j) {
+if (j && j.files && j.files.length) {
+gDriveFileId = j.files[0].id;
+return fetch('https://www.googleapis.com/drive/v3/files/' + gDriveFileId + '?alt=media',
+{ headers: { Authorization: 'Bearer ' + gAccessToken } }).then(function(r) { return r.json(); });
+}
+return null;
+});
+}
+var cloudTimer = null, cloudBusy = false;
+function scheduleCloudSave() {
+if (!googleUser) return;
+clearTimeout(cloudTimer);
+cloudTimer = setTimeout(cloudUploadNow, 4000);
+}
+function cloudUploadNow() {
+if (cloudBusy || !googleUser) return;
+var raw;
+try { raw = localStorage.getItem(saveKey(accountEmail)); } catch(e) { raw = null; }
+if (!raw) return;
+cloudBusy = true;
+ensureToken().then(function(tok) {
+var boundary = 'pkc' + Date.now();
+var meta = gDriveFileId ? {} : { name: DRIVE_FILE, parents: ['appDataFolder'] };
+var body = '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify(meta) +
+'\r\n--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + raw +
+'\r\n--' + boundary + '--';
+var url = gDriveFileId
+? 'https://www.googleapis.com/upload/drive/v3/files/' + gDriveFileId + '?uploadType=multipart'
+: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+return fetch(url, {
+method: gDriveFileId ? 'PATCH' : 'POST',
+headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'multipart/related; boundary=' + boundary },
+body: body
+}).then(function(r) { return r.json(); });
+}).then(function(j) {
+if (j && j.id) gDriveFileId = j.id;
+cloudBusy = false;
+}).catch(function() { cloudBusy = false; });
+}
 function startIntro() {
 document.getElementById('title-screen').classList.remove('active');
 document.getElementById('login-screen').classList.add('active');
 renderAccounts();
+setupGoogleLogin();
 }
 // ============================================================
 // PROFESSOR
@@ -2899,7 +3082,8 @@ var actualDmg = m.dmg === 0 ? 0 : m.dmg + (prog.level - 1) * 5;
 var barW = actualDmg === 0 ? 0 : Math.round(actualDmg / 250 * 100);
 return '<div class="poke-stat-row">'
 + '<span class="poke-move-name">' + m.name + '</span>'
-+ '<div class="poke-move-bar-wrap"><div class="poke-move-bar" style="width:' + Math.min(barW,100) + '%"></div></div>'
++ '<div class="poke-move-bar-wrap"><div class="poke-move-bar" style="width:' +
+Math.min(barW,100) + '%"></div></div>'
 + '<span class="poke-move-dmg">' + (actualDmg === 0 ? 'Status' : actualDmg + ' dmg')
 + '</span>'
 + '</div>';
@@ -2920,12 +3104,14 @@ detail.innerHTML = '<div class="poke-detail-header">'
 + activeBtnHTML
 + '<div class="poke-detail-section">❤ STATS</div>'
 + '<div class="poke-level-row"><span class="poke-level-label">HP</span><span class="poke-level-val">' + currentHP + ' / ' + maxHP + '</span></div>'
-+ '<div class="poke-xp-bar-wrap"><div class="poke-xp-bar" style="width:' + hpPct + '%;background:linear-gradient(90deg,' + hpColor + ',#80ff80)"></div></div>'
++ '<div class="poke-xp-bar-wrap"><div class="poke-xp-bar" style="width:' + hpPct +
+'%;background:linear-gradient(90deg,' + hpColor + ',#80ff80)"></div></div>'
 + '<div class="poke-level-row" style="margin-top:8px"><span class="poke-level-label">Level</span><span class="poke-level-val">' + prog.level +
 '</span></div>'
 + '<div class="poke-level-row"><span class="poke-level-label">XP</span><span class="poke-level-val">' + prog.xp + ' / ' + xpNeeded + '</span></div>'
 
-+ '<div class="poke-xp-bar-wrap"><div class="poke-xp-bar" style="width:' + xpPct + '%"></div></div>'
++ '<div class="poke-xp-bar-wrap"><div class="poke-xp-bar" style="width:' + xpPct +
+'%"></div></div>'
 + '<div class="poke-detail-section">⚔ MOVESET</div>'
 + movesHTML;
 document.getElementById('pokedex-list').style.display = 'none';
