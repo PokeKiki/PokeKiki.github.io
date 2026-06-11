@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1256,7 +1257,8 @@ google.accounts.id.renderButton(document.getElementById('gsi-button'),
 gTokenClient = google.accounts.oauth2.initTokenClient({
 client_id: GOOGLE_CLIENT_ID,
 scope: 'https://www.googleapis.com/auth/drive.appdata',
-callback: function(resp) { if (gTokenCallback) gTokenCallback(resp); }
+callback: function(resp) { if (gTokenCallback) gTokenCallback(resp); },
+error_callback: function(err) { if (gTokenCallback) gTokenCallback({ error: (err && err.type) || 'popup_error' }); }
 });
 }, function() {
 // Could not reach Google - fall back to local accounts
@@ -1273,10 +1275,32 @@ googleUser = { name: p.given_name || p.name || 'Trainer', email: p.email, pictur
 username = String(googleUser.name).slice(0, 12);
 accountEmail = googleUser.email;
 setChip(googleUser);
+// The Google Drive permission popup must be opened by a real tap,
+// or Safari blocks it silently - so we show a PLAY button first.
+document.getElementById('gsi-button').style.display = 'none';
 var status = document.getElementById('gsi-status');
-status.textContent = 'Loading your save\u2026';
+status.textContent = 'Hi ' + googleUser.name + '!';
+var real = document.getElementById('gsi-real');
+var play = document.createElement('button');
+play.className = 'gsi-btn gsi-btn-primary';
+play.style.width = '100%';
+play.style.padding = '13px 0';
+play.textContent = '\u25B6  PLAY';
+play.onclick = playWithCloud;
+real.appendChild(play);
+var skip = document.createElement('button');
+skip.className = 'gsi-btn gsi-btn-text';
+skip.textContent = 'Play without cloud save';
+skip.onclick = function() {
+googleUser = null;
+startPlaying(loadSaveData(accountEmail));
+};
+real.appendChild(skip);
+}
+function playWithCloud() {
+var status = document.getElementById('gsi-status');
+status.textContent = 'Connecting to Google Drive\u2026';
 ensureToken().then(function() { return cloudFindAndDownload(); })
-.catch(function() { return null; })
 .then(function(cloudSv) {
 var localSv = loadSaveData(accountEmail);
 var sv = cloudSv || localSv;
@@ -1287,6 +1311,9 @@ try { localStorage.setItem(saveKey(accountEmail), JSON.stringify(sv)); } catch(e
 if (!cloudSv && localSv) scheduleCloudSave();
 status.textContent = '';
 startPlaying(sv);
+}, function(err) {
+status.textContent = 'Could not connect to Google Drive \u2014 your save will stay on this device.';
+setTimeout(function() { startPlaying(loadSaveData(accountEmail)); }, 1600);
 });
 }
 function ensureToken() {
