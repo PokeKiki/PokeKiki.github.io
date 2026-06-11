@@ -1252,7 +1252,7 @@ note.textContent = 'Your progress saves automatically to your Google account.';
 loadGsiScript(function() {
 google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
 google.accounts.id.renderButton(document.getElementById('gsi-button'),
-{ theme: 'filled_blue', size: 'large', shape: 'pill', width: 260 });
+{ theme: 'filled_blue', size: 'large', shape: 'pill', width: 260, locale: 'en' });
 gTokenClient = google.accounts.oauth2.initTokenClient({
 client_id: GOOGLE_CLIENT_ID,
 scope: 'https://www.googleapis.com/auth/drive.appdata',
