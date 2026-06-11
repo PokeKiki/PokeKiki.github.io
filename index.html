@@ -1138,8 +1138,9 @@ function startPlaying(sv) {
 document.getElementById('login-screen').classList.remove('active');
 if (sv) {
 // Returning player — load save, skip Oak intro
+var signedInName = username;
 applySaveToState(sv);
-username = acct.name;
+if (signedInName) username = signedInName;
 document.getElementById('game-screen').classList.add('active');
 gameCanvas = document.getElementById('game-canvas');
 gctx = gameCanvas.getContext('2d');
@@ -1169,7 +1170,7 @@ function signOut() {
 if (!accountEmail) return;
 if (!confirm('Sign out?\nYour progress is saved automatically.')) return;
 saveGame();
-if (googleUser) { cloudUploadNow(); try { google.accounts.id.disableAutoSelect(); } catch(e) {} }
+if (googleUser) { cloudUploadNow(); try { google.accounts.id.disableAutoSelect(); } catch(e) {} try { localStorage.removeItem('pkcastle_guser'); } catch(e) {} }
 setTimeout(function() { location.reload(); }, googleUser ? 600 : 0);
 }
 // Auto-save: every 10 seconds while playing, plus when leaving the page
@@ -1231,6 +1232,19 @@ return JSON.parse(decodeURIComponent(atob(p).split('').map(function(c) {
 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
 }).join('')));
 }
+function getCachedUser() {
+try { return JSON.parse(localStorage.getItem('pkcastle_guser')); } catch(e) { return null; }
+}
+function gsiDyn() {
+var d = document.getElementById('gsi-dyn');
+if (!d) {
+d = document.createElement('div');
+d.id = 'gsi-dyn';
+d.style.cssText = 'display:flex;flex-direction:column;gap:8px;width:100%;align-items:center;';
+document.getElementById('gsi-real').appendChild(d);
+}
+return d;
+}
 function setupGoogleLogin() {
 var real = document.getElementById('gsi-real');
 var note = document.getElementById('gsi-note');
@@ -1249,6 +1263,11 @@ chooser.style.display = 'none';
 document.getElementById('gsi-add-form').style.display = 'none';
 real.style.display = 'flex';
 note.textContent = 'Your progress saves automatically to your Google account.';
+// restore a still-valid Drive token from this browsing session (no popups needed)
+try {
+var tk = JSON.parse(sessionStorage.getItem('pkc_tok'));
+if (tk && tk.e && Date.now() < tk.e - 60000) { gAccessToken = tk.t; gTokenExp = tk.e; }
+} catch(e) {}
 loadGsiScript(function() {
 google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
 google.accounts.id.renderButton(document.getElementById('gsi-button'),
@@ -1259,8 +1278,10 @@ scope: 'https://www.googleapis.com/auth/drive.appdata',
 callback: function(resp) { if (gTokenCallback) gTokenCallback(resp); },
 error_callback: function(err) { if (gTokenCallback) gTokenCallback({ error: (err && err.type) || 'popup_error' }); }
 });
+// Returning player on this device: skip Google screens entirely
+var cu = getCachedUser();
+if (cu) showContinueCard(cu);
 }, function() {
-// Could not reach Google - fall back to local accounts
 real.style.display = 'none';
 chooser.style.display = 'flex';
 note.textContent = 'Could not reach Google. Using local accounts instead.';
@@ -1270,52 +1291,94 @@ renderAccounts();
 function onGoogleCredential(resp) {
 var p;
 try { p = parseJwt(resp.credential); } catch(e) { return; }
-googleUser = { name: p.given_name || p.name || 'Trainer', email: p.email, picture: p.picture, sub: p.sub };
-username = String(googleUser.name).slice(0, 12);
-accountEmail = googleUser.email;
-setChip(googleUser);
-// The Google Drive permission popup must be opened by a real tap,
-// or Safari blocks it silently - so we show a PLAY button first.
+var u = { name: p.given_name || p.name || 'Trainer', email: p.email, picture: p.picture, sub: p.sub };
+try { localStorage.setItem('pkcastle_guser', JSON.stringify(u)); } catch(e) {}
+showContinueCard(u);
+}
+function showContinueCard(u) {
+googleUser = u;
+username = String(u.name).slice(0, 12);
+accountEmail = u.email;
+setChip(u);
 document.getElementById('gsi-button').style.display = 'none';
-var status = document.getElementById('gsi-status');
-status.textContent = 'Hi ' + googleUser.name + '!';
-var real = document.getElementById('gsi-real');
+document.getElementById('gsi-status').textContent = '';
+var d = gsiDyn();
+d.innerHTML = '';
+var row = document.createElement('div');
+row.style.cssText = 'display:flex;align-items:center;gap:12px;width:100%;justify-content:center;';
+var av = document.createElement('div');
+av.style.cssText = 'width:42px;height:42px;border-radius:50%;background:#1a73e8;background-size:cover;background-position:center;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;flex-shrink:0;';
+if (u.picture) { av.style.backgroundImage = 'url(' + u.picture + ')'; }
+else { av.textContent = u.name.charAt(0).toUpperCase(); }
+var nm = document.createElement('div');
+nm.style.cssText = 'text-align:left;min-width:0;';
+nm.innerHTML = '<div style="font-size:15px;color:#202124;"></div><div style="font-size:12px;color:#5f6368;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>';
+nm.children[0].textContent = u.name;
+nm.children[1].textContent = u.email;
+row.appendChild(av); row.appendChild(nm);
+d.appendChild(row);
 var play = document.createElement('button');
 play.className = 'gsi-btn gsi-btn-primary';
-play.style.width = '100%';
-play.style.padding = '13px 0';
+play.style.cssText = 'width:100%;padding:13px 0;font-size:15px;';
 play.textContent = '\u25B6  PLAY';
 play.onclick = playWithCloud;
-real.appendChild(play);
-var skip = document.createElement('button');
-skip.className = 'gsi-btn gsi-btn-text';
-skip.textContent = 'Play without cloud save';
-skip.onclick = function() {
-googleUser = null;
-startPlaying(loadSaveData(accountEmail));
+d.appendChild(play);
+var other = document.createElement('button');
+other.className = 'gsi-btn gsi-btn-text';
+other.textContent = 'Use a different account';
+other.onclick = function() {
+try { localStorage.removeItem('pkcastle_guser'); } catch(e) {}
+try { google.accounts.id.disableAutoSelect(); } catch(e) {}
+googleUser = null; gAccessToken = null; gTokenExp = 0;
+d.innerHTML = '';
+document.getElementById('gsi-button').style.display = '';
 };
-real.appendChild(skip);
+d.appendChild(other);
 }
 function playWithCloud() {
 var status = document.getElementById('gsi-status');
-status.textContent = 'Connecting to Google Drive\u2026';
-ensureToken().then(function() { return cloudFindAndDownload(); })
+status.textContent = 'Connecting\u2026';
+ensureToken(false).catch(function() {
+// Silent connect failed: ask once, with a tap-driven button so Safari allows the popup
+return new Promise(function(resolve, reject) {
+status.textContent = 'Allow Pok\u00e9mon Castle to keep your save in your Google Drive:';
+var d = gsiDyn();
+d.innerHTML = '';
+var allow = document.createElement('button');
+allow.className = 'gsi-btn gsi-btn-primary';
+allow.style.cssText = 'width:100%;padding:13px 0;';
+allow.textContent = 'Allow Google Drive';
+allow.onclick = function() {
+status.textContent = 'Connecting\u2026';
+ensureToken(true).then(resolve, reject);
+};
+d.appendChild(allow);
+var skipB = document.createElement('button');
+skipB.className = 'gsi-btn gsi-btn-text';
+skipB.textContent = 'Play without cloud save';
+skipB.onclick = function() { reject({ skip: true }); };
+d.appendChild(skipB);
+});
+}).then(function() { return cloudFindAndDownload(); })
 .then(function(cloudSv) {
 var localSv = loadSaveData(accountEmail);
 var sv = cloudSv || localSv;
 if (cloudSv && localSv && (localSv.ts || 0) > (cloudSv.ts || 0)) sv = localSv;
-if (sv) {
-try { localStorage.setItem(saveKey(accountEmail), JSON.stringify(sv)); } catch(e) {}
-}
+if (sv) { try { localStorage.setItem(saveKey(accountEmail), JSON.stringify(sv)); } catch(e) {} }
 if (!cloudSv && localSv) scheduleCloudSave();
 status.textContent = '';
 startPlaying(sv);
 }, function(err) {
-status.textContent = 'Could not connect to Google Drive \u2014 your save will stay on this device.';
+if (err && err.skip) {
+googleUser = null;
+startPlaying(loadSaveData(accountEmail));
+return;
+}
+status.textContent = 'Could not connect \u2014 your save will stay on this iPad for now.';
 setTimeout(function() { startPlaying(loadSaveData(accountEmail)); }, 1600);
 });
 }
-function ensureToken() {
+function ensureToken(interactive) {
 return new Promise(function(resolve, reject) {
 if (gAccessToken && Date.now() < gTokenExp - 60000) { resolve(gAccessToken); return; }
 if (!gTokenClient) { reject(new Error('no token client')); return; }
@@ -1323,20 +1386,24 @@ gTokenCallback = function(resp) {
 if (resp && resp.access_token) {
 gAccessToken = resp.access_token;
 gTokenExp = Date.now() + (resp.expires_in || 3600) * 1000;
+try { sessionStorage.setItem('pkc_tok', JSON.stringify({ t: gAccessToken, e: gTokenExp })); } catch(e) {}
 resolve(gAccessToken);
 } else {
 reject(resp);
 }
 };
-gTokenClient.requestAccessToken(gAccessToken ? { prompt: '' } : {});
+var opts = interactive ? {} : { prompt: '' };
+if (accountEmail) opts.login_hint = accountEmail;
+gTokenClient.requestAccessToken(opts);
 });
 }
 function cloudFindAndDownload() {
-return ensureToken().then(function(tok) {
+if (!gAccessToken) return Promise.resolve(null);
 var q = encodeURIComponent("name='" + DRIVE_FILE + "'");
 return fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id)&q=' + q,
-{ headers: { Authorization: 'Bearer ' + tok } }).then(function(r) { return r.json(); });
-}).then(function(j) {
+{ headers: { Authorization: 'Bearer ' + gAccessToken } })
+.then(function(r) { return r.json(); })
+.then(function(j) {
 if (j && j.files && j.files.length) {
 gDriveFileId = j.files[0].id;
 return fetch('https://www.googleapis.com/drive/v3/files/' + gDriveFileId + '?alt=media',
@@ -1353,11 +1420,12 @@ cloudTimer = setTimeout(cloudUploadNow, 4000);
 }
 function cloudUploadNow() {
 if (cloudBusy || !googleUser) return;
+// Never open popups mid-game: only sync while the token is still valid.
+if (!gAccessToken || Date.now() > gTokenExp - 60000) return;
 var raw;
 try { raw = localStorage.getItem(saveKey(accountEmail)); } catch(e) { raw = null; }
 if (!raw) return;
 cloudBusy = true;
-ensureToken().then(function(tok) {
 var boundary = 'pkc' + Date.now();
 var meta = gDriveFileId ? {} : { name: DRIVE_FILE, parents: ['appDataFolder'] };
 var body = '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify(meta) +
@@ -1366,15 +1434,13 @@ var body = '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + JSON
 var url = gDriveFileId
 ? 'https://www.googleapis.com/upload/drive/v3/files/' + gDriveFileId + '?uploadType=multipart'
 : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-return fetch(url, {
+fetch(url, {
 method: gDriveFileId ? 'PATCH' : 'POST',
-headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'multipart/related; boundary=' + boundary },
+headers: { Authorization: 'Bearer ' + gAccessToken, 'Content-Type': 'multipart/related; boundary=' + boundary },
 body: body
-}).then(function(r) { return r.json(); });
-}).then(function(j) {
-if (j && j.id) gDriveFileId = j.id;
-cloudBusy = false;
-}).catch(function() { cloudBusy = false; });
+}).then(function(r) { return r.json(); })
+.then(function(j) { if (j && j.id) gDriveFileId = j.id; cloudBusy = false; })
+.catch(function() { cloudBusy = false; });
 }
 function startIntro() {
 document.getElementById('title-screen').classList.remove('active');
