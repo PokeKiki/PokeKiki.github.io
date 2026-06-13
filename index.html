@@ -339,6 +339,77 @@ function loadSpartanTexture(cb){
   img.src="data:image/jpeg;base64,"+TEX_B64;
 }
 
+/* ================= PROCEDURAL RIG ================= */
+/* The GLB is a static mesh, so we auto-skin it: bone weights are derived
+   from vertex height/side, then a code-driven gait moves legs, knees,
+   hips and torso on the GPU (SkinnedMesh). */
+const RIG={hipY:1.0,kneeY:.55,chestY:1.39,blend:.06,sideBlend:.05,pivotX:.19};
+function computeSkinData(pos,count){
+  const idx=new Uint16Array(count*4), wgt=new Float32Array(count*4);
+  // bones: 0 pelvis, 1 spine, 2 thighL, 3 shinL, 4 thighR, 5 shinR
+  for(let i=0;i<count;i++){
+    const x=pos[i*3], y=pos[i*3+1];
+    const u=Math.min(1,Math.max(0,(y-(RIG.hipY-RIG.blend))/(RIG.blend*2)));
+    const v=Math.min(1,Math.max(0,(y-(RIG.kneeY-RIG.blend))/(RIG.blend*2)));
+    const sL=Math.min(1,Math.max(0,((-x)+RIG.sideBlend)/(RIG.sideBlend*2)));
+    const leg=1-u, th=leg*v, sh=leg*(1-v);
+    const inf=[[1,u],[2,th*sL],[4,th*(1-sL)],[3,sh*sL],[5,sh*(1-sL)]]
+      .filter(p=>p[1]>1e-4).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    let s=0;for(const p of inf)s+=p[1];
+    for(let k=0;k<4;k++){
+      idx[i*4+k]=inf[k]?inf[k][0]:0;
+      wgt[i*4+k]=inf[k]?inf[k][1]/s:0;
+    }
+  }
+  return {idx,wgt};
+}
+function addSkinAttributes(geo){
+  const pa=geo.attributes.position;
+  const d=computeSkinData(pa.array,pa.count);
+  geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(d.idx,4));
+  geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(d.wgt,4));
+}
+function makeSpartanRig(geo,mat){
+  const mesh=new THREE.SkinnedMesh(geo,mat);
+  const pelvis=new THREE.Bone(); pelvis.position.set(0,RIG.hipY,0);
+  const spine =new THREE.Bone(); spine.position.set(0,RIG.chestY-RIG.hipY,0);
+  const thighL=new THREE.Bone(); thighL.position.set(-RIG.pivotX,0,0);
+  const shinL =new THREE.Bone(); shinL.position.set(0,RIG.kneeY-RIG.hipY,0);
+  const thighR=new THREE.Bone(); thighR.position.set( RIG.pivotX,0,0);
+  const shinR =new THREE.Bone(); shinR.position.set(0,RIG.kneeY-RIG.hipY,0);
+  pelvis.add(spine);pelvis.add(thighL);thighL.add(shinL);pelvis.add(thighR);thighR.add(shinR);
+  mesh.add(pelvis);
+  mesh.updateMatrixWorld(true);
+  mesh.bind(new THREE.Skeleton([pelvis,spine,thighL,shinL,thighR,shinR]));
+  return {mesh,pelvis,spine,thighL,shinL,thighR,shinR,phase:Math.random()*7,t:0};
+}
+/* o:{speed,onGround,crouch} — sign convention: -x rot = limb swings forward */
+function animateRig(r,dt,o){
+  const sp=o.speed||0, run=Math.min(1,sp/7.4), mov=sp>.15;
+  r.t+=dt;
+  r.phase+=dt*sp*1.85;
+  const k=Math.min(1,dt*10);
+  const amp=mov?(.34+.3*run):0;
+  let tL=-amp*Math.sin(r.phase), tR=-amp*Math.sin(r.phase+Math.PI);
+  let kn=(mov?1:0)*(.45+.5*run);
+  let kL=kn*Math.max(0,Math.sin(r.phase+1.5));
+  let kR=kn*Math.max(0,Math.sin(r.phase+1.5+Math.PI));
+  let py=mov?(.018+.02*run)*Math.abs(Math.cos(r.phase)):0;
+  let sx=mov?(.04+.13*run):(.02+.022*Math.sin(r.t*1.7));   // run lean / idle breath
+  let sy=mov?.09*Math.sin(r.phase):0;
+  let pz=mov?.05*Math.sin(r.phase):0;
+  if(o.crouch){py-=.2;tL-=.65;tR-=.65;kL+=.9;kR+=.9;sx+=.2}
+  if(o.onGround===false){tL=-.5;tR=-.5;kL=1.0;kR=1.0;py-=.04}
+  r.thighL.rotation.x+=(tL-r.thighL.rotation.x)*k;
+  r.thighR.rotation.x+=(tR-r.thighR.rotation.x)*k;
+  r.shinL.rotation.x +=(kL-r.shinL.rotation.x)*k;
+  r.shinR.rotation.x +=(kR-r.shinR.rotation.x)*k;
+  r.spine.rotation.x +=(sx-r.spine.rotation.x)*k;
+  r.spine.rotation.y +=(sy-r.spine.rotation.y)*k;
+  r.pelvis.rotation.z+=(pz-r.pelvis.rotation.z)*k;
+  r.pelvis.position.y=RIG.hipY+py;
+}
+
 /* ================= AUDIO ================= */
 const AudioSys=(()=>{let ctx=null,master=null;
   function ensure(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=.5;master.connect(ctx.destination)}if(ctx.state==='suspended')ctx.resume()}
@@ -813,7 +884,8 @@ class Enemy{
   constructor(hp){
     this.hp=hp;this.maxhp=hp;this.dead=false;this.deadT=0;this.vy=0;
     this.mat=spartanMat.clone();
-    this.mesh=new THREE.Mesh(spartanGeoLow,this.mat);
+    this.rig=makeSpartanRig(spartanGeoLow,this.mat);
+    this.mesh=this.rig.mesh;
     this.mesh.castShadow=!IS_TOUCH;this.mesh.receiveShadow=true;
     const far=SPAWNS.filter(s=>{const dx=s[0]-player.pos.x,dz=s[1]-player.pos.z;return dx*dx+dz*dz>196});
     const pool=far.length?far:SPAWNS;
@@ -831,6 +903,7 @@ class Enemy{
       this.mesh.rotation.x=Math.min(this.deadT*3.4,1)* -Math.PI/2;
       if(this.deadT>1.2){this.mat.transparent=true;this.mat.opacity=Math.max(0,1-(this.deadT-1.2)/.8);
         if(this.deadT>2)this.remove=true}
+      animateRig(this.rig,dt,{speed:0,onGround:true});
       this.mesh.position.set(this.pos.x,this.pos.y,this.pos.z);return}
     const toP=new THREE.Vector3(player.pos.x-this.pos.x,0,player.pos.z-this.pos.z);
     const dist=toP.length();toP.normalize();
@@ -848,8 +921,8 @@ class Enemy{
     if(sup>=this.pos.y-PSTEP){this.vy=0;this.pos.y+=(sup-this.pos.y)*Math.min(1,dt*12)}
     else{this.vy-=14*dt;this.pos.y=Math.max(sup,this.pos.y+this.vy*dt);
       if(this.pos.y<=sup+.001){this.pos.y=sup;this.vy=0}}
-    this.bob+=dt*this.speed*3.2;
-    this.mesh.position.set(this.pos.x,this.pos.y+Math.abs(Math.sin(this.bob))*.05,this.pos.z);
+    animateRig(this.rig,dt,{speed:this.speed,onGround:true});
+    this.mesh.position.set(this.pos.x,this.pos.y,this.pos.z);
     this.mesh.rotation.y=Math.atan2(toP.x,toP.z);
     /* fire */
     this.fireT-=dt;
@@ -1083,6 +1156,7 @@ function spawnDummy(){
   d.update=function(dt){ // override: stationary, no fire
     if(this.dead){Enemy.prototype.update.call(this,dt);return}
     const toP=new THREE.Vector3(player.pos.x-this.pos.x,0,player.pos.z-this.pos.z).normalize();
+    animateRig(this.rig,dt,{speed:0,onGround:true});
     this.mesh.position.set(this.pos.x,this.pos.y,this.pos.z);
     this.mesh.rotation.y=Math.atan2(toP.x,toP.z);
   };
@@ -1115,7 +1189,8 @@ function endTutorial(skipped){
 
 /* ================= PLAYER MODEL (3rd person) ================= */
 function setupPlayerModel(){
-  player.model=new THREE.Mesh(spartanGeo,spartanMat);
+  player.rig=makeSpartanRig(spartanGeo,spartanMat);
+  player.model=player.rig.mesh;
   player.model.castShadow=true;player.model.visible=false;scene.add(player.model);
 }
 
@@ -1124,7 +1199,7 @@ const menuScene=new THREE.Scene();
 menuScene.background=new THREE.Color(0x0a0d09);
 menuScene.fog=new THREE.FogExp2(0x0a0d09,.07);
 const menuCam=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,60);
-let menuSpartan=null,menuPodium=null;
+let menuSpartan=null,menuRig=null,menuPodium=null;
 function setupMenuScene(){
   const hemiM=new THREE.HemisphereLight(0x6e7a64,0x0c0e09,.5);menuScene.add(hemiM);
   const key=new THREE.DirectionalLight(0xffb868,1.5);key.position.set(2.6,3.4,2.2);key.castShadow=true;key.shadow.mapSize.set(1024,1024);menuScene.add(key);
@@ -1136,7 +1211,8 @@ function setupMenuScene(){
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x0e110c,roughness:.95}));
   floor.rotation.x=-Math.PI/2;floor.position.y=-.22;floor.receiveShadow=true;menuScene.add(floor);
   const grid=new THREE.GridHelper(40,40,0x2c3527,0x1a2016);grid.position.y=-.21;menuScene.add(grid);
-  menuSpartan=new THREE.Mesh(spartanGeo,spartanMat);
+  menuRig=makeSpartanRig(spartanGeo,spartanMat);
+  menuSpartan=menuRig.mesh;
   menuSpartan.castShadow=true;menuScene.add(menuSpartan);
   menuCam.position.set(2.2,1.5,3.4);menuCam.lookAt(.45,1.0,0);
 }
@@ -1388,7 +1464,8 @@ function tickGame(dt){
     vmGroup.visible=false;
     if(player.model){player.model.visible=true;
       player.model.position.set(player.pos.x,player.pos.y,player.pos.z);
-      player.model.rotation.y=player.yaw+Math.PI}
+      player.model.rotation.y=player.yaw+Math.PI;
+      animateRig(player.rig,dt,{speed:moving?speed*mag:0,onGround:player.onGround,crouch:player.crouch});}
   }
   /* viewmodel motion */
   if(vmGroup.children[0]){
@@ -1422,6 +1499,7 @@ function loop(){
   }else if(spartanGeo){
     menuT+=dt;
     if(menuSpartan)menuSpartan.rotation.y=menuT*.4;
+    if(menuRig)animateRig(menuRig,dt,{speed:0,onGround:true});
     menuCam.position.x=2.2+Math.sin(menuT*.13)*.25;
     menuCam.lookAt(.45,1.0,0);
     renderer.render(menuScene,menuCam);
@@ -1440,13 +1518,15 @@ function boot(){
   $('lbar').firstElementChild.style.width='25%';
   setTimeout(()=>{
     spartanGeo=decodeSpartan(MESH_B64);
+    addSkinAttributes(spartanGeo);
     $('lbar').firstElementChild.style.width='55%';
     setTimeout(()=>{
       spartanGeoLow=decodeSpartan(MESH2_B64);
+      addSkinAttributes(spartanGeoLow);
       $('lbar').firstElementChild.style.width='80%';
       loadSpartanTexture(t=>{
         spartanTex=t;
-        spartanMat=new THREE.MeshStandardMaterial({map:t,roughness:.62,metalness:.42});
+        spartanMat=new THREE.MeshStandardMaterial({map:t,roughness:.62,metalness:.42,skinning:true});
         setupMenuScene();setupPlayerModel();
         if(IS_TOUCH){
           $('tut-skip').innerHTML='<span style="color:var(--amber)">TAP HERE</span> TO SKIP TRAINING';
