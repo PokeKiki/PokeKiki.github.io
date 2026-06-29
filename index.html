@@ -92,12 +92,13 @@
   .clip{
     position:absolute; top:11px; height:62px; border-radius:8px; overflow:hidden; cursor:grab;
     border:1px solid rgba(255,255,255,.18); box-shadow:0 3px 12px rgba(0,0,0,.35); user-select:none;
+    touch-action:none; -webkit-user-select:none;
   }
   .clip.sel{outline:2px solid var(--text); outline-offset:-1px;}
   .clip canvas{position:absolute; inset:0; width:100%; height:100%; opacity:.85;}
   .clip .lbl{position:absolute; left:8px; top:6px; font-size:11px; font-weight:600; color:#fff;
     text-shadow:0 1px 3px rgba(0,0,0,.7); z-index:2; pointer-events:none;}
-  .clip .handle{position:absolute; top:0; bottom:0; width:9px; cursor:ew-resize; z-index:3;}
+  .clip .handle{position:absolute; top:0; bottom:0; width:13px; cursor:ew-resize; z-index:3; touch-action:none;}
   .clip .handle.l{left:0;} .clip .handle.r{right:0;}
   .clip .handle:hover{background:rgba(255,255,255,.25);}
 
@@ -171,6 +172,16 @@
   ::-webkit-scrollbar{width:11px; height:11px;}
   ::-webkit-scrollbar-thumb{background:var(--border-bright); border-radius:6px; border:3px solid var(--panel);}
   ::-webkit-scrollbar-track{background:var(--panel);}
+
+  @media (max-width:760px){
+    main{flex-direction:column;}
+    .stage{min-height:44vh;}
+    aside{width:auto; border-left:none; border-top:1px solid var(--border); max-height:48vh;}
+    header{gap:9px; padding:10px 12px;}
+    .logo{font-size:23px;}
+    .btn{padding:9px 11px; font-size:12px;}
+    .beat-menu{width:calc(100vw - 24px); max-width:340px;}
+  }
 </style>
 </head>
 <body>
@@ -188,6 +199,9 @@
     </button>
     <button class="btn" id="beatBtn" title="Add a phonk beat">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v11"/></svg>Add beat
+    </button>
+    <button class="btn" id="cutBtn" disabled title="Cut selected clip at the playhead (C)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 7.5L20 18M8.5 16.5L20 6"/></svg>Cut
     </button>
   </div>
   <div class="spacer"></div>
@@ -487,10 +501,9 @@
       const hl=document.createElement('div'); hl.className='handle l'; clip.appendChild(hl);
       const hr=document.createElement('div'); hr.className='handle r'; clip.appendChild(hr);
 
-      clip.onmousedown=e=>{ if(e.target===hl||e.target===hr) return; startDrag(e,t,'move',clip); };
-      hl.onmousedown=e=>{ e.stopPropagation(); startDrag(e,t,'trimL',clip); };
-      hr.onmousedown=e=>{ e.stopPropagation(); startDrag(e,t,'trimR',clip); };
-      clip.onclick=()=>{ if(!clip._moved){ select(t.id); } };
+      clip.addEventListener('pointerdown',e=>{ if(e.target===hl||e.target===hr) return; startDrag(e,t,'move',clip); });
+      hl.addEventListener('pointerdown',e=>{ e.stopPropagation(); startDrag(e,t,'trimL',clip); });
+      hr.addEventListener('pointerdown',e=>{ e.stopPropagation(); startDrag(e,t,'trimR',clip); });
 
       lane.appendChild(clip);
       lanesEl.appendChild(lane);
@@ -524,10 +537,11 @@
     }
   }
 
-  // ---------- drag move / trim ----------
+  // ---------- drag move / trim (pointer events: mouse + touch) ----------
   function startDrag(e,t,mode,clipEl){
     e.preventDefault();
     if(playing) stop();
+    try{ clipEl.setPointerCapture(e.pointerId); }catch(_){}
     const startX=e.clientX;
     const o={start:t.start, inPoint:t.inPoint, bufLen:t.bufLen};
     const cv=clipEl.querySelector('canvas');
@@ -561,16 +575,19 @@
       }
       paint();
     }
-    function mu(){
-      document.removeEventListener('mousemove',mm);
-      document.removeEventListener('mouseup',mu);
+    function up(){
+      clipEl.removeEventListener('pointermove',mm);
+      clipEl.removeEventListener('pointerup',up);
+      clipEl.removeEventListener('pointercancel',up);
       clipEl.style.zIndex='';
       const wasMoved=clipEl._moved;
       render();              // one full re-render to refresh ruler width + lanes
       if(wasMoved) select(t.id);
+      else select(t.id);     // a tap (no move) selects the clip
     }
-    document.addEventListener('mousemove',mm);
-    document.addEventListener('mouseup',mu);
+    clipEl.addEventListener('pointermove',mm);
+    clipEl.addEventListener('pointerup',up);
+    clipEl.addEventListener('pointercancel',up);
   }
 
   // ---------- selection / inspector ----------
@@ -615,7 +632,7 @@
   function refreshButtons(){
     const has=tracks.length>0;
     $('playBtn').disabled=!has; $('exportBtn').disabled=!has; $('saveBtn').disabled=!has;
-    $('dupBtn').disabled=!selected();
+    $('dupBtn').disabled=!selected(); $('cutBtn').disabled=!selected();
   }
 
   $('importBtn').onclick=()=>$('fileInput').click();
@@ -659,6 +676,23 @@
   };
   $('delBtn').onclick=()=>{ const t=selected(); if(!t) return;
     tracks=tracks.filter(x=>x.id!==t.id); selectedId=null; render(); syncInspector(); };
+
+  // cut / split the selected clip at the playhead
+  function splitSelected(){
+    const t=selected();
+    if(!t){ showHint('Select a clip first'); return; }
+    const p=playheadSec, rs=t.start, re=realEnd(t);
+    if(p<=rs+0.03 || p>=re-0.03){ showHint('Put the playhead inside the clip, then cut'); return; }
+    const leftBuf=(p-rs)*t.fx.pitch;          // buffer-seconds for the left piece
+    const right={ ...t, id:uid++, fx:{...t.fx}, _peaks:t._peaks,
+      inPoint:t.inPoint+leftBuf, bufLen:t.bufLen-leftBuf, start:p,
+      muted:t.muted, solo:t.solo, name:t.name+' B' };
+    t.bufLen=leftBuf;
+    const i=tracks.indexOf(t);
+    tracks.splice(i+1,0,right);
+    select(right.id); render(); showHint('Clip cut');
+  }
+  $('cutBtn').onclick=splitSelected;
 
   // ---------- ruler seek ----------
   rulerEl.onclick=e=>{
@@ -880,6 +914,7 @@
     if(e.code==='Space'){ e.preventDefault(); play(); }
     if(e.code==='Delete'||e.code==='Backspace'){ const t=selected(); if(t){ tracks=tracks.filter(x=>x.id!==t.id); selectedId=null; render(); syncInspector(); } }
     if(e.key==='d'&&selected()){ $('dupBtn').click(); }
+    if(e.key==='c'&&selected()){ splitSelected(); }
     if(e.key==='Home'){ playheadSec=0; drawPlayhead(); updateClock(0); }
   });
 
