@@ -130,6 +130,11 @@
   input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:50%; background:var(--magenta-bright);
     cursor:pointer; border:2px solid var(--bg);}
   .presets{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 18px;}
+  .icbtn2{flex:1; padding:9px 6px; border-radius:9px; background:var(--surface); border:1px solid var(--border-bright);
+    color:var(--muted); font-size:12px; font-weight:600;}
+  .icbtn2:hover{border-color:var(--magenta); color:var(--text);}
+  .icbtn2.on{background:var(--magenta); color:#fff; border-color:transparent;}
+  .icbtn2.on.solo{background:var(--amber); color:#1a1330;}
   .chip{padding:6px 11px; border-radius:20px; font-size:11px; font-weight:600; background:var(--surface);
     border:1px solid var(--border-bright); color:var(--muted);}
   .chip:hover{border-color:var(--cyan); color:var(--text);}
@@ -190,7 +195,7 @@
 <audio id="silentLoop" loop playsinline preload="auto" src="data:audio/wav;base64,UklGRiQZAABXQVZFZm10IBAAAAABAAIAQB8AAAB9AAAEABAAZGF0YQAZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"></audio>
 
 <header>
-  <div class="logo">DRIFT<small>PHONK VOCAL LAB · v4</small></div>
+  <div class="logo">DRIFT<small>PHONK VOCAL LAB · v5</small></div>
   <div class="toolbar">
     <button class="btn rec" id="recBtn" title="Record from mic">
       <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="7"/></svg><span id="recLbl">Record</span>
@@ -245,6 +250,11 @@
     <div id="inspBody" style="display:none;">
       <h2>TAKE</h2>
       <div class="insp-name" id="inspName">Take 1</div>
+      <div id="takeControls" style="display:flex; gap:7px; margin-bottom:12px;">
+        <button class="icbtn2" id="muteBtn">Mute</button>
+        <button class="icbtn2" id="soloBtn">Solo</button>
+        <button class="icbtn2" id="renameBtn">Rename</button>
+      </div>
       <div class="presets" id="presets"></div>
       <div class="divider"></div>
       <div id="fxControls"></div>
@@ -402,7 +412,7 @@
   }
 
   // ---------- transport ----------
-  let playing=false, sources=[], rafId=null, playFromSec=0, playStartCtx=0;
+  let playing=false, sources=[], rafId=null, playFromSec=0, playStartCtx=0, masterBus=null;
   let playheadSec=0;
 
   function play(){
@@ -422,6 +432,13 @@
     playFromSec = playheadSec;
     playStartCtx = context.currentTime + 0.08;
     sources=[];
+    // loud master bus: makeup gain into a limiter so layers are loud but don't clip out
+    const master=context.createGain(); master.gain.value=2.2;
+    const limiter=context.createDynamicsCompressor();
+    limiter.threshold.value=-3; limiter.knee.value=6; limiter.ratio.value=20;
+    limiter.attack.value=0.002; limiter.release.value=0.18;
+    master.connect(limiter); limiter.connect(context.destination);
+    masterBus=master;
     tracks.forEach(t=>{
       if(!audible(t)) return;
       const rs=t.start, re=realEnd(t);
@@ -438,7 +455,7 @@
       if(!isFinite(when)||when<0) when=context.currentTime+0.05;
       if(!isFinite(offset)||offset<0) offset=0;
       if(!isFinite(bufLen)||bufLen<=0) bufLen=Math.max(0.05,t.buffer.duration-offset);
-      const s=buildChain(context,t,context.destination);
+      const s=buildChain(context,t,master);
       try{ s.start(when, offset, bufLen); }catch(e){ try{s.start(when,offset);}catch(_){ try{s.start();}catch(__){} } }
       sources.push(s);
     });
@@ -485,8 +502,33 @@
   }
 
   // ---------- rendering ----------
+  function compactLanes(){
+    const used=[...new Set(tracks.map(t=>(t.lane==null?0:t.lane)))].sort((a,b)=>a-b);
+    const map=new Map(); used.forEach((v,i)=>map.set(v,i));
+    tracks.forEach(t=>{ t.lane=map.get(t.lane==null?0:t.lane); });
+  }
+  function laneCountOccupied(){ let mx=-1; tracks.forEach(t=>{ if(t.lane>mx) mx=t.lane; }); return mx+1; }
+
+  function buildClip(t, laneEl){
+    const clip=document.createElement('div');
+    clip.className='clip'+(t.id===selectedId?' sel':'');
+    clip.style.left=(148+t.start*pps)+'px';
+    clip.style.width=Math.max(14,realLen(t)*pps)+'px';
+    clip.style.background='linear-gradient(160deg,'+t.color+'cc,'+t.color+'66)';
+    const cv=document.createElement('canvas'); clip.appendChild(cv);
+    const lbl=document.createElement('div'); lbl.className='lbl'; lbl.textContent=t.name; clip.appendChild(lbl);
+    const hl=document.createElement('div'); hl.className='handle l'; clip.appendChild(hl);
+    const hr=document.createElement('div'); hr.className='handle r'; clip.appendChild(hr);
+    clip.addEventListener('pointerdown',e=>{ if(e.target===hl||e.target===hr) return; startDrag(e,t,'move',clip); });
+    hl.addEventListener('pointerdown',e=>{ e.stopPropagation(); startDrag(e,t,'trimL',clip); });
+    hr.addEventListener('pointerdown',e=>{ e.stopPropagation(); startDrag(e,t,'trimR',clip); });
+    laneEl.appendChild(clip);
+    requestAnimationFrame(()=>drawWave(cv,t));
+  }
+
   function render(){
     emptyTl.style.display = tracks.length?'none':'grid';
+    compactLanes();
     const dur=projectDur();
     const width=148+dur*pps+40;
 
@@ -503,53 +545,23 @@
       tick.appendChild(lab); rulerEl.appendChild(tick);
     }
 
-    // lanes
+    // lanes — one row per lane index; multiple clips can live on the same lane
     lanesEl.style.width=width+'px';
     lanesEl.innerHTML='';
-    tracks.forEach((t,i)=>{
+    const nLanes=Math.max(laneCountOccupied()+1,1); // trailing empty lane = drop target for a new row
+    for(let L=0;L<nLanes;L++){
       const lane=document.createElement('div');
-      lane.className='lane'+(t.id===selectedId?' selected':'');
-
-      const head=document.createElement('div');
-      head.className='lane-head';
-      const nm=document.createElement('div');
-      nm.className='nm';
-      nm.innerHTML='<span class="dot" style="background:'+t.color+'"></span>';
-      const nmTxt=document.createElement('span'); nmTxt.textContent=t.name; nmTxt.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-      nm.appendChild(nmTxt);
-      nm.title='Click to rename';
-      nm.onclick=()=>{ const n=prompt('Rename take',t.name); if(n){t.name=n.trim()||t.name; render(); syncInspector();} };
-      head.appendChild(nm);
-
-      const mini=document.createElement('div'); mini.className='mini';
-      const mb=document.createElement('button'); mb.className='icbtn'+(t.muted?' on':''); mb.textContent='M'; mb.title='Mute';
-      mb.onclick=e=>{e.stopPropagation(); t.muted=!t.muted; render();};
-      const sb=document.createElement('button'); sb.className='icbtn solo'+(t.solo?' on':''); sb.textContent='S'; sb.title='Solo';
-      sb.onclick=e=>{e.stopPropagation(); t.solo=!t.solo; render();};
-      mini.appendChild(mb); mini.appendChild(sb);
-      head.appendChild(mini);
+      lane.className='lane'; lane.dataset.lane=L;
+      const head=document.createElement('div'); head.className='lane-head';
+      const nm=document.createElement('div'); nm.className='nm';
+      nm.innerHTML='<span class="dot" style="background:#4a3a6e"></span>';
+      const nmTxt=document.createElement('span'); nmTxt.textContent='Lane '+(L+1);
+      nmTxt.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);';
+      nm.appendChild(nmTxt); head.appendChild(nm);
       lane.appendChild(head);
-
-      // clip
-      const clip=document.createElement('div');
-      clip.className='clip'+(t.id===selectedId?' sel':'');
-      clip.style.left=(148+t.start*pps)+'px';
-      clip.style.width=Math.max(14,realLen(t)*pps)+'px';
-      clip.style.background='linear-gradient(160deg,'+t.color+'cc,'+t.color+'66)';
-      const cv=document.createElement('canvas'); clip.appendChild(cv);
-      const lbl=document.createElement('div'); lbl.className='lbl'; lbl.textContent=t.name; clip.appendChild(lbl);
-      const hl=document.createElement('div'); hl.className='handle l'; clip.appendChild(hl);
-      const hr=document.createElement('div'); hr.className='handle r'; clip.appendChild(hr);
-
-      clip.addEventListener('pointerdown',e=>{ if(e.target===hl||e.target===hr) return; startDrag(e,t,'move',clip); });
-      hl.addEventListener('pointerdown',e=>{ e.stopPropagation(); startDrag(e,t,'trimL',clip); });
-      hr.addEventListener('pointerdown',e=>{ e.stopPropagation(); startDrag(e,t,'trimR',clip); });
-
-      lane.appendChild(clip);
+      tracks.forEach(t=>{ if(t.lane===L){ if(t.id===selectedId) lane.classList.add('selected'); buildClip(t,lane); } });
       lanesEl.appendChild(lane);
-      // draw waveform after in DOM (need width)
-      requestAnimationFrame(()=>drawWave(cv,t));
-    });
+    }
     drawPlayhead();
     refreshButtons();
   }
@@ -588,7 +600,8 @@
     const o={start:t.start, inPoint:t.inPoint, bufLen:t.bufLen};
     const cv=clipEl.querySelector('canvas');
     const lanesTop=lanesEl.getBoundingClientRect().top;
-    let targetLane=tracks.indexOf(t);
+    const maxLaneTarget=laneCountOccupied(); // allow dropping onto the trailing empty lane
+    let targetLane=(t.lane==null?0:t.lane);
     clipEl._moved=false;
     clipEl.style.cursor = mode==='move' ? 'grabbing' : 'ew-resize';
     clipEl.style.zIndex=20;
@@ -607,10 +620,9 @@
         t.start=Math.max(0,o.start+dx);
         // vertical: lift the clip and figure out which lane it's over
         clipEl.style.transform='translateY('+dyPx+'px)';
-        const curIdx=tracks.indexOf(t);
-        targetLane=Math.max(0,Math.min(tracks.length-1,
+        targetLane=Math.max(0,Math.min(maxLaneTarget,
           Math.floor((ev.clientY-lanesTop)/LANE_H)));
-        clipEl.style.boxShadow = targetLane!==curIdx
+        clipEl.style.boxShadow = targetLane!==(t.lane==null?0:t.lane)
           ? '0 10px 26px rgba(0,0,0,.6), 0 0 0 2px var(--cyan)' : '';
       } else if(mode==='trimR'){
         const maxLen=(t.buffer.duration-t.inPoint);
@@ -633,14 +645,8 @@
       clipEl.style.transform='';
       clipEl.style.zIndex='';
       clipEl.style.boxShadow='';
-      // commit a vertical lane change (move block up/down)
-      if(mode==='move'){
-        const from=tracks.indexOf(t);
-        if(targetLane!==from && targetLane>=0){
-          tracks.splice(from,1);
-          tracks.splice(targetLane,0,t);
-        }
-      }
+      // commit a vertical lane change (move block onto another lane, or a new one)
+      if(mode==='move'){ t.lane=targetLane; }
       render();
       select(t.id);
     }
@@ -657,6 +663,13 @@
     $('inspBody').style.display=t?'block':'none';
     if(!t) return;
     $('inspName').textContent=t.name;
+    // mute / solo / rename
+    const mb=$('muteBtn'), sb=$('soloBtn'), rn=$('renameBtn');
+    mb.className='icbtn2'+(t.muted?' on':''); mb.textContent=t.muted?'Muted':'Mute';
+    sb.className='icbtn2 solo'+(t.solo?' on':''); sb.textContent='Solo';
+    mb.onclick=()=>{ t.muted=!t.muted; syncInspector(); render(); };
+    sb.onclick=()=>{ t.solo=!t.solo; syncInspector(); render(); };
+    rn.onclick=()=>{ const n=prompt('Rename take',t.name); if(n){ t.name=n.trim()||t.name; render(); syncInspector(); } };
     // presets
     const pc=$('presets'); pc.innerHTML='';
     Object.keys(PRESETS).forEach(name=>{
@@ -681,9 +694,28 @@
   }
 
   // ---------- add / import / record ----------
+  // boost quiet audio (e.g. mic recordings) up toward full scale
+  function normalizeBuffer(buf, target){
+    target=target||0.97;
+    let peak=0;
+    for(let c=0;c<buf.numberOfChannels;c++){
+      const d=buf.getChannelData(c);
+      for(let i=0;i<d.length;i++){ const a=Math.abs(d[i]); if(a>peak) peak=a; }
+    }
+    if(peak>0.0001 && peak<target){
+      const g=target/peak;
+      for(let c=0;c<buf.numberOfChannels;c++){
+        const d=buf.getChannelData(c);
+        for(let i=0;i<d.length;i++) d[i]*=g;
+      }
+    }
+    return buf;
+  }
+
   function addTrack(buffer,name){
+    const nextLane = tracks.length ? Math.max(...tracks.map(t=>t.lane==null?0:t.lane))+1 : 0;
     const t={ id:uid++, name:name||('Take '+(tracks.length+1)), buffer,
-      start:0, inPoint:0, bufLen:buffer.duration, fx:fx(), muted:false, solo:false,
+      start:0, inPoint:0, bufLen:buffer.duration, fx:fx(), muted:false, solo:false, lane:nextLane,
       color:COLORS[tracks.length%COLORS.length], _peaks:null };
     tracks.push(t); select(t.id); refreshButtons();
     return t;
@@ -719,7 +751,7 @@
       recStream.getTracks().forEach(tr=>tr.stop());
       const blob=new Blob(recChunks,{type:recChunks[0]?.type||'audio/webm'});
       const ab=await blob.arrayBuffer();
-      ac().decodeAudioData(ab, buf=>{ addTrack(buf,'Vocal '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})); render(); showHint('Recorded take added'); },
+      ac().decodeAudioData(ab, buf=>{ normalizeBuffer(buf,0.97); addTrack(buf,'Vocal '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})); render(); showHint('Recorded take added (boosted)'); },
         ()=>showHint('Recording failed to decode'));
     };
     mediaRec.start();
@@ -730,6 +762,7 @@
   $('dupBtn').onclick=()=>{
     const t=selected(); if(!t) return;
     const c={...t, id:uid++, name:t.name+' copy', fx:{...t.fx}, _peaks:t._peaks,
+      lane:(tracks.length?Math.max(...tracks.map(x=>x.lane==null?0:x.lane))+1:0),
       color:COLORS[tracks.length%COLORS.length]};
     tracks.push(c); select(c.id); render(); showHint('Take duplicated');
   };
@@ -796,8 +829,12 @@
     const rate=44100;
     const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
     const off=new OAC(2,Math.ceil(dur*rate)+rate,rate);
+    const exMaster=off.createGain(); exMaster.gain.value=2.2;
+    const exLim=off.createDynamicsCompressor();
+    exLim.threshold.value=-3; exLim.knee.value=6; exLim.ratio.value=20; exLim.attack.value=0.002; exLim.release.value=0.18;
+    exMaster.connect(exLim); exLim.connect(off.destination);
     aud.forEach(t=>{
-      const s=buildChain(off,t,off.destination);
+      const s=buildChain(off,t,exMaster);
       try{ s.start(Math.max(0,num(t.start,0)), Math.max(0,num(t.inPoint,0)), Math.max(0.05,num(t.bufLen,t.buffer.duration))); }catch(e){ try{ s.start(0); }catch(_){} }
     });
     $('exportBtn').disabled=true; showHint('Rendering mix…');
@@ -834,7 +871,7 @@
   // ---------- save / load session ----------
   $('saveBtn').onclick=()=>{
     const data={ v:1, pps, tracks:tracks.map(t=>({
-      name:t.name,start:t.start,inPoint:t.inPoint,bufLen:t.bufLen,fx:t.fx,
+      name:t.name,start:t.start,inPoint:t.inPoint,bufLen:t.bufLen,fx:t.fx,lane:t.lane,
       muted:t.muted,solo:t.solo,color:t.color, wav:b64(encodeWAV(t.buffer)) })) };
     const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
     const a=document.createElement('a'); a.href=url; a.download='session.phonk'; a.click();
@@ -851,7 +888,8 @@
           const ab=unb64(td.wav);
           const buf=await ac().decodeAudioData(ab);
           const t={ id:uid++, name:td.name, buffer:buf, start:td.start, inPoint:td.inPoint,
-            bufLen:td.bufLen, fx:Object.assign(fx(),td.fx), muted:td.muted, solo:td.solo, color:td.color, _peaks:null };
+            bufLen:td.bufLen, fx:Object.assign(fx(),td.fx), muted:td.muted, solo:td.solo, color:td.color,
+            lane:(td.lane==null?uid:td.lane), _peaks:null };
           tracks.push(t);
         }
         if(data.pps){ pps=data.pps; $('zoomLbl').textContent=Math.round(pps)+' px/s'; }
